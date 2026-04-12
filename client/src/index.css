@@ -1,0 +1,101 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0f0f13;
+  --surface: #1a1a24;
+  --surface2: #23232f;
+  --border: #2e2e3f;
+  --green: #00c853;
+  --yellow: #ffd600;
+  --red: #f44336;
+  --blue: #2979ff;
+  --text: #f0f0f0;
+  --muted: #888;
+
+  /* Character colors */
+  --politico: #1565c0;
+  --empresario: #e65100;
+  --investigador: #6a1b9a;
+  --juiz: #1b5e20;
+  --assassino: #b71c1c;
+  --guarda_costas: #4e342e;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  min-height: 100vh;
+}
+
+h1, h2, h3 {
+  font-family: 'Bebas Neue', sans-serif;
+  letter-spacing: 0.05em;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  outline: none;
+  font-family: inherit;
+  font-weight: 600;
+  border-radius: 8px;
+  transition: all 0.15s;
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+input {
+  font-family: inherit;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 1rem;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+input:focus { border-color: var(--yellow); }
+
+.btn {
+  padding: 10px 20px;
+  font-size: 0.95rem;
+  background: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.btn:hover:not(:disabled) { background: var(--border); }
+
+.btn-primary {
+  background: var(--yellow);
+  color: #000;
+  border: none;
+  font-size: 1rem;
+  padding: 12px 28px;
+}
+.btn-primary:hover:not(:disabled) { background: #ffe033; }
+
+.btn-danger {
+  background: var(--red);
+  color: #fff;
+  border: none;
+}
+.btn-danger:hover:not(:disabled) { background: #e53935; }
+
+.btn-success {
+  background: var(--green);
+  color: #000;
+  border: none;
+}
+.btn-success:hover:not(:disabled) { background: #00e676; }
+
+.btn-sm {
+  padding: 6px 14px;
+  font-size: 0.82rem;
+}
