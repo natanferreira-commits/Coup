@@ -63,10 +63,10 @@ export default function Landing({ onEnter }) {
 }
 
 const CHARS = [
-  { icon: '🏛️', name: 'Político',      color: '#1565c0' },
-  { icon: '💼', name: 'Bicheiro',      color: '#e65100' },
-  { icon: '🕵️', name: 'Investigador',  color: '#6a1b9a' },
-  { icon: '⚖️', name: 'Juiz',          color: '#1b5e20' },
-  { icon: '🔪', name: 'Miliciano',     color: '#b71c1c' },
-  { icon: '🛡️', name: 'Guarda-Costas', color: '#4e342e' },
+  { icon: '🏛️', name: 'Político',  color: '#1565c0' },
+  { icon: '💼', name: 'Bicheiro',  color: '#e65100' },
+  { icon: '🕵️', name: 'X9',        color: '#6a1b9a' },
+  { icon: '⚖️', name: 'Juiz',      color: '#1b5e20' },
+  { icon: '🔪', name: 'Miliciano', color: '#b71c1c' },
+  { icon: '🛡️', name: 'Segurança', color: '#4e342e' },
 ];

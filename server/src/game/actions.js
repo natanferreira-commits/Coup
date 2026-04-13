@@ -63,16 +63,16 @@ const ACTION_NAMES = {
   taxar: 'Taxação (Político)',
   roubar: 'Roubo (Bicheiro)',
   assassinar: 'Assassinato (Miliciano)',
-  investigar: 'Investigação (Investigador)',
+  investigar: 'Investigação (X9)',
 };
 
 const CHARACTER_NAMES = {
   politico: 'Político',
   empresario: 'Bicheiro',
-  investigador: 'Investigador',
+  investigador: 'X9',
   juiz: 'Juiz',
   assassino: 'Miliciano',
-  guarda_costas: 'Guarda-Costas',
+  guarda_costas: 'Segurança',
 };
 
 function getBlockers(actionType) {

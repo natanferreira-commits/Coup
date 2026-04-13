@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import socket from '../socket';
-import Card, { CHAR_CONFIG } from '../components/Card';
+import Card from '../components/Card';
+import { CHAR_CONFIG } from '../components/charConfig';
 import GameLog from '../components/GameLog';
+import TurnCard from '../components/TurnCard';
 import moedaImg from '../assets/moeda.svg';
 import styles from './Game.module.css';
 
 const ACTION_NAMES = {
   renda: 'Renda', ajuda_externa: 'Ajuda Externa', golpe: 'Golpe',
-  taxar: 'Taxar', roubar: 'Roubar', assassinar: 'Assassinar', investigar: 'Investigar',
+  taxar: 'Taxar', roubar: 'Roubar', assassinar: 'Assassinar', investigar: 'Investigar (X9)',
 };
 const ACTIONS_NEEDING_TARGET = ['golpe', 'roubar', 'assassinar', 'investigar'];
 const BLOCK_OPTIONS = {
@@ -98,8 +100,12 @@ export default function Game({ data, myId }) {
   return (
     <div className={styles.board}>
 
-      {/* ── LEFT: log ── */}
+      {/* ── LEFT: turno + log ── */}
       <div className={styles.leftPanel}>
+        <TurnCard
+          player={players.find(p => p.id === currentPlayerId)}
+          isMe={isMyTurn}
+        />
         <p className={styles.panelLabel}>Chat da Rodada</p>
         <GameLog log={log} />
       </div>
@@ -287,15 +293,19 @@ export default function Game({ data, myId }) {
                       </div>
                     )}
                     <div className={styles.actionGrid}>
-                      <ActionBtn icon="💵" label="Renda" sub="+1 moeda"        disabled={me?.coins >= 10} onClick={() => takeAction('renda')} />
-                      <ActionBtn icon="💰" label="Ajuda Externa" sub="+2 moedas" disabled={me?.coins >= 10} onClick={() => takeAction('ajuda_externa')} />
-                      <ActionBtn icon="💥" label="Golpe" sub="7 moedas"        disabled={(me?.coins||0) < 7} onClick={() => takeAction('golpe')} danger />
-                      <ActionBtn icon="🏛️" label="Taxar" sub="+3 moedas"       disabled={me?.coins >= 10} onClick={() => takeAction('taxar')} />
-                      <ActionBtn icon="💼" label="Roubar" sub="alvo perde 2"   disabled={!selectedTarget} onClick={() => takeAction('roubar')} />
-                      <ActionBtn icon="🔪" label="Miliciano" sub="3 moedas"    disabled={(me?.coins||0) < 3 || !selectedTarget} onClick={() => takeAction('assassinar')} danger />
-                      <ActionBtn icon="🕵️" label="Investigar" sub="ver carta"  disabled={!selectedTarget} onClick={() => takeAction('investigar')} />
+                      <ActionBtn icon="💵" label="Renda"         sub="+1 moeda"              disabled={me?.coins >= 10}       onClick={() => takeAction('renda')} />
+                      <ActionBtn icon="💰" label="Ajuda Externa" sub="+2 moedas"             disabled={me?.coins >= 10}       onClick={() => takeAction('ajuda_externa')} />
+                      <ActionBtn icon="💥" label="Golpe"         sub="7 moedas · precisa alvo" disabled={(me?.coins||0) < 7} onClick={() => takeAction('golpe')} danger />
+                      <ActionBtn icon="🏛️" label="Taxar"         sub="+3 moedas (Político)"  disabled={me?.coins >= 10}       onClick={() => takeAction('taxar')} />
+                      <ActionBtn icon="💼" label="Roubar"        sub="2 moedas do alvo"                                       onClick={() => takeAction('roubar')} />
+                      <ActionBtn icon="🔪" label="Miliciano"     sub="3 moedas · elimina carta" disabled={(me?.coins||0) < 3} onClick={() => takeAction('assassinar')} danger />
+                      <ActionBtn icon="🕵️" label="X9"            sub="ver carta do alvo"                                      onClick={() => takeAction('investigar')} />
                     </div>
-                    {!selectedTarget && <p className={styles.targetHint}>⬆ Clique em um oponente para selecionar como alvo</p>}
+                    <p className={styles.targetHint}>
+                      {selectedTarget
+                        ? `✓ Alvo: ${players.find(p => p.id === selectedTarget)?.name} — clique em outro para trocar`
+                        : '⬆ Clique em um oponente para selecionar como alvo (obrigatório para Golpe, Roubar, Miliciano e X9)'}
+                    </p>
                   </>
                 )}
 
