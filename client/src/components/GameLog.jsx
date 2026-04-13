@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import styles from './GameLog.module.css';
 
 export default function GameLog({ log }) {
@@ -10,9 +11,19 @@ export default function GameLog({ log }) {
 
   return (
     <div className={styles.log} ref={ref}>
-      {log?.map((entry, i) => (
-        <p key={i} className={styles.entry}>{entry}</p>
-      ))}
+      <AnimatePresence initial={false}>
+        {log?.map((entry, i) => (
+          <motion.p
+            key={entry + i}
+            className={styles.entry}
+            initial={{ opacity: 0, x: -12 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.25 }}
+          >
+            {entry}
+          </motion.p>
+        ))}
+      </AnimatePresence>
     </div>
   );
 }

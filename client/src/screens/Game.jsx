@@ -1,26 +1,19 @@
 import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import socket from '../socket';
 import Card, { CHAR_CONFIG } from '../components/Card';
 import GameLog from '../components/GameLog';
+import moedaImg from '../assets/moeda.svg';
 import styles from './Game.module.css';
 
 const ACTION_NAMES = {
-  renda: 'Renda',
-  ajuda_externa: 'Ajuda Externa',
-  golpe: 'Golpe',
-  taxar: 'Taxar',
-  roubar: 'Roubar',
-  assassinar: 'Assassinar',
-  investigar: 'Investigar',
+  renda: 'Renda', ajuda_externa: 'Ajuda Externa', golpe: 'Golpe',
+  taxar: 'Taxar', roubar: 'Roubar', assassinar: 'Assassinar', investigar: 'Investigar',
 };
-
 const ACTIONS_NEEDING_TARGET = ['golpe', 'roubar', 'assassinar', 'investigar'];
-
 const BLOCK_OPTIONS = {
-  ajuda_externa: ['politico'],
-  roubar: ['juiz', 'guarda_costas'],
-  assassinar: ['guarda_costas'],
-  investigar: ['juiz'],
+  ajuda_externa: ['politico'], roubar: ['juiz', 'guarda_costas'],
+  assassinar: ['guarda_costas'], investigar: ['juiz'],
 };
 
 export default function Game({ data, myId }) {
@@ -46,407 +39,385 @@ export default function Game({ data, myId }) {
     });
   }
 
-  function takeAction(action) {
-    if (ACTIONS_NEEDING_TARGET.includes(action) && !selectedTarget) {
-      setError('Selecione um oponente como alvo primeiro');
-      return;
-    }
+  const takeAction = action => {
+    if (ACTIONS_NEEDING_TARGET.includes(action) && !selectedTarget)
+      return setError('Selecione um oponente como alvo primeiro');
     emit('take_action', { action, targetId: selectedTarget }, () => setSelectedTarget(null));
-  }
-
-  function handlePass() { emit('pass', {}); }
-  function handleChallenge() { emit('challenge', {}); }
-  function handleBlock() {
+  };
+  const handlePass      = () => emit('pass', {});
+  const handleChallenge = () => emit('challenge', {});
+  const handleBlock     = () => {
     if (!blockChar) return setError('Escolha o personagem para bloquear');
     emit('block', { character: blockChar }, () => setBlockChar(null));
-  }
-  function handleLoseInfluence() {
-    if (selectedCardIndex === null) return setError('Selecione uma carta para perder');
+  };
+  const handleLoseInfluence = () => {
+    if (selectedCardIndex === null) return setError('Selecione uma carta');
     emit('lose_influence', { cardIndex: selectedCardIndex }, () => setSelectedCardIndex(null));
-  }
-  function handleInvestigateDecision(forceSwap) {
-    emit('investigate_decision', { forceSwap });
-  }
+  };
+  const handleInvestigateDecision = forceSwap => emit('investigate_decision', { forceSwap });
 
-  const iAmActor = pa?.actorId === myId;
-  const iAmTarget = pa?.targetId === myId;
+  const iAmActor    = pa?.actorId === myId;
+  const iAmTarget   = pa?.targetId === myId;
   const alreadyResponded = pa?.respondedPlayers?.includes(myId);
-  const iAmInLoseQueue = pa?.loseInfluenceQueue?.[0]?.playerId === myId;
+  const iAmInLoseQueue   = pa?.loseInfluenceQueue?.[0]?.playerId === myId;
 
-  const canAct = isMyTurn && phase === 'ACTION_SELECT' && me?.alive;
-  const canRespond = phase === 'RESPONSE_WINDOW' && !iAmActor && !alreadyResponded && me?.alive;
+  const canAct             = isMyTurn && phase === 'ACTION_SELECT' && me?.alive;
+  const canRespond         = phase === 'RESPONSE_WINDOW' && !iAmActor && !alreadyResponded && me?.alive;
   const canChallengeAction = canRespond && !!pa?.claimedCharacter;
-  const canBlockAction = canRespond && (() => {
-    if (!pa) return false;
-    if (pa.type === 'ajuda_externa') return true;
-    return iAmTarget;
-  })();
-  const canChallengeBlock = phase === 'BLOCK_CHALLENGE_WINDOW' && iAmActor;
-  const mustLoseInfluence = phase === 'LOSE_INFLUENCE' && iAmInLoseQueue;
+  const canBlockAction     = canRespond && (pa?.type === 'ajuda_externa' ? true : iAmTarget);
+  const canChallengeBlock  = phase === 'BLOCK_CHALLENGE_WINDOW' && iAmActor;
+  const mustLoseInfluence  = phase === 'LOSE_INFLUENCE' && iAmInLoseQueue;
   const mustInvestigateDecide = phase === 'INVESTIGATE_DECISION' && iAmActor;
   const blockOptions = pa ? (BLOCK_OPTIONS[pa.type] || []) : [];
 
-  const actorName = pa ? players.find(p => p.id === pa.actorId)?.name : null;
+  const actorName  = pa ? players.find(p => p.id === pa.actorId)?.name : null;
   const targetName = pa?.targetId ? players.find(p => p.id === pa.targetId)?.name : null;
   const blockerName = pa?.blocker ? players.find(p => p.id === pa.blocker.playerId)?.name : null;
+
+  const hasAction = canAct || canChallengeAction || canBlockAction || canChallengeBlock || mustLoseInfluence || mustInvestigateDecide;
 
   if (winner) {
     const winnerPlayer = players.find(p => p.id === winner);
     return (
-      <div className={styles.gameOver}>
-        <div className={styles.gameOverCard}>
+      <motion.div className={styles.gameOver}
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+        <motion.div className={styles.gameOverCard}
+          initial={{ scale: 0.7, y: 40 }} animate={{ scale: 1, y: 0 }}
+          transition={{ type: 'spring', stiffness: 200, damping: 18 }}>
           <h1>FIM DE JOGO</h1>
           <p className={styles.winnerName}>{winnerPlayer?.name} venceu!</p>
-          <button className="btn btn-primary" onClick={() => window.location.reload()}>Jogar Novamente</button>
-        </div>
-      </div>
+          <motion.button className="btn btn-primary" whileTap={{ scale: 0.95 }}
+            onClick={() => window.location.reload()}>
+            Jogar Novamente
+          </motion.button>
+        </motion.div>
+      </motion.div>
     );
   }
 
   return (
     <div className={styles.board}>
 
-      {/* ── TOP BAR: opponents + help ── */}
-      <div className={styles.topBar}>
-        <div className={styles.opponents}>
-          {others.map(p => (
-            <div
-              key={p.id}
-              className={`
-                ${styles.opponent}
-                ${p.id === currentPlayerId ? styles.opponentActive : ''}
-                ${!p.alive ? styles.opponentDead : ''}
-                ${selectedTarget === p.id ? styles.opponentTargeted : ''}
-                ${canAct && p.alive && ACTIONS_NEEDING_TARGET.length ? styles.opponentClickable : ''}
-              `}
-              onClick={() => {
-                if (canAct && p.alive) setSelectedTarget(prev => prev === p.id ? null : p.id);
-              }}
-            >
-              <div className={styles.opponentAvatar}>
-                {p.name.charAt(0).toUpperCase()}
-              </div>
-              <div className={styles.opponentInfo}>
-                <span className={styles.opponentName}>{p.name}</span>
-                <span className={styles.opponentCoins}>💰 {p.coins}</span>
-              </div>
-              <div className={styles.opponentCardBacks}>
-                {p.cards.map((c, i) => (
-                  <div key={i} className={`${styles.miniCard} ${c.dead ? styles.miniCardDead : ''}`}>
-                    {c.dead ? '✕' : c.character
-                      ? <span title={CHAR_CONFIG[c.character]?.label}>{CHAR_CONFIG[c.character]?.icon}</span>
-                      : '🃏'
-                    }
-                  </div>
-                ))}
-              </div>
-              {p.id === currentPlayerId && <div className={styles.turnIndicator}>VEZ</div>}
-              {selectedTarget === p.id && <div className={styles.targetIndicator}>ALVO</div>}
-            </div>
-          ))}
-        </div>
-        <button className={styles.helpBtn} onClick={() => setShowHelp(h => !h)}>
-          ? Ajuda
-        </button>
+      {/* ── LEFT: log ── */}
+      <div className={styles.leftPanel}>
+        <p className={styles.panelLabel}>Chat da Rodada</p>
+        <GameLog log={log} />
       </div>
 
-      {/* ── MAIN AREA ── */}
-      <div className={styles.main}>
+      {/* ── CENTER ── */}
+      <div className={styles.center}>
 
-        {/* LEFT: log + deck + coins */}
-        <div className={styles.leftPanel}>
-          <div className={styles.logTitle}>Chat da Rodada</div>
-          <GameLog log={log} />
-          <div className={styles.deckInfo}>
-            <div className={styles.deckStack}>
-              <div className={styles.deckCard} />
-              <div className={styles.deckCard} />
-              <div className={styles.deckCard} />
-            </div>
-            <span>Compras</span>
-          </div>
-          <div className={styles.coinsInfo}>
-            {[...Array(Math.min(me?.coins || 0, 10))].map((_, i) => (
-              <span key={i} className={styles.coin}>●</span>
+        {/* Opponents row — integrated */}
+        <div className={styles.opponents}>
+          <AnimatePresence>
+            {others.map(p => (
+              <motion.div
+                key={p.id}
+                className={`${styles.opponent}
+                  ${p.id === currentPlayerId ? styles.opponentActive : ''}
+                  ${!p.alive ? styles.opponentDead : ''}
+                  ${selectedTarget === p.id ? styles.opponentTargeted : ''}
+                `}
+                layout
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: p.alive ? 1 : 0.35, y: 0 }}
+                whileHover={canAct && p.alive ? { scale: 1.03, y: -2 } : {}}
+                whileTap={canAct && p.alive ? { scale: 0.97 } : {}}
+                onClick={() => canAct && p.alive && setSelectedTarget(prev => prev === p.id ? null : p.id)}
+                style={{ cursor: canAct && p.alive ? 'pointer' : 'default' }}
+              >
+                <div className={styles.opponentAvatar}>{p.name.charAt(0).toUpperCase()}</div>
+                <div className={styles.opponentInfo}>
+                  <span className={styles.opponentName}>{p.name}</span>
+                  <div className={styles.opponentCoins}>
+                    <img src={moedaImg} className={styles.coinIconSm} alt="moeda" />
+                    <span>{p.coins}</span>
+                  </div>
+                </div>
+                <div className={styles.opponentCards}>
+                  {p.cards.map((c, i) => (
+                    <div key={i} className={`${styles.miniCard} ${c.dead ? styles.miniCardDead : ''}`}>
+                      {c.dead ? '✕' : c.character ? CHAR_CONFIG[c.character]?.icon : '🃏'}
+                    </div>
+                  ))}
+                </div>
+                {p.id === currentPlayerId && (
+                  <motion.div className={styles.turnBadge}
+                    initial={{ scale: 0 }} animate={{ scale: 1 }}
+                    transition={{ type: 'spring', stiffness: 400 }}>
+                    VEZ
+                  </motion.div>
+                )}
+                {selectedTarget === p.id && (
+                  <motion.div className={styles.targetBadge}
+                    initial={{ scale: 0 }} animate={{ scale: 1 }}>
+                    ALVO
+                  </motion.div>
+                )}
+              </motion.div>
             ))}
-            <span className={styles.coinCount}>{me?.coins} moedas</span>
-          </div>
+          </AnimatePresence>
         </div>
 
-        {/* CENTER: mesa + my cards */}
-        <div className={styles.centerPanel}>
-          {/* Mesa */}
-          <div className={styles.mesaWrapper}>
-            <div className={styles.mesa}>
+        {/* Mesa */}
+        <div className={styles.mesaWrapper}>
+          <motion.div
+            className={styles.mesa}
+            animate={
+              phase === 'RESPONSE_WINDOW' ? { borderColor: '#ffd600', boxShadow: '0 0 40px rgba(255,214,0,0.15)' } :
+              phase === 'BLOCK_CHALLENGE_WINDOW' ? { borderColor: '#f44336', boxShadow: '0 0 40px rgba(244,67,54,0.15)' } :
+              phase === 'LOSE_INFLUENCE' ? { borderColor: '#f44336', boxShadow: '0 0 40px rgba(244,67,54,0.2)' } :
+              { borderColor: 'var(--border)', boxShadow: 'none' }
+            }
+            transition={{ duration: 0.4 }}
+          >
+            <AnimatePresence mode="wait">
               {phase === 'ACTION_SELECT' && (
-                isMyTurn
-                  ? <div className={styles.mesaMyTurn}><span>SUA VEZ</span><p>Escolha uma ação no menu →</p></div>
-                  : <div className={styles.mesaWaiting}><span>{players.find(p => p.id === currentPlayerId)?.name}</span><p>está escolhendo...</p></div>
+                <motion.div key="action_select" className={styles.mesaContent}
+                  initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
+                  {isMyTurn
+                    ? <><span className={styles.mesaTitle} style={{ color: 'var(--yellow)' }}>SUA VEZ</span><p className={styles.mesaSub}>Escolha uma ação abaixo</p></>
+                    : <><span className={styles.mesaTitle}>{players.find(p => p.id === currentPlayerId)?.name}</span><p className={styles.mesaSub}>está escolhendo...</p></>
+                  }
+                </motion.div>
               )}
               {(phase === 'RESPONSE_WINDOW' || phase === 'BLOCK_CHALLENGE_WINDOW') && pa && (
-                <div className={styles.mesaAction}>
-                  <div className={styles.mesaActionIcon}>{pa.claimedCharacter ? CHAR_CONFIG[pa.claimedCharacter]?.icon : '⚡'}</div>
-                  <div className={styles.mesaActionName}>{ACTION_NAMES[pa.type]}</div>
-                  <div className={styles.mesaActionPlayers}>
-                    <span className={styles.mesaActor}>{actorName}</span>
-                    {targetName && <><span className={styles.mesaArrow}>→</span><span className={styles.mesaTarget}>{targetName}</span></>}
+                <motion.div key="response" className={styles.mesaContent}
+                  initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
+                  <span className={styles.mesaIcon}>{pa.claimedCharacter ? CHAR_CONFIG[pa.claimedCharacter]?.icon : '⚡'}</span>
+                  <span className={styles.mesaTitle}>{ACTION_NAMES[pa.type]}</span>
+                  <div className={styles.mesaPlayers}>
+                    <span style={{ color: '#2979ff' }}>{actorName}</span>
+                    {targetName && <><span style={{ color: 'var(--muted)' }}>→</span><span style={{ color: 'var(--red)' }}>{targetName}</span></>}
                   </div>
                   {phase === 'BLOCK_CHALLENGE_WINDOW' && pa.blocker && (
-                    <div className={styles.mesaBlock}>
-                      🛡️ {blockerName} bloqueia como {CHAR_CONFIG[pa.blocker.character]?.label}
-                    </div>
+                    <motion.div className={styles.mesaBlockBadge}
+                      initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}>
+                      🛡️ {blockerName} bloqueia
+                    </motion.div>
                   )}
-                  {phase === 'RESPONSE_WINDOW' && (
-                    <div className={styles.mesaWaiting}><p>Aguardando respostas...</p></div>
-                  )}
-                </div>
+                </motion.div>
               )}
-              {phase === 'LOSE_INFLUENCE' && pa?.loseInfluenceQueue?.[0] && (
-                <div className={styles.mesaLose}>
-                  <div className={styles.mesaActionIcon}>💀</div>
-                  <p>{players.find(p => p.id === pa.loseInfluenceQueue[0].playerId)?.name}</p>
-                  <p>perde uma influência</p>
-                </div>
+              {phase === 'LOSE_INFLUENCE' && (
+                <motion.div key="lose" className={styles.mesaContent}
+                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                  <motion.span className={styles.mesaIcon}
+                    animate={{ rotate: [0, -10, 10, -10, 10, 0] }}
+                    transition={{ repeat: Infinity, duration: 1.5 }}>💀</motion.span>
+                  <span className={styles.mesaTitle} style={{ color: 'var(--red)' }}>
+                    {players.find(p => p.id === pa?.loseInfluenceQueue?.[0]?.playerId)?.name}
+                  </span>
+                  <p className={styles.mesaSub}>perde uma influência</p>
+                </motion.div>
               )}
-              {phase === 'INVESTIGATE_DECISION' && pa && (
-                <div className={styles.mesaAction}>
-                  <div className={styles.mesaActionIcon}>🕵️</div>
-                  <div className={styles.mesaActionName}>Investigação</div>
-                  <div className={styles.mesaActionPlayers}>
-                    <span className={styles.mesaActor}>{actorName}</span>
-                    <span className={styles.mesaArrow}>→</span>
-                    <span className={styles.mesaTarget}>{targetName}</span>
+              {phase === 'INVESTIGATE_DECISION' && (
+                <motion.div key="investigate" className={styles.mesaContent}
+                  initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  <span className={styles.mesaIcon}>🕵️</span>
+                  <span className={styles.mesaTitle}>Investigação</span>
+                  <div className={styles.mesaPlayers}>
+                    <span style={{ color: '#2979ff' }}>{actorName}</span>
+                    <span style={{ color: 'var(--muted)' }}>→</span>
+                    <span style={{ color: 'var(--red)' }}>{targetName}</span>
                   </div>
-                </div>
+                </motion.div>
               )}
-            </div>
+            </AnimatePresence>
+          </motion.div>
+        </div>
+
+        {/* My cards + coins + actions */}
+        <div className={styles.myArea}>
+
+          {/* Coin counter */}
+          <div className={styles.coinCounter}>
+            <img src={moedaImg} className={styles.coinIcon} alt="moeda" />
+            <span className={styles.coinNum}>{me?.coins ?? 0}</span>
+            {me?.coins >= 10 && (
+              <motion.span className={styles.mustCoup}
+                animate={{ opacity: [1, 0.5, 1] }} transition={{ repeat: Infinity, duration: 0.8 }}>
+                GOLPE OBRIGATÓRIO!
+              </motion.span>
+            )}
           </div>
 
-          {/* My cards */}
-          <div className={styles.myCardsArea}>
-            <div className={styles.myCardsLabel}>Suas Cartas</div>
+          {/* Cards */}
+          <div className={styles.myCardsRow}>
+            <span className={styles.panelLabel}>Suas Cartas</span>
             <div className={styles.myCards}>
               {me?.cards.map((c, i) => (
-                <Card
-                  key={i}
-                  character={c.character}
-                  dead={c.dead}
-                  onClick={() => {
-                    if (mustLoseInfluence && !c.dead) setSelectedCardIndex(prev => prev === i ? null : i);
-                  }}
+                <Card key={i} character={c.character} dead={c.dead}
                   selected={selectedCardIndex === i}
+                  onClick={() => mustLoseInfluence && !c.dead && setSelectedCardIndex(prev => prev === i ? null : i)}
                 />
               ))}
             </div>
-            {mustLoseInfluence && <p className={styles.loseHint}>Clique na carta que deseja perder</p>}
+            {mustLoseInfluence && (
+              <motion.p className={styles.loseHint}
+                animate={{ opacity: [1, 0.4, 1] }} transition={{ repeat: Infinity, duration: 1 }}>
+                Clique na carta que deseja perder
+              </motion.p>
+            )}
           </div>
-        </div>
 
-        {/* RIGHT: action menu */}
-        <div className={styles.rightPanel}>
-          <div className={styles.menuTitle}>Menu de Ações</div>
+          {/* Action panel */}
+          <AnimatePresence>
+            {hasAction && (
+              <motion.div className={styles.actionPanel}
+                key={phase}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                transition={{ type: 'spring', stiffness: 260, damping: 22 }}>
 
-          {error && <div className={styles.errorMsg}>{error}</div>}
+                {error && (
+                  <motion.div className={styles.errorMsg}
+                    initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}>
+                    {error}
+                  </motion.div>
+                )}
 
-          {/* MY TURN */}
-          {canAct && (
-            <div className={styles.menuContent}>
-              {me?.coins >= 10 && (
-                <div className={styles.forceAlert}>⚠️ Com 10+ moedas é obrigatório usar Golpe!</div>
-              )}
-              {selectedTarget && (
-                <div className={styles.targetSelected}>
-                  Alvo: <strong>{players.find(p => p.id === selectedTarget)?.name}</strong>
-                  <button className={styles.clearTarget} onClick={() => setSelectedTarget(null)}>✕</button>
-                </div>
-              )}
+                {/* MY TURN */}
+                {canAct && (
+                  <>
+                    {selectedTarget && (
+                      <div className={styles.targetPill}>
+                        Alvo: <strong>{players.find(p => p.id === selectedTarget)?.name}</strong>
+                        <button className={styles.clearTarget} onClick={() => setSelectedTarget(null)}>✕</button>
+                      </div>
+                    )}
+                    <div className={styles.actionGrid}>
+                      <ActionBtn icon="💵" label="Renda" sub="+1 moeda"        disabled={me?.coins >= 10} onClick={() => takeAction('renda')} />
+                      <ActionBtn icon="💰" label="Ajuda Externa" sub="+2 moedas" disabled={me?.coins >= 10} onClick={() => takeAction('ajuda_externa')} />
+                      <ActionBtn icon="💥" label="Golpe" sub="7 moedas"        disabled={(me?.coins||0) < 7} onClick={() => takeAction('golpe')} danger />
+                      <ActionBtn icon="🏛️" label="Taxar" sub="+3 moedas"       disabled={me?.coins >= 10} onClick={() => takeAction('taxar')} />
+                      <ActionBtn icon="💼" label="Roubar" sub="alvo perde 2"   disabled={!selectedTarget} onClick={() => takeAction('roubar')} />
+                      <ActionBtn icon="🔪" label="Miliciano" sub="3 moedas"    disabled={(me?.coins||0) < 3 || !selectedTarget} onClick={() => takeAction('assassinar')} danger />
+                      <ActionBtn icon="🕵️" label="Investigar" sub="ver carta"  disabled={!selectedTarget} onClick={() => takeAction('investigar')} />
+                    </div>
+                    {!selectedTarget && <p className={styles.targetHint}>⬆ Clique em um oponente para selecionar como alvo</p>}
+                  </>
+                )}
 
-              <div className={styles.menuSection}>
-                <div className={styles.menuSectionTitle}>Ações Básicas</div>
-                <button className={`${styles.actionBtn}`} onClick={() => takeAction('renda')} disabled={me?.coins >= 10}>
-                  <span className={styles.actionIcon}>💵</span>
-                  <div><strong>Renda</strong><small>+1 moeda</small></div>
-                </button>
-                <button className={`${styles.actionBtn}`} onClick={() => takeAction('ajuda_externa')} disabled={me?.coins >= 10}>
-                  <span className={styles.actionIcon}>💰</span>
-                  <div><strong>Ajuda Externa</strong><small>+2 moedas</small></div>
-                </button>
-                <button className={`${styles.actionBtn} ${styles.actionBtnDanger}`} onClick={() => takeAction('golpe')} disabled={(me?.coins || 0) < 7}>
-                  <span className={styles.actionIcon}>💥</span>
-                  <div><strong>Golpe</strong><small>7 moedas · precisa de alvo</small></div>
-                </button>
-              </div>
+                {/* RESPONSE */}
+                {(canChallengeAction || canBlockAction) && (
+                  <>
+                    <p className={styles.responseTitle}>
+                      <strong>{actorName}</strong> declara <strong>{ACTION_NAMES[pa?.type]}</strong>
+                      {targetName && <> em <strong>{targetName}</strong></>}
+                    </p>
+                    <div className={styles.actionGrid}>
+                      {canChallengeAction && <ActionBtn icon="⚔️" label="DUVIDAR" sub="chamar de mentiroso" danger onClick={handleChallenge} />}
+                      {canBlockAction && blockOptions.map(char => (
+                        <ActionBtn key={char} icon={CHAR_CONFIG[char]?.icon}
+                          label={`Bloquear como ${CHAR_CONFIG[char]?.label}`}
+                          sub="clique para selecionar"
+                          selected={blockChar === char}
+                          onClick={() => setBlockChar(prev => prev === char ? null : char)} />
+                      ))}
+                      {blockChar && <ActionBtn icon="🛡️" label="Confirmar Bloqueio" sub={`como ${CHAR_CONFIG[blockChar]?.label}`} success onClick={handleBlock} />}
+                      <ActionBtn icon="✅" label="Passar" sub="deixar acontecer" onClick={handlePass} />
+                    </div>
+                  </>
+                )}
 
-              <div className={styles.menuSection}>
-                <div className={styles.menuSectionTitle}>Personagens (pode blefar)</div>
-                <button className={`${styles.actionBtn}`} onClick={() => takeAction('taxar')} disabled={me?.coins >= 10}>
-                  <span className={styles.actionIcon}>🏛️</span>
-                  <div><strong>Taxar</strong><small>+3 moedas (Político)</small></div>
-                </button>
-                <button className={`${styles.actionBtn}`} onClick={() => takeAction('roubar')} disabled={!selectedTarget}>
-                  <span className={styles.actionIcon}>💼</span>
-                  <div><strong>Roubar</strong><small>2 moedas do alvo (Empresário)</small></div>
-                </button>
-                <button className={`${styles.actionBtn} ${styles.actionBtnDanger}`} onClick={() => takeAction('assassinar')} disabled={(me?.coins || 0) < 3 || !selectedTarget}>
-                  <span className={styles.actionIcon}>🔪</span>
-                  <div><strong>Assassinar</strong><small>3 moedas · alvo perde carta (Assassino)</small></div>
-                </button>
-                <button className={`${styles.actionBtn}`} onClick={() => takeAction('investigar')} disabled={!selectedTarget}>
-                  <span className={styles.actionIcon}>🕵️</span>
-                  <div><strong>Investigar</strong><small>ver carta do alvo (Investigador)</small></div>
-                </button>
-              </div>
+                {/* BLOCK CHALLENGE */}
+                {canChallengeBlock && (
+                  <>
+                    <p className={styles.responseTitle}>
+                      <strong>{blockerName}</strong> bloqueou como <strong>{CHAR_CONFIG[pa?.blocker?.character]?.label}</strong>
+                    </p>
+                    <div className={styles.actionGrid}>
+                      <ActionBtn icon="⚔️" label="Duvidar do Bloqueio" sub="acha que está blefando?" danger onClick={handleChallenge} />
+                      <ActionBtn icon="✅" label="Aceitar Bloqueio" sub="desistir da ação" onClick={handlePass} />
+                    </div>
+                  </>
+                )}
 
-              {!selectedTarget && (
-                <p className={styles.targetHint}>⬆ Clique em um oponente para selecionar como alvo</p>
-              )}
-            </div>
-          )}
+                {/* LOSE INFLUENCE */}
+                {mustLoseInfluence && (
+                  <>
+                    <p className={styles.responseTitle} style={{ color: 'var(--red)' }}>Escolha uma carta para perder</p>
+                    <div className={styles.actionGrid}>
+                      <ActionBtn icon="💀" label="Perder carta selecionada"
+                        sub={selectedCardIndex !== null ? `Carta ${selectedCardIndex + 1}` : 'Selecione uma carta acima'}
+                        danger disabled={selectedCardIndex === null} onClick={handleLoseInfluence} />
+                    </div>
+                  </>
+                )}
 
-          {/* RESPONSE: challenge or block */}
-          {(canChallengeAction || canBlockAction) && (
-            <div className={styles.menuContent}>
-              <div className={styles.responseHeader}>
-                <strong>{actorName}</strong> declara <strong>{ACTION_NAMES[pa?.type]}</strong>
-                {targetName && <> em <strong>{targetName}</strong></>}
-              </div>
-
-              {canChallengeAction && (
-                <div className={styles.menuSection}>
-                  <div className={styles.menuSectionTitle}>Desafiar</div>
-                  <button className={`${styles.actionBtn} ${styles.actionBtnDanger}`} onClick={handleChallenge}>
-                    <span className={styles.actionIcon}>⚔️</span>
-                    <div><strong>DUVIDAR</strong><small>Acha que está blefando?</small></div>
-                  </button>
-                </div>
-              )}
-
-              {canBlockAction && blockOptions.length > 0 && (
-                <div className={styles.menuSection}>
-                  <div className={styles.menuSectionTitle}>Bloquear como...</div>
-                  {blockOptions.map(char => (
-                    <button
-                      key={char}
-                      className={`${styles.actionBtn} ${blockChar === char ? styles.actionBtnSelected : ''}`}
-                      onClick={() => setBlockChar(prev => prev === char ? null : char)}
-                    >
-                      <span className={styles.actionIcon}>{CHAR_CONFIG[char]?.icon}</span>
-                      <div><strong>{CHAR_CONFIG[char]?.label}</strong><small>clique para selecionar</small></div>
-                    </button>
-                  ))}
-                  {blockChar && (
-                    <button className={`${styles.actionBtn} ${styles.actionBtnSuccess}`} onClick={handleBlock}>
-                      <span className={styles.actionIcon}>🛡️</span>
-                      <div><strong>Confirmar Bloqueio</strong><small>como {CHAR_CONFIG[blockChar]?.label}</small></div>
-                    </button>
-                  )}
-                </div>
-              )}
-
-              <div className={styles.menuSection}>
-                <button className={`${styles.actionBtn}`} onClick={handlePass}>
-                  <span className={styles.actionIcon}>✅</span>
-                  <div><strong>Passar</strong><small>deixar a ação acontecer</small></div>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* BLOCK CHALLENGE */}
-          {canChallengeBlock && (
-            <div className={styles.menuContent}>
-              <div className={styles.responseHeader}>
-                <strong>{blockerName}</strong> bloqueou como <strong>{CHAR_CONFIG[pa?.blocker?.character]?.label}</strong>
-              </div>
-              <div className={styles.menuSection}>
-                <button className={`${styles.actionBtn} ${styles.actionBtnDanger}`} onClick={handleChallenge}>
-                  <span className={styles.actionIcon}>⚔️</span>
-                  <div><strong>DUVIDAR do Bloqueio</strong><small>Acha que está blefando?</small></div>
-                </button>
-                <button className={`${styles.actionBtn}`} onClick={handlePass}>
-                  <span className={styles.actionIcon}>✅</span>
-                  <div><strong>Aceitar Bloqueio</strong><small>desistir da ação</small></div>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* LOSE INFLUENCE */}
-          {mustLoseInfluence && (
-            <div className={styles.menuContent}>
-              <div className={`${styles.responseHeader} ${styles.responseHeaderDanger}`}>
-                Você deve perder uma influência
-              </div>
-              <div className={styles.menuSection}>
-                <p style={{ fontSize: '0.82rem', color: 'var(--muted)', marginBottom: 8 }}>
-                  Clique na carta que deseja perder (à esquerda) e confirme:
-                </p>
-                <button
-                  className={`${styles.actionBtn} ${styles.actionBtnDanger}`}
-                  onClick={handleLoseInfluence}
-                  disabled={selectedCardIndex === null}
-                >
-                  <span className={styles.actionIcon}>💀</span>
-                  <div>
-                    <strong>Perder carta</strong>
-                    <small>{selectedCardIndex !== null ? `Carta ${selectedCardIndex + 1} selecionada` : 'Selecione uma carta'}</small>
-                  </div>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* INVESTIGATE DECISION */}
-          {mustInvestigateDecide && pa?.investigationPeek && (
-            <div className={styles.menuContent}>
-              <div className={styles.responseHeader}>
-                Você viu a carta de <strong>{targetName}</strong>
-              </div>
-              <div className={styles.investigatePeek}>
-                <span>{CHAR_CONFIG[pa.investigationPeek.character]?.icon}</span>
-                <strong>{CHAR_CONFIG[pa.investigationPeek.character]?.label}</strong>
-              </div>
-              <div className={styles.menuSection}>
-                <button className={`${styles.actionBtn} ${styles.actionBtnDanger}`} onClick={() => handleInvestigateDecision(true)}>
-                  <span className={styles.actionIcon}>🔄</span>
-                  <div><strong>Forçar Troca</strong><small>obrigar {targetName} a trocar</small></div>
-                </button>
-                <button className={`${styles.actionBtn}`} onClick={() => handleInvestigateDecision(false)}>
-                  <span className={styles.actionIcon}>✅</span>
-                  <div><strong>Manter Carta</strong><small>deixar como está</small></div>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Waiting state */}
-          {!canAct && !canChallengeAction && !canBlockAction && !canChallengeBlock && !mustLoseInfluence && !mustInvestigateDecide && (
-            <div className={styles.menuWaiting}>
-              <span className={styles.waitingDot} />
-              <span className={styles.waitingDot} />
-              <span className={styles.waitingDot} />
-              <p>Aguardando...</p>
-            </div>
-          )}
+                {/* INVESTIGATE */}
+                {mustInvestigateDecide && pa?.investigationPeek && (
+                  <>
+                    <p className={styles.responseTitle}>
+                      Carta de <strong>{targetName}</strong>: {CHAR_CONFIG[pa.investigationPeek.character]?.icon} <strong>{CHAR_CONFIG[pa.investigationPeek.character]?.label}</strong>
+                    </p>
+                    <div className={styles.actionGrid}>
+                      <ActionBtn icon="🔄" label="Forçar Troca" sub={`${targetName} troca a carta`} danger onClick={() => handleInvestigateDecision(true)} />
+                      <ActionBtn icon="✅" label="Manter Carta" sub="deixar como está" onClick={() => handleInvestigateDecision(false)} />
+                    </div>
+                  </>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 
+      {/* Help button */}
+      <motion.button className={styles.helpBtn} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+        onClick={() => setShowHelp(h => !h)}>
+        ? Ajuda
+      </motion.button>
+
       {/* Help modal */}
-      {showHelp && (
-        <div className={styles.helpOverlay} onClick={() => setShowHelp(false)}>
-          <div className={styles.helpModal} onClick={e => e.stopPropagation()}>
-            <h2>Personagens</h2>
-            {Object.entries(CHAR_CONFIG).map(([key, cfg]) => (
-              <div key={key} className={styles.helpRow}>
-                <span>{cfg.icon}</span>
-                <strong>{cfg.label}</strong>
-                <span>{cfg.desc}</span>
-              </div>
-            ))}
-            <button className="btn btn-primary" style={{ marginTop: 16, width: '100%' }} onClick={() => setShowHelp(false)}>Fechar</button>
-          </div>
-        </div>
-      )}
+      <AnimatePresence>
+        {showHelp && (
+          <motion.div className={styles.helpOverlay}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => setShowHelp(false)}>
+            <motion.div className={styles.helpModal}
+              initial={{ scale: 0.85, y: 30 }} animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.85, opacity: 0 }}
+              onClick={e => e.stopPropagation()}>
+              <h2>Personagens</h2>
+              {Object.entries(CHAR_CONFIG).map(([key, cfg]) => (
+                <div key={key} className={styles.helpRow}>
+                  <span>{cfg.icon}</span><strong>{cfg.label}</strong><span>{cfg.desc}</span>
+                </div>
+              ))}
+              <motion.button className="btn btn-primary" style={{ marginTop: 16, width: '100%' }}
+                whileTap={{ scale: 0.97 }} onClick={() => setShowHelp(false)}>
+                Fechar
+              </motion.button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
+  );
+}
+
+// ── Reusable action button ──────────────────────────────────────────────────
+function ActionBtn({ icon, label, sub, onClick, disabled, danger, success, selected }) {
+  return (
+    <motion.button
+      className={`${styles.actionBtn}
+        ${danger   ? styles.actionBtnDanger   : ''}
+        ${success  ? styles.actionBtnSuccess  : ''}
+        ${selected ? styles.actionBtnSelected : ''}
+      `}
+      onClick={onClick}
+      disabled={disabled}
+      whileHover={!disabled ? { scale: 1.03, y: -1 } : {}}
+      whileTap={!disabled ? { scale: 0.96 } : {}}
+      transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+    >
+      <span className={styles.actionIcon}>{icon}</span>
+      <div>
+        <strong>{label}</strong>
+        <small>{sub}</small>
+      </div>
+    </motion.button>
   );
 }

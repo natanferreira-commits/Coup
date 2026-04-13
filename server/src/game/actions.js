@@ -61,17 +61,17 @@ const ACTION_NAMES = {
   ajuda_externa: 'Ajuda Externa',
   golpe: 'Golpe',
   taxar: 'Taxação (Político)',
-  roubar: 'Roubo (Empresário)',
-  assassinar: 'Assassinato (Assassino)',
+  roubar: 'Roubo (Bicheiro)',
+  assassinar: 'Assassinato (Miliciano)',
   investigar: 'Investigação (Investigador)',
 };
 
 const CHARACTER_NAMES = {
   politico: 'Político',
-  empresario: 'Empresário',
+  empresario: 'Bicheiro',
   investigador: 'Investigador',
   juiz: 'Juiz',
-  assassino: 'Assassino',
+  assassino: 'Miliciano',
   guarda_costas: 'Guarda-Costas',
 };
 
