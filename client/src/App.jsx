@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import socket from './socket';
+import Landing from './screens/Landing';
 import Lobby from './screens/Lobby';
 import Room from './screens/Room';
 import Game from './screens/Game';
 
 export default function App() {
-  const [screen, setScreen] = useState('lobby'); // 'lobby' | 'room' | 'game'
+  const [screen, setScreen] = useState('landing'); // 'landing' | 'lobby' | 'room' | 'game'
   const [roomData, setRoomData] = useState(null);
   const [gameData, setGameData] = useState(null);
   const [playerName, setPlayerName] = useState('');
@@ -33,6 +34,10 @@ export default function App() {
       socket.off('disconnect');
     };
   }, []);
+
+  if (screen === 'landing') {
+    return <Landing onEnter={() => setScreen('lobby')} />;
+  }
 
   if (screen === 'lobby') {
     return (

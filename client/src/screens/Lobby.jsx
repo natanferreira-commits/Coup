@@ -7,11 +7,13 @@ export default function Lobby({ onJoined }) {
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [loadingMsg, setLoadingMsg] = useState('Conectando...');
 
   function connect(cb) {
     if (!name.trim()) return setError('Digite seu nome');
     setError('');
     setLoading(true);
+    setLoadingMsg('Conectando...');
 
     if (socket.connected) {
       cb();
@@ -20,10 +22,24 @@ export default function Lobby({ onJoined }) {
 
     socket.connect();
 
+    // Render free tier pode demorar até 60s pra acordar
+    const warmupTimer = setTimeout(() => {
+      setLoadingMsg('Servidor acordando, aguarde (~30s)...');
+    }, 4000);
+
     function onConnect() { cleanup(); cb(); }
-    function onError() { cleanup(); setLoading(false); setError('Servidor offline. Rode o servidor primeiro (npm run dev na pasta /server).'); }
+    function onError(err) {
+      cleanup();
+      setLoading(false);
+      const isLocalhost = (import.meta.env.VITE_SERVER_URL || '').includes('localhost');
+      setError(isLocalhost
+        ? 'Servidor offline. Rode o servidor (npm run dev na pasta /server).'
+        : 'Não foi possível conectar. Tente novamente em alguns segundos.'
+      );
+    }
 
     function cleanup() {
+      clearTimeout(warmupTimer);
       socket.off('connect', onConnect);
       socket.off('connect_error', onError);
     }
@@ -69,7 +85,7 @@ export default function Lobby({ onJoined }) {
           />
 
           <button className="btn btn-primary" onClick={handleCreate} disabled={loading}>
-            {loading ? 'Conectando...' : 'Criar Sala'}
+            {loading ? loadingMsg : 'Criar Sala'}
           </button>
 
           <div className={styles.divider}><span>ou entre em uma sala</span></div>
