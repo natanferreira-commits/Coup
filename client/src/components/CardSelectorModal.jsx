@@ -45,11 +45,15 @@ export default function CardSelectorModal({ title, description, cards, confirmLa
               >
                 {cfg.img
                   ? <img src={cfg.img} alt={cfg.label} className={styles.cardImg} />
-                  : <span className={styles.cardIcon}>{cfg.icon}</span>
+                  : (
+                    <>
+                      <span className={styles.cardIcon}>{cfg.icon}</span>
+                      <div className={styles.cardFooter}>
+                        <span className={styles.cardName}>{cfg.label || card.character}</span>
+                      </div>
+                    </>
+                  )
                 }
-                <div className={styles.cardFooter}>
-                  <span className={styles.cardName}>{cfg.label || card.character}</span>
-                </div>
               </motion.div>
             );
           })}

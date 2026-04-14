@@ -215,6 +215,10 @@ function handleChallenge(room, challengerId) {
   if (game.phase === 'RESPONSE_WINDOW') {
     if (!pa.claimedCharacter) return { success: false, error: 'Ação não pode ser desafiada' };
     if (challengerId === pa.actorId) return { success: false, error: 'Não pode se desafiar' };
+    // For targeted actions only the target may challenge
+    const def = ACTION_DEFS[pa.type];
+    if (def.requiresTarget && pa.targetId && challengerId !== pa.targetId)
+      return { success: false, error: 'Só o alvo pode duvidar desta ação' };
 
     const actor = getPlayer(game, pa.actorId);
     const cardIdx = actor.cards.findIndex(c => !c.dead && c.character === pa.claimedCharacter);

@@ -8,7 +8,17 @@
   position: relative;
 }
 
-/* ── Left panel ── */
+/* ── Shared label ── */
+.panelLabel {
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* ── LEFT ── */
 .leftPanel {
   border-right: 1px solid var(--border);
   display: flex;
@@ -18,32 +28,23 @@
   overflow: hidden;
 }
 
-.panelLabel {
-  font-size: 0.68rem;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--muted);
-  font-weight: 700;
-}
-
-/* ── Center ── */
+/* ── CENTER ── */
 .center {
   display: flex;
   flex-direction: column;
   align-items: center;
   overflow-y: auto;
-  padding: 14px 16px 20px;
-  gap: 0;
+  padding: 12px 16px 16px;
+  gap: 8px;
 }
 
-/* ── Opponents ── */
+/* Opponents */
 .opponents {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
   justify-content: center;
   width: 100%;
-  margin-bottom: 6px;
 }
 
 .opponent {
@@ -59,7 +60,7 @@
   transition: border-color 0.2s;
 }
 .opponentActive   { border-color: var(--yellow) !important; }
-.opponentDead     { pointer-events: none; opacity: 0.5; }
+.opponentDead     { pointer-events: none; opacity: 0.45; }
 .opponentTargeted { border-color: var(--red) !important; background: rgba(244,67,54,0.07) !important; }
 
 .opponentAvatar {
@@ -68,11 +69,11 @@
   display: flex; align-items: center; justify-content: center;
   font-weight: 700; font-size: 0.82rem; flex-shrink: 0;
 }
-.opponentInfo   { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
-.opponentName   { font-size: 0.8rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.opponentCoins  { display: flex; align-items: center; gap: 4px; font-size: 0.76rem; color: var(--yellow); }
-.coinIconSm     { width: 14px; height: 14px; object-fit: contain; }
-.opponentCards  { display: flex; gap: 3px; }
+.opponentInfo  { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.opponentName  { font-size: 0.8rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.opponentCoins { display: flex; align-items: center; gap: 4px; font-size: 0.76rem; color: var(--yellow); }
+.coinIconSm    { width: 13px; height: 13px; object-fit: contain; }
+.opponentCards { display: flex; gap: 3px; }
 .miniCard {
   width: 20px; height: 28px; border-radius: 4px;
   background: linear-gradient(160deg, #1a237e, #0d1b5e);
@@ -84,110 +85,131 @@
 .turnBadge {
   position: absolute; top: -9px; left: 50%; transform: translateX(-50%);
   background: var(--yellow); color: #000;
-  font-size: 0.56rem; font-weight: 800; padding: 1px 7px; border-radius: 4px; letter-spacing: 0.05em;
+  font-size: 0.54rem; font-weight: 800; padding: 1px 7px; border-radius: 4px; letter-spacing: 0.05em;
 }
 .targetBadge {
   position: absolute; top: -9px; right: 8px;
   background: var(--red); color: #fff;
-  font-size: 0.56rem; font-weight: 800; padding: 1px 7px; border-radius: 4px;
+  font-size: 0.54rem; font-weight: 800; padding: 1px 7px; border-radius: 4px;
 }
 
-/* ── Mesa ── */
+/* ── Mesa — SVG-based ── */
 .mesaWrapper {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  width: 100%; flex: 1; min-height: 180px; gap: 12px;
+  display: flex; flex-direction: column; align-items: center;
+  width: 100%; gap: 10px; flex: 1; min-height: 160px; justify-content: center;
 }
 
-.mesa {
-  width: 190px; height: 190px;
-  transform: rotate(45deg);
-  background: var(--surface);
-  border: 2px solid var(--border);
-  border-radius: 16px;
+.mesaOuter {
   position: relative;
-  flex-shrink: 0;
+  width: 220px; height: 220px;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* The SVG already has the diamond shape */
+.mesaBg {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: contain;
+  pointer-events: none;
 }
 
 .mesaContent {
-  position: absolute;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%) rotate(-45deg);
-  width: 126px; /* max safe width for 190px diamond */
+  position: relative; z-index: 1;
   display: flex; flex-direction: column;
   align-items: center; gap: 4px;
   text-align: center;
-  pointer-events: none;
+  max-width: 120px;
 }
-.mesaIcon    { font-size: 1.8rem; display: block; line-height: 1; }
-.mesaTitle   { font-family: 'Bebas Neue', sans-serif; font-size: 1.05rem; letter-spacing: 0.06em; line-height: 1.1; word-break: break-word; }
-.mesaSub     { font-size: 0.65rem; color: var(--muted); line-height: 1.3; }
-.mesaPlayers { display: flex; align-items: center; gap: 4px; font-size: 0.72rem; font-weight: 600; flex-wrap: wrap; justify-content: center; }
-.mesaBlockBadge { font-size: 0.65rem; color: var(--green); margin-top: 2px; }
+.mesaIcon    { font-size: 1.8rem; line-height: 1; }
+.mesaTitle   { font-family: 'Bebas Neue', sans-serif; font-size: 1rem; letter-spacing: 0.06em; line-height: 1.15; word-break: break-word; }
+.mesaSub     { font-size: 0.63rem; color: var(--muted); line-height: 1.3; }
+.mesaPlayers { display: flex; align-items: center; gap: 4px; font-size: 0.7rem; font-weight: 600; flex-wrap: wrap; justify-content: center; }
+.mesaBlockBadge { font-size: 0.62rem; color: var(--green); margin-top: 2px; }
 
-/* ── Timer ── */
+/* Timer */
 .timerContainer {
   display: flex; align-items: center; gap: 8px;
-  width: 190px;
+  width: 200px;
 }
 .timerOuter {
   flex: 1; height: 5px; background: var(--surface2);
   border-radius: 3px; overflow: hidden;
 }
-.timerFill {
-  height: 100%; border-radius: 3px;
-  transition: width 0.25s linear, background 0.5s;
-}
-.timerNum {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 0.95rem; letter-spacing: 0.05em;
-  min-width: 28px; text-align: right;
-}
+.timerFill  { height: 100%; border-radius: 3px; }
+.timerNum   { font-family: 'Bebas Neue', sans-serif; font-size: 0.95rem; min-width: 28px; text-align: right; }
 
-/* ── My area ── */
+/* ── My area — row: coins LEFT + cards RIGHT ── */
 .myArea {
-  width: 100%; display: flex; flex-direction: column; align-items: center; gap: 10px;
-  padding-top: 6px;
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  padding-top: 4px;
 }
 
-.coinCounter {
-  display: flex; align-items: center; gap: 8px;
+.coinSide {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  flex-shrink: 0;
 }
-.coinIcon { width: 40px; height: 40px; object-fit: contain; filter: drop-shadow(0 2px 6px rgba(255,200,0,0.4)); }
-.coinNum  { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; color: var(--text); background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 0 14px; line-height: 1.6; }
-.mustCoup { font-size: 0.7rem; color: var(--red); font-weight: 700; border: 1px solid var(--red); border-radius: 6px; padding: 3px 8px; }
+.coinIcon { width: 38px; height: 38px; object-fit: contain; filter: drop-shadow(0 2px 6px rgba(255,200,0,0.4)); }
+.coinNum  {
+  font-family: 'Bebas Neue', sans-serif; font-size: 2.4rem; line-height: 1;
+  color: var(--yellow);
+}
+.mustCoup {
+  font-size: 0.58rem; color: var(--red); font-weight: 800;
+  border: 1px solid var(--red); border-radius: 4px; padding: 2px 5px;
+  text-align: center;
+}
 
-.myCardsRow { display: flex; flex-direction: column; align-items: center; gap: 6px; }
-.myCards    { display: flex; gap: 12px; }
+.myCards { display: flex; gap: 10px; }
 
-/* ── Right panel ── */
+/* ── RIGHT panel: flex column — top=actions, bottom=chars ── */
 .rightPanel {
   border-left: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 14px 12px;
-  overflow-y: auto;
+  overflow: hidden;
 }
 
-/* ── Character grid (2 columns) ── */
+/* Actions area — top, scrollable if needed */
+.actionsTop {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 12px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Character section — fixed bottom */
+.charSection {
+  border-top: 1px solid var(--border);
+  padding: 10px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* Char grid: 3 columns, small cards */
 .charGrid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
 }
 
 .charCard {
   position: relative;
-  border-radius: 10px;
+  border-radius: 8px;
   overflow: hidden;
   border: 2px solid var(--border);
   aspect-ratio: 4 / 5;
   background: linear-gradient(160deg, var(--char-color, #333) 0%, color-mix(in srgb, var(--char-color, #333) 50%, #000) 100%);
+  cursor: default;
   transition: border-color 0.15s;
 }
-.charCardMine     { border-color: var(--yellow) !important; box-shadow: 0 0 10px rgba(255,214,0,0.25); }
-.charCardSelected { border-color: #fff !important; box-shadow: 0 0 14px rgba(255,255,255,0.2); }
-.charCardDim      { opacity: 0.55; }
+.charCardMine     { border-color: var(--yellow) !important; box-shadow: 0 0 8px rgba(255,214,0,0.3); }
+.charCardSelected { border-color: #fff !important; box-shadow: 0 0 10px rgba(255,255,255,0.25); }
 
 .charCardImg {
   width: 100%; height: 100%;
@@ -197,78 +219,67 @@
 .charCardFallback {
   width: 100%; height: 100%;
   display: flex; align-items: center; justify-content: center;
-  font-size: 2rem;
-}
-.charCardFooter {
-  position: absolute; bottom: 0; left: 0; right: 0;
-  background: linear-gradient(to top, rgba(0,0,0,0.92) 0%, transparent 100%);
-  padding: 16px 6px 6px;
-  display: flex; flex-direction: column; gap: 1px;
-}
-.charCardName {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 0.82rem; color: #fff; letter-spacing: 0.05em; line-height: 1;
-}
-.charCardSub {
-  font-size: 0.52rem; color: rgba(255,255,255,0.65); line-height: 1.2;
+  font-size: 1.6rem;
 }
 .mineBadge {
-  position: absolute; top: 4px; right: 4px;
+  position: absolute; top: 3px; right: 3px;
   background: var(--yellow); color: #000;
-  font-size: 0.5rem; font-weight: 800;
-  padding: 1px 5px; border-radius: 4px;
-  letter-spacing: 0.05em;
+  font-size: 0.5rem; font-weight: 900;
+  width: 14px; height: 14px;
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+}
+.selectedBadge {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: rgba(255,255,255,0.92); color: #000;
+  font-size: 0.48rem; font-weight: 800;
+  text-align: center; padding: 2px 0;
+  letter-spacing: 0.04em;
 }
 
-/* ── Right panel action area ── */
-.rightActions {
-  display: flex; flex-direction: column; gap: 8px;
-}
-
+/* Character action box */
 .charActionBox {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 10px;
-  display: flex; flex-direction: column; gap: 6px;
-  overflow: hidden;
-}
-.charActionDesc {
-  font-size: 0.72rem; color: var(--muted); margin-bottom: 2px;
+  border-radius: 8px;
+  padding: 8px;
+  display: flex; flex-direction: column; gap: 5px;
 }
 
+/* Basic actions */
 .basicActionsBox {
   display: flex; flex-direction: column; gap: 5px;
 }
 .sectionLabel {
-  font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.1em;
+  font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.1em;
   color: var(--muted); font-weight: 700;
 }
 
+/* Response box */
+.responseBox {
+  background: var(--surface);
+  border: 1px solid rgba(255,214,0,0.2);
+  border-radius: 8px;
+  padding: 10px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.responseTitle {
+  font-size: 0.76rem; color: var(--text); line-height: 1.5;
+}
+
+/* Target pill */
 .targetPill {
   background: rgba(244,67,54,0.1); border: 1px solid rgba(244,67,54,0.35);
   border-radius: 16px; padding: 4px 10px;
-  font-size: 0.78rem; display: flex; align-items: center; gap: 6px; width: fit-content;
+  font-size: 0.76rem; display: flex; align-items: center; gap: 5px; width: fit-content;
 }
 .targetPill strong { color: var(--red); }
 .clearTarget { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.85rem; padding: 0 2px; }
 .clearTarget:hover { color: var(--red); }
 
-.targetHint { font-size: 0.7rem; color: var(--muted); }
+/* Hint */
+.hint { font-size: 0.68rem; color: var(--muted); text-align: center; }
 
-/* ── Response box ── */
-.responseBox {
-  background: var(--surface);
-  border: 1px solid rgba(255,214,0,0.25);
-  border-radius: 10px;
-  padding: 10px;
-  display: flex; flex-direction: column; gap: 6px;
-}
-.responseTitle {
-  font-size: 0.78rem; color: var(--text); line-height: 1.5;
-}
-
-/* ── Action buttons ── */
+/* Action buttons */
 .actionBtn {
   display: flex; align-items: center; gap: 8px;
   padding: 8px 10px;
@@ -278,54 +289,52 @@
   font-family: inherit; width: 100%;
 }
 .actionBtn:disabled { opacity: 0.35; cursor: not-allowed; }
-.actionBtn div   { display: flex; flex-direction: column; gap: 1px; }
-.actionBtn strong { font-size: 0.78rem; }
-.actionBtn small  { font-size: 0.63rem; color: var(--muted); font-weight: 400; }
+.actionBtn div    { display: flex; flex-direction: column; gap: 1px; }
+.actionBtn strong { font-size: 0.77rem; }
+.actionBtn small  { font-size: 0.62rem; color: var(--muted); font-weight: 400; }
+.actionIcon { font-size: 1.05rem; flex-shrink: 0; width: 20px; text-align: center; }
 
-.actionIcon { font-size: 1.1rem; flex-shrink: 0; width: 22px; text-align: center; }
-
-.actionBtnDanger  { border-color: rgba(244,67,54,0.35); }
+.actionBtnDanger   { border-color: rgba(244,67,54,0.35); }
 .actionBtnDanger:not(:disabled):hover  { background: rgba(244,67,54,0.1); border-color: var(--red); }
-.actionBtnSuccess { border-color: rgba(0,200,83,0.4); background: rgba(0,200,83,0.07); }
+.actionBtnSuccess  { border-color: rgba(0,200,83,0.4); background: rgba(0,200,83,0.07); }
 .actionBtnSelected { border-color: var(--yellow) !important; background: rgba(255,214,0,0.08) !important; }
 
-/* ── Error ── */
+/* Error */
 .errorMsg {
   background: rgba(244,67,54,0.1); border: 1px solid rgba(244,67,54,0.35);
-  color: var(--red); padding: 8px 10px; border-radius: 8px; font-size: 0.76rem;
+  color: var(--red); padding: 7px 10px; border-radius: 8px; font-size: 0.74rem;
 }
 
-/* ── X9 result ── */
+/* X9 result */
 .x9Result {
   background: rgba(105,27,249,0.1); border: 1px solid rgba(105,27,249,0.35);
-  border-radius: 10px; padding: 12px;
-  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  border-radius: 10px; padding: 10px;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
 }
-.x9ResultTitle { font-size: 0.78rem; color: #b39ddb; text-align: center; }
+.x9ResultTitle { font-size: 0.76rem; color: #b39ddb; text-align: center; }
 .x9ResultCard {
-  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
   background: var(--surface2); border: 1px solid rgba(105,27,249,0.4);
-  border-radius: 8px; padding: 10px 16px;
+  border-radius: 8px; padding: 8px 14px;
 }
-.x9ResultCard span:first-child { font-size: 1.8rem; }
-.x9ResultCard strong { font-family: 'Bebas Neue', sans-serif; font-size: 0.95rem; letter-spacing: 0.06em; }
+.x9ResultCard span:first-child { font-size: 1.6rem; }
+.x9ResultCard strong { font-family: 'Bebas Neue', sans-serif; font-size: 0.9rem; letter-spacing: 0.05em; }
 .x9AckBtn {
   background: rgba(105,27,249,0.25); border: 1px solid rgba(105,27,249,0.5);
-  color: #d1c4e9; border-radius: 8px; padding: 7px 14px;
-  font-size: 0.78rem; font-weight: 600; cursor: pointer; font-family: inherit;
+  color: #d1c4e9; border-radius: 7px; padding: 6px 12px;
+  font-size: 0.75rem; font-weight: 600; cursor: pointer; font-family: inherit;
 }
 .x9AckBtn:hover { background: rgba(105,27,249,0.4); }
 
-/* ── Help button ── */
+/* ── Help ── */
 .helpBtn {
   position: fixed; top: 14px; right: 16px;
   background: transparent; border: 1px solid var(--border);
   color: var(--muted); padding: 5px 12px; border-radius: 8px;
-  font-size: 0.78rem; cursor: pointer; z-index: 10;
+  font-size: 0.76rem; cursor: pointer; z-index: 10;
 }
 .helpBtn:hover { border-color: var(--yellow); color: var(--yellow); }
 
-/* ── Help modal ── */
 .helpOverlay {
   position: fixed; inset: 0; background: rgba(0,0,0,0.7);
   display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px;
@@ -337,11 +346,11 @@
 .helpModal h2 { font-size: 1.6rem; color: var(--yellow); margin-bottom: 14px; }
 .helpRow {
   display: flex; align-items: center; gap: 10px;
-  padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 0.84rem;
+  padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 0.82rem;
 }
-.helpRow span:first-child { font-size: 1.1rem; width: 26px; }
+.helpRow span:first-child { font-size: 1rem; width: 24px; }
 .helpRow strong { flex: 1; }
-.helpRow span:last-child { color: var(--muted); font-size: 0.72rem; }
+.helpRow span:last-child { color: var(--muted); font-size: 0.7rem; }
 
 /* ── Game over ── */
 .gameOver {

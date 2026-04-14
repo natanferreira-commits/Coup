@@ -41,7 +41,7 @@ function startGame(room) {
   const players = room.players.map(p => ({
     id: p.id,
     name: p.name,
-    coins: 2,
+    coins: 1,
     cards: [
       { character: deck.pop(), dead: false },
       { character: deck.pop(), dead: false },

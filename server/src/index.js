@@ -62,8 +62,22 @@ function scheduleAutoAdvance(room) {
     const pa = g.pendingAction;
 
     if (snapshotPhase === 'ACTION_SELECT') {
-      // Skip turn: auto renda (safest no-cost action)
-      handleAction(room, g.currentPlayerId, 'renda', null);
+      // Penalty: player loses all coins, then skip turn
+      const currentPlayer = g.players.find(p => p.id === g.currentPlayerId);
+      if (currentPlayer) {
+        const lost = currentPlayer.coins;
+        currentPlayer.coins = 0;
+        if (lost > 0) g.log.push(`⏰ ${currentPlayer.name} deixou o tempo acabar e perdeu ${lost} moeda${lost !== 1 ? 's' : ''}!`);
+        else g.log.push(`⏰ ${currentPlayer.name} deixou o tempo acabar e perdeu a vez!`);
+      }
+      // Advance turn manually (no action taken)
+      const alive = g.players.filter(p => p.cards.some(c => !c.dead));
+      const idx = alive.findIndex(p => p.id === g.currentPlayerId);
+      const next = alive[(idx + 1) % alive.length];
+      g.currentPlayerId = next.id;
+      g.phase = 'ACTION_SELECT';
+      g.pendingAction = null;
+      g.log.push(`--- Vez de ${next.name}. Bora ver o que essa pessoa vai aprontar... 🤔`);
 
     } else if (snapshotPhase === 'RESPONSE_WINDOW' && pa) {
       // Pass for every player that hasn't responded yet
