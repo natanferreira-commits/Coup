@@ -8,85 +8,69 @@ const {
 } = require('./rooms');
 const {
   handleAction, handlePass, handleBlock, handleChallenge,
-  handleLoseInfluence, handleInvestigateDecision,
+  handleLoseInfluence, handleSelectCardShow, handleAcknowledgePeek, handleSelectCardSwap,
 } = require('./game/engine');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
-
 const server = http.createServer(app);
-const io = new Server(server, {
-  cors: { origin: '*', methods: ['GET', 'POST'] },
-});
+const io = new Server(server, { cors: { origin: '*', methods: ['GET', 'POST'] } });
 
 app.get('/health', (_, res) => res.json({ ok: true }));
 
-// ─── Socket helpers ──────────────────────────────────────────────────────────
+// ── Sanitize ─────────────────────────────────────────────────────────────────
 
-function sanitizeGameForPlayer(game, playerId) {
+function sanitizeGame(game, playerId) {
   return {
     players: game.players.map(p => ({
-      id: p.id,
-      name: p.name,
-      coins: p.coins,
+      id: p.id, name: p.name, coins: p.coins,
       cardCount: p.cards.filter(c => !c.dead).length,
       alive: p.cards.some(c => !c.dead),
-      // Own cards are always visible; dead cards are visible to all
       cards: p.cards.map((c, i) => ({
-        index: i,
-        dead: c.dead,
+        index: i, dead: c.dead,
         character: (p.id === playerId || c.dead) ? c.character : null,
       })),
     })),
     currentPlayerId: game.currentPlayerId,
     phase: game.phase,
-    pendingAction: sanitizePendingAction(game.pendingAction, playerId, game),
-    log: game.log.slice(-20),
+    pendingAction: sanitizePA(game.pendingAction, playerId),
+    log: game.log.slice(-25),
     winner: game.winner,
   };
 }
 
-function sanitizePendingAction(pa, playerId, game) {
+function sanitizePA(pa, playerId) {
   if (!pa) return null;
   const base = {
-    type: pa.type,
-    actorId: pa.actorId,
-    targetId: pa.targetId,
-    claimedCharacter: pa.claimedCharacter,
-    blocker: pa.blocker,
-    respondedPlayers: pa.respondedPlayers,
-    loseInfluenceQueue: pa.loseInfluenceQueue,
+    type: pa.type, actorId: pa.actorId, targetId: pa.targetId,
+    claimedCharacter: pa.claimedCharacter, blocker: pa.blocker,
+    respondedPlayers: pa.respondedPlayers, loseInfluenceQueue: pa.loseInfluenceQueue,
+    swapPlayerId: pa.swapPlayerId, swapContext: pa.swapContext,
   };
-  // Only send investigation peek to the actor
-  if (pa.investigationPeek && pa.actorId === playerId) {
-    base.investigationPeek = pa.investigationPeek;
-  }
+  // X9 peek result: only sent to the actor
+  if (pa.x9Result && pa.actorId === playerId) base.x9Result = pa.x9Result;
   return base;
 }
 
-function broadcastGameState(room) {
+function broadcast(room) {
   room.players.forEach(p => {
     if (!room.game) return;
     io.to(p.id).emit('game_state', {
-      code: room.code,
-      hostId: room.hostId,
-      status: 'playing',
-      game: sanitizeGameForPlayer(room.game, p.id),
+      code: room.code, hostId: room.hostId, status: 'playing',
+      game: sanitizeGame(room.game, p.id),
     });
   });
 }
 
 function broadcastLobby(room) {
   io.to(room.code).emit('room_updated', {
-    code: room.code,
-    hostId: room.hostId,
-    status: 'waiting',
+    code: room.code, hostId: room.hostId, status: 'waiting',
     players: room.players.map(p => ({ id: p.id, name: p.name })),
   });
 }
 
-// ─── Socket events ───────────────────────────────────────────────────────────
+// ── Socket events ─────────────────────────────────────────────────────────────
 
 io.on('connection', socket => {
   console.log('connected:', socket.id);
@@ -108,62 +92,31 @@ io.on('connection', socket => {
   socket.on('start_game', (_, cb) => {
     const room = getRoomByPlayer(socket.id);
     if (!room) return cb?.({ success: false, error: 'Sala não encontrada' });
-    if (room.hostId !== socket.id) return cb?.({ success: false, error: 'Apenas o host pode iniciar' });
+    if (room.hostId !== socket.id) return cb?.({ success: false, error: 'Só o host pode iniciar' });
     if (room.players.length < 2) return cb?.({ success: false, error: 'Mínimo 2 jogadores' });
     startGameInRoom(room);
-    broadcastGameState(room);
+    broadcast(room);
     cb?.({ success: true });
   });
 
-  socket.on('take_action', ({ action, targetId }, cb) => {
-    const room = getRoomByPlayer(socket.id);
-    if (!room?.game) return cb?.({ success: false });
-    const result = handleAction(room, socket.id, action, targetId);
-    if (!result.success) return cb?.({ success: false, error: result.error });
-    broadcastGameState(room);
-    cb?.({ success: true });
-  });
+  function withRoom(cb) {
+    return (payload, ack) => {
+      const room = getRoomByPlayer(socket.id);
+      if (!room?.game) return ack?.({ success: false });
+      const result = cb(room, payload);
+      broadcast(room);
+      ack?.({ success: result?.success ?? true, error: result?.error });
+    };
+  }
 
-  socket.on('challenge', (_, cb) => {
-    const room = getRoomByPlayer(socket.id);
-    if (!room?.game) return;
-    const result = handleChallenge(room, socket.id);
-    broadcastGameState(room);
-    cb?.({ success: result.success });
-  });
-
-  socket.on('block', ({ character }, cb) => {
-    const room = getRoomByPlayer(socket.id);
-    if (!room?.game) return;
-    const result = handleBlock(room, socket.id, character);
-    if (!result.success) return cb?.({ success: false, error: result.error });
-    broadcastGameState(room);
-    cb?.({ success: true });
-  });
-
-  socket.on('pass', (_, cb) => {
-    const room = getRoomByPlayer(socket.id);
-    if (!room?.game) return;
-    handlePass(room, socket.id);
-    broadcastGameState(room);
-    cb?.({ success: true });
-  });
-
-  socket.on('lose_influence', ({ cardIndex }, cb) => {
-    const room = getRoomByPlayer(socket.id);
-    if (!room?.game) return;
-    const result = handleLoseInfluence(room, socket.id, cardIndex);
-    broadcastGameState(room);
-    cb?.({ success: result.success });
-  });
-
-  socket.on('investigate_decision', ({ forceSwap }, cb) => {
-    const room = getRoomByPlayer(socket.id);
-    if (!room?.game) return;
-    const result = handleInvestigateDecision(room, socket.id, forceSwap);
-    broadcastGameState(room);
-    cb?.({ success: result.success });
-  });
+  socket.on('take_action',       withRoom((room, { action, targetId }) => handleAction(room, socket.id, action, targetId)));
+  socket.on('challenge',         withRoom(room => handleChallenge(room, socket.id)));
+  socket.on('block',             withRoom((room, { character }) => handleBlock(room, socket.id, character)));
+  socket.on('pass',              withRoom(room => handlePass(room, socket.id)));
+  socket.on('lose_influence',    withRoom((room, { cardIndex }) => handleLoseInfluence(room, socket.id, cardIndex)));
+  socket.on('select_card_show',  withRoom((room, { cardIndex }) => handleSelectCardShow(room, socket.id, cardIndex)));
+  socket.on('acknowledge_peek',  withRoom(room => handleAcknowledgePeek(room, socket.id)));
+  socket.on('select_card_swap',  withRoom((room, { cardIndex }) => handleSelectCardSwap(room, socket.id, cardIndex)));
 
   socket.on('disconnect', () => {
     console.log('disconnected:', socket.id);

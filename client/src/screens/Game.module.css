@@ -235,3 +235,37 @@
 .winnerName { font-size: 1.4rem; }
 
 .loading { min-height: 100vh; display: flex; align-items: center; justify-content: center; color: var(--muted); }
+
+/* ── Action sections ── */
+.actionSection {
+  display: flex; flex-direction: column; gap: 6px;
+}
+.sectionLabel {
+  font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.12em;
+  color: var(--muted); font-weight: 700;
+}
+
+/* ── X9 peek result ── */
+.x9Result {
+  background: rgba(105,27,249,0.1);
+  border: 1px solid rgba(105,27,249,0.35);
+  border-radius: 12px; padding: 14px 16px;
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+}
+.x9ResultTitle {
+  font-size: 0.82rem; color: #b39ddb; font-weight: 600; text-align: center;
+}
+.x9ResultCard {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  background: var(--surface2); border: 1px solid rgba(105,27,249,0.4);
+  border-radius: 10px; padding: 12px 20px;
+}
+.x9ResultCard span:first-child { font-size: 2rem; }
+.x9ResultCard span:last-child  { font-family: 'Bebas Neue', sans-serif; font-size: 1rem; letter-spacing: 0.06em; }
+.x9AckBtn {
+  background: rgba(105,27,249,0.25); border: 1px solid rgba(105,27,249,0.5);
+  color: #d1c4e9; border-radius: 8px; padding: 8px 18px;
+  font-size: 0.82rem; font-weight: 600; cursor: pointer; font-family: inherit;
+  transition: background 0.15s;
+}
+.x9AckBtn:hover { background: rgba(105,27,249,0.4); }

@@ -5,89 +5,95 @@ import Card from '../components/Card';
 import { CHAR_CONFIG } from '../components/charConfig';
 import GameLog from '../components/GameLog';
 import TurnCard from '../components/TurnCard';
+import CardSelectorModal from '../components/CardSelectorModal';
 import moedaImg from '../assets/moeda.svg';
 import styles from './Game.module.css';
 
 const ACTION_NAMES = {
-  renda: 'Renda', ajuda_externa: 'Ajuda Externa', golpe: 'Golpe',
-  taxar: 'Taxar', roubar: 'Roubar', assassinar: 'Assassinar', investigar: 'Investigar (X9)',
+  renda:        'Trampo Suado',
+  ajuda_externa:'Imposto é Roubo',
+  golpe:        'Golpe de Estado',
+  taxar:        'Faz o L',
+  roubar:       'Pegar o Arrego',
+  assassinar:   'Mandar pro Vasco',
+  meter_x9:     'Meter o X9',
+  disfarce:     'Disfarce',
+  trocar_carta: 'Troca de Cartas',
 };
-const ACTIONS_NEEDING_TARGET = ['golpe', 'roubar', 'assassinar', 'investigar'];
+
+const TARGET_ACTIONS = ['golpe', 'roubar', 'assassinar', 'meter_x9', 'trocar_carta'];
 const BLOCK_OPTIONS = {
-  ajuda_externa: ['politico'], roubar: ['juiz', 'guarda_costas'],
-  assassinar: ['guarda_costas'], investigar: ['juiz'],
+  ajuda_externa: ['politico'],
+  roubar:        ['juiz', 'guarda_costas'],
+  assassinar:    ['guarda_costas'],
+  meter_x9:      ['juiz'],
+  disfarce:      ['juiz'],
+  trocar_carta:  ['juiz'],
 };
 
 export default function Game({ data, myId }) {
   const [selectedTarget, setSelectedTarget] = useState(null);
-  const [selectedCardIndex, setSelectedCardIndex] = useState(null);
-  const [blockChar, setBlockChar] = useState(null);
-  const [error, setError] = useState('');
-  const [showHelp, setShowHelp] = useState(false);
+  const [blockChar, setBlockChar]           = useState(null);
+  const [error, setError]                   = useState('');
+  const [showHelp, setShowHelp]             = useState(false);
 
   if (!data?.game) return <div className={styles.loading}>Carregando...</div>;
 
-  const { game } = data;
+  const { game }  = data;
   const { players, currentPlayerId, phase, pendingAction: pa, log, winner } = game;
-  const me = players.find(p => p.id === myId);
-  const others = players.filter(p => p.id !== myId);
-  const isMyTurn = currentPlayerId === myId;
+  const me        = players.find(p => p.id === myId);
+  const others    = players.filter(p => p.id !== myId);
+  const isMyTurn  = currentPlayerId === myId;
 
   function emit(event, payload, cb) {
     setError('');
-    socket.emit(event, payload, res => {
+    socket.emit(event, payload ?? {}, res => {
       if (res && !res.success) setError(res.error || 'Erro');
       cb?.();
     });
   }
 
   const takeAction = action => {
-    if (ACTIONS_NEEDING_TARGET.includes(action) && !selectedTarget)
-      return setError('Selecione um oponente como alvo primeiro');
+    if (TARGET_ACTIONS.includes(action) && !selectedTarget)
+      return setError('Selecione um oponente como alvo primeiro ⬆');
     emit('take_action', { action, targetId: selectedTarget }, () => setSelectedTarget(null));
   };
-  const handlePass      = () => emit('pass', {});
-  const handleChallenge = () => emit('challenge', {});
-  const handleBlock     = () => {
-    if (!blockChar) return setError('Escolha o personagem para bloquear');
-    emit('block', { character: blockChar }, () => setBlockChar(null));
-  };
-  const handleLoseInfluence = () => {
-    if (selectedCardIndex === null) return setError('Selecione uma carta');
-    emit('lose_influence', { cardIndex: selectedCardIndex }, () => setSelectedCardIndex(null));
-  };
-  const handleInvestigateDecision = forceSwap => emit('investigate_decision', { forceSwap });
 
-  const iAmActor    = pa?.actorId === myId;
-  const iAmTarget   = pa?.targetId === myId;
+  const iAmActor         = pa?.actorId === myId;
+  const iAmTarget        = pa?.targetId === myId;
   const alreadyResponded = pa?.respondedPlayers?.includes(myId);
   const iAmInLoseQueue   = pa?.loseInfluenceQueue?.[0]?.playerId === myId;
+  const iAmSwapPlayer    = pa?.swapPlayerId === myId;
 
-  const canAct             = isMyTurn && phase === 'ACTION_SELECT' && me?.alive;
-  const canRespond         = phase === 'RESPONSE_WINDOW' && !iAmActor && !alreadyResponded && me?.alive;
-  const canChallengeAction = canRespond && !!pa?.claimedCharacter;
-  const canBlockAction     = canRespond && (pa?.type === 'ajuda_externa' ? true : iAmTarget);
-  const canChallengeBlock  = phase === 'BLOCK_CHALLENGE_WINDOW' && iAmActor;
-  const mustLoseInfluence  = phase === 'LOSE_INFLUENCE' && iAmInLoseQueue;
-  const mustInvestigateDecide = phase === 'INVESTIGATE_DECISION' && iAmActor;
-  const blockOptions = pa ? (BLOCK_OPTIONS[pa.type] || []) : [];
+  const canAct            = isMyTurn && phase === 'ACTION_SELECT' && me?.alive;
+  const canRespond        = phase === 'RESPONSE_WINDOW' && !iAmActor && !alreadyResponded && me?.alive;
+  const canChallengeAct   = canRespond && !!pa?.claimedCharacter;
+  const canBlockAct       = canRespond && (pa?.type === 'ajuda_externa' ? true : iAmTarget);
+  const canChallengeBlock = phase === 'BLOCK_CHALLENGE_WINDOW' && iAmActor;
 
-  const actorName  = pa ? players.find(p => p.id === pa.actorId)?.name : null;
-  const targetName = pa?.targetId ? players.find(p => p.id === pa.targetId)?.name : null;
-  const blockerName = pa?.blocker ? players.find(p => p.id === pa.blocker.playerId)?.name : null;
+  const mustLoseInfluence    = phase === 'LOSE_INFLUENCE'     && iAmInLoseQueue;
+  const mustShowCard         = phase === 'X9_PEEK_SELECT'     && iAmTarget;
+  const mustAcknowledgePeek  = phase === 'X9_PEEK_VIEW'       && iAmActor;
+  const mustSwapCard         = phase === 'CARD_SWAP_SELECT'   && iAmSwapPlayer;
 
-  const hasAction = canAct || canChallengeAction || canBlockAction || canChallengeBlock || mustLoseInfluence || mustInvestigateDecide;
+  const blockOptions  = pa ? (BLOCK_OPTIONS[pa.type] || []) : [];
+  const actorName     = pa ? players.find(p => p.id === pa.actorId)?.name  : null;
+  const targetName    = pa?.targetId ? players.find(p => p.id === pa.targetId)?.name : null;
+  const blockerName   = pa?.blocker  ? players.find(p => p.id === pa.blocker.playerId)?.name : null;
 
+  const hasAction = canAct || canChallengeAct || canBlockAct || canChallengeBlock
+    || mustLoseInfluence || mustShowCard || mustAcknowledgePeek || mustSwapCard;
+
+  // ── Game over ──────────────────────────────────────────────────────────────
   if (winner) {
-    const winnerPlayer = players.find(p => p.id === winner);
+    const w = players.find(p => p.id === winner);
     return (
-      <motion.div className={styles.gameOver}
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+      <motion.div className={styles.gameOver} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
         <motion.div className={styles.gameOverCard}
           initial={{ scale: 0.7, y: 40 }} animate={{ scale: 1, y: 0 }}
           transition={{ type: 'spring', stiffness: 200, damping: 18 }}>
           <h1>FIM DE JOGO</h1>
-          <p className={styles.winnerName}>{winnerPlayer?.name} venceu!</p>
+          <p className={styles.winnerName}>{w?.name} venceu o Golpe! 🇧🇷</p>
           <motion.button className="btn btn-primary" whileTap={{ scale: 0.95 }}
             onClick={() => window.location.reload()}>
             Jogar Novamente
@@ -100,12 +106,45 @@ export default function Game({ data, myId }) {
   return (
     <div className={styles.board}>
 
+      {/* ── Card selector modals (overlay) ── */}
+      {mustLoseInfluence && (
+        <CardSelectorModal
+          context="lose"
+          title="Perdeu, mané 💀"
+          description="Você deve perder uma carta. Escolha qual revelar para a mesa."
+          cards={me?.cards || []}
+          confirmLabel="Perder"
+          onConfirm={i => emit('lose_influence', { cardIndex: i })}
+        />
+      )}
+      {mustShowCard && (
+        <CardSelectorModal
+          context="show"
+          title="O X9 tá de olho 👀"
+          description={`${actorName} meteu o X9 em você. Escolha uma carta para mostrar APENAS a ele.`}
+          cards={me?.cards || []}
+          confirmLabel="Mostrar"
+          onConfirm={i => emit('select_card_show', { cardIndex: i })}
+        />
+      )}
+      {mustSwapCard && (
+        <CardSelectorModal
+          context="swap"
+          title={pa?.swapContext === 'disfarce' ? 'Hora do Disfarce 🎭' : 'Troca Forçada 🔄'}
+          description={
+            pa?.swapContext === 'disfarce'
+              ? 'Escolha uma carta para trocar pelo baralho. Só você sabe o que vai sair.'
+              : `${actorName} forçou uma troca. Escolha qual carta você quer trocar pelo baralho.`
+          }
+          cards={me?.cards || []}
+          confirmLabel="Trocar"
+          onConfirm={i => emit('select_card_swap', { cardIndex: i })}
+        />
+      )}
+
       {/* ── LEFT: turno + log ── */}
       <div className={styles.leftPanel}>
-        <TurnCard
-          player={players.find(p => p.id === currentPlayerId)}
-          isMe={isMyTurn}
-        />
+        <TurnCard player={players.find(p => p.id === currentPlayerId)} isMe={isMyTurn} />
         <p className={styles.panelLabel}>Chat da Rodada</p>
         <GameLog log={log} />
       </div>
@@ -113,82 +152,67 @@ export default function Game({ data, myId }) {
       {/* ── CENTER ── */}
       <div className={styles.center}>
 
-        {/* Opponents row — integrated */}
+        {/* Opponents */}
         <div className={styles.opponents}>
-          <AnimatePresence>
-            {others.map(p => (
-              <motion.div
-                key={p.id}
-                className={`${styles.opponent}
-                  ${p.id === currentPlayerId ? styles.opponentActive : ''}
-                  ${!p.alive ? styles.opponentDead : ''}
-                  ${selectedTarget === p.id ? styles.opponentTargeted : ''}
-                `}
-                layout
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: p.alive ? 1 : 0.35, y: 0 }}
-                whileHover={canAct && p.alive ? { scale: 1.03, y: -2 } : {}}
-                whileTap={canAct && p.alive ? { scale: 0.97 } : {}}
-                onClick={() => canAct && p.alive && setSelectedTarget(prev => prev === p.id ? null : p.id)}
-                style={{ cursor: canAct && p.alive ? 'pointer' : 'default' }}
-              >
-                <div className={styles.opponentAvatar}>{p.name.charAt(0).toUpperCase()}</div>
-                <div className={styles.opponentInfo}>
-                  <span className={styles.opponentName}>{p.name}</span>
-                  <div className={styles.opponentCoins}>
-                    <img src={moedaImg} className={styles.coinIconSm} alt="moeda" />
-                    <span>{p.coins}</span>
+          {others.map(p => (
+            <motion.div key={p.id}
+              className={`${styles.opponent}
+                ${p.id === currentPlayerId ? styles.opponentActive : ''}
+                ${!p.alive ? styles.opponentDead : ''}
+                ${selectedTarget === p.id ? styles.opponentTargeted : ''}
+              `}
+              whileHover={canAct && p.alive ? { scale: 1.03, y: -2 } : {}}
+              whileTap={canAct && p.alive ? { scale: 0.97 } : {}}
+              onClick={() => canAct && p.alive && setSelectedTarget(prev => prev === p.id ? null : p.id)}
+              style={{ cursor: canAct && p.alive ? 'pointer' : 'default' }}
+            >
+              <div className={styles.opponentAvatar}>{p.name.charAt(0).toUpperCase()}</div>
+              <div className={styles.opponentInfo}>
+                <span className={styles.opponentName}>{p.name}</span>
+                <div className={styles.opponentCoins}>
+                  <img src={moedaImg} className={styles.coinIconSm} alt="moeda" />
+                  <span>{p.coins}</span>
+                </div>
+              </div>
+              <div className={styles.opponentCards}>
+                {p.cards.map((c, i) => (
+                  <div key={i} className={`${styles.miniCard} ${c.dead ? styles.miniCardDead : ''}`}>
+                    {c.dead ? '✕' : c.character ? CHAR_CONFIG[c.character]?.icon : '🃏'}
                   </div>
-                </div>
-                <div className={styles.opponentCards}>
-                  {p.cards.map((c, i) => (
-                    <div key={i} className={`${styles.miniCard} ${c.dead ? styles.miniCardDead : ''}`}>
-                      {c.dead ? '✕' : c.character ? CHAR_CONFIG[c.character]?.icon : '🃏'}
-                    </div>
-                  ))}
-                </div>
-                {p.id === currentPlayerId && (
-                  <motion.div className={styles.turnBadge}
-                    initial={{ scale: 0 }} animate={{ scale: 1 }}
-                    transition={{ type: 'spring', stiffness: 400 }}>
-                    VEZ
-                  </motion.div>
-                )}
-                {selectedTarget === p.id && (
-                  <motion.div className={styles.targetBadge}
-                    initial={{ scale: 0 }} animate={{ scale: 1 }}>
-                    ALVO
-                  </motion.div>
-                )}
-              </motion.div>
-            ))}
-          </AnimatePresence>
+                ))}
+              </div>
+              {p.id === currentPlayerId && <div className={styles.turnBadge}>VEZ</div>}
+              {selectedTarget === p.id && <div className={styles.targetBadge}>ALVO</div>}
+            </motion.div>
+          ))}
         </div>
 
         {/* Mesa */}
         <div className={styles.mesaWrapper}>
-          <motion.div
-            className={styles.mesa}
+          <motion.div className={styles.mesa}
             animate={
-              phase === 'RESPONSE_WINDOW' ? { borderColor: '#ffd600', boxShadow: '0 0 40px rgba(255,214,0,0.15)' } :
-              phase === 'BLOCK_CHALLENGE_WINDOW' ? { borderColor: '#f44336', boxShadow: '0 0 40px rgba(244,67,54,0.15)' } :
-              phase === 'LOSE_INFLUENCE' ? { borderColor: '#f44336', boxShadow: '0 0 40px rgba(244,67,54,0.2)' } :
-              { borderColor: 'var(--border)', boxShadow: 'none' }
+              phase === 'RESPONSE_WINDOW'       ? { borderColor: '#ffd600' } :
+              phase === 'BLOCK_CHALLENGE_WINDOW' ? { borderColor: '#f44336' } :
+              phase === 'LOSE_INFLUENCE'         ? { borderColor: '#f44336' } :
+              phase === 'X9_PEEK_SELECT'         ? { borderColor: '#9c27b0' } :
+              phase === 'X9_PEEK_VIEW'           ? { borderColor: '#9c27b0' } :
+              phase === 'CARD_SWAP_SELECT'       ? { borderColor: '#2979ff' } :
+              { borderColor: 'var(--border)' }
             }
-            transition={{ duration: 0.4 }}
+            transition={{ duration: 0.35 }}
           >
             <AnimatePresence mode="wait">
               {phase === 'ACTION_SELECT' && (
-                <motion.div key="action_select" className={styles.mesaContent}
+                <motion.div key="sel" className={styles.mesaContent}
                   initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
                   {isMyTurn
                     ? <><span className={styles.mesaTitle} style={{ color: 'var(--yellow)' }}>SUA VEZ</span><p className={styles.mesaSub}>Escolha uma ação abaixo</p></>
-                    : <><span className={styles.mesaTitle}>{players.find(p => p.id === currentPlayerId)?.name}</span><p className={styles.mesaSub}>está escolhendo...</p></>
+                    : <><span className={styles.mesaTitle}>{players.find(p => p.id === currentPlayerId)?.name}</span><p className={styles.mesaSub}>pensando na jogada...</p></>
                   }
                 </motion.div>
               )}
               {(phase === 'RESPONSE_WINDOW' || phase === 'BLOCK_CHALLENGE_WINDOW') && pa && (
-                <motion.div key="response" className={styles.mesaContent}
+                <motion.div key="resp" className={styles.mesaContent}
                   initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
                   <span className={styles.mesaIcon}>{pa.claimedCharacter ? CHAR_CONFIG[pa.claimedCharacter]?.icon : '⚡'}</span>
                   <span className={styles.mesaTitle}>{ACTION_NAMES[pa.type]}</span>
@@ -197,30 +221,25 @@ export default function Game({ data, myId }) {
                     {targetName && <><span style={{ color: 'var(--muted)' }}>→</span><span style={{ color: 'var(--red)' }}>{targetName}</span></>}
                   </div>
                   {phase === 'BLOCK_CHALLENGE_WINDOW' && pa.blocker && (
-                    <motion.div className={styles.mesaBlockBadge}
-                      initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}>
-                      🛡️ {blockerName} bloqueia
-                    </motion.div>
+                    <div className={styles.mesaBlockBadge}>🛡️ {blockerName} bloqueou</div>
                   )}
                 </motion.div>
               )}
               {phase === 'LOSE_INFLUENCE' && (
                 <motion.div key="lose" className={styles.mesaContent}
                   initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                  <motion.span className={styles.mesaIcon}
-                    animate={{ rotate: [0, -10, 10, -10, 10, 0] }}
-                    transition={{ repeat: Infinity, duration: 1.5 }}>💀</motion.span>
+                  <span className={styles.mesaIcon}>💀</span>
                   <span className={styles.mesaTitle} style={{ color: 'var(--red)' }}>
                     {players.find(p => p.id === pa?.loseInfluenceQueue?.[0]?.playerId)?.name}
                   </span>
-                  <p className={styles.mesaSub}>perde uma influência</p>
+                  <p className={styles.mesaSub}>perde uma carta</p>
                 </motion.div>
               )}
-              {phase === 'INVESTIGATE_DECISION' && (
-                <motion.div key="investigate" className={styles.mesaContent}
-                  initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              {(phase === 'X9_PEEK_SELECT' || phase === 'X9_PEEK_VIEW') && (
+                <motion.div key="x9" className={styles.mesaContent}
+                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                   <span className={styles.mesaIcon}>🕵️</span>
-                  <span className={styles.mesaTitle}>Investigação</span>
+                  <span className={styles.mesaTitle} style={{ color: '#ce93d8' }}>X9 em ação</span>
                   <div className={styles.mesaPlayers}>
                     <span style={{ color: '#2979ff' }}>{actorName}</span>
                     <span style={{ color: 'var(--muted)' }}>→</span>
@@ -228,18 +247,28 @@ export default function Game({ data, myId }) {
                   </div>
                 </motion.div>
               )}
+              {phase === 'CARD_SWAP_SELECT' && (
+                <motion.div key="swap" className={styles.mesaContent}
+                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                  <span className={styles.mesaIcon}>🔄</span>
+                  <span className={styles.mesaTitle} style={{ color: '#82b1ff' }}>
+                    {pa?.swapContext === 'disfarce' ? 'Disfarce' : 'Troca de Cartas'}
+                  </span>
+                  <p className={styles.mesaSub}>
+                    {players.find(p => p.id === pa?.swapPlayerId)?.name} escolhe uma carta
+                  </p>
+                </motion.div>
+              )}
             </AnimatePresence>
           </motion.div>
         </div>
 
-        {/* My cards + coins + actions */}
+        {/* My area: coins + cards + action panel */}
         <div className={styles.myArea}>
-
-          {/* Coin counter */}
           <div className={styles.coinCounter}>
             <img src={moedaImg} className={styles.coinIcon} alt="moeda" />
             <span className={styles.coinNum}>{me?.coins ?? 0}</span>
-            {me?.coins >= 10 && (
+            {(me?.coins ?? 0) >= 10 && (
               <motion.span className={styles.mustCoup}
                 animate={{ opacity: [1, 0.5, 1] }} transition={{ repeat: Infinity, duration: 0.8 }}>
                 GOLPE OBRIGATÓRIO!
@@ -247,38 +276,42 @@ export default function Game({ data, myId }) {
             )}
           </div>
 
-          {/* Cards */}
           <div className={styles.myCardsRow}>
             <span className={styles.panelLabel}>Suas Cartas</span>
             <div className={styles.myCards}>
-              {me?.cards.map((c, i) => (
-                <Card key={i} character={c.character} dead={c.dead}
-                  selected={selectedCardIndex === i}
-                  onClick={() => mustLoseInfluence && !c.dead && setSelectedCardIndex(prev => prev === i ? null : i)}
-                />
-              ))}
+              {me?.cards.map((c, i) => <Card key={i} character={c.character} dead={c.dead} />)}
             </div>
-            {mustLoseInfluence && (
-              <motion.p className={styles.loseHint}
-                animate={{ opacity: [1, 0.4, 1] }} transition={{ repeat: Infinity, duration: 1 }}>
-                Clique na carta que deseja perder
-              </motion.p>
-            )}
           </div>
+
+          {/* X9 peek result (only shown to actor) */}
+          {mustAcknowledgePeek && pa?.x9Result && (
+            <motion.div className={styles.x9Result}
+              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+              <p className={styles.x9ResultTitle}>🕵️ Você viu a carta de <strong>{targetName}</strong>:</p>
+              <div className={styles.x9ResultCard}>
+                <span>{CHAR_CONFIG[pa.x9Result.character]?.icon}</span>
+                <strong>{CHAR_CONFIG[pa.x9Result.character]?.label}</strong>
+              </div>
+              <motion.button className={styles.x9AckBtn}
+                whileTap={{ scale: 0.96 }}
+                onClick={() => emit('acknowledge_peek', {})}>
+                Ok, guardei no coração 🤫
+              </motion.button>
+            </motion.div>
+          )}
 
           {/* Action panel */}
           <AnimatePresence>
-            {hasAction && (
+            {hasAction && !mustLoseInfluence && !mustShowCard && !mustSwapCard && !mustAcknowledgePeek && (
               <motion.div className={styles.actionPanel}
                 key={phase}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
+                initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 8 }}
                 transition={{ type: 'spring', stiffness: 260, damping: 22 }}>
 
                 {error && (
                   <motion.div className={styles.errorMsg}
-                    initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}>
+                    initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }}>
                     {error}
                   </motion.div>
                 )}
@@ -288,45 +321,67 @@ export default function Game({ data, myId }) {
                   <>
                     {selectedTarget && (
                       <div className={styles.targetPill}>
-                        Alvo: <strong>{players.find(p => p.id === selectedTarget)?.name}</strong>
+                        🎯 Alvo: <strong>{players.find(p => p.id === selectedTarget)?.name}</strong>
                         <button className={styles.clearTarget} onClick={() => setSelectedTarget(null)}>✕</button>
                       </div>
                     )}
-                    <div className={styles.actionGrid}>
-                      <ActionBtn icon="💵" label="Renda"         sub="+1 moeda"              disabled={me?.coins >= 10}       onClick={() => takeAction('renda')} />
-                      <ActionBtn icon="💰" label="Ajuda Externa" sub="+2 moedas"             disabled={me?.coins >= 10}       onClick={() => takeAction('ajuda_externa')} />
-                      <ActionBtn icon="💥" label="Golpe"         sub="7 moedas · precisa alvo" disabled={(me?.coins||0) < 7} onClick={() => takeAction('golpe')} danger />
-                      <ActionBtn icon="🏛️" label="Taxar"         sub="+3 moedas (Político)"  disabled={me?.coins >= 10}       onClick={() => takeAction('taxar')} />
-                      <ActionBtn icon="💼" label="Roubar"        sub="2 moedas do alvo"                                       onClick={() => takeAction('roubar')} />
-                      <ActionBtn icon="🔪" label="Miliciano"     sub="3 moedas · elimina carta" disabled={(me?.coins||0) < 3} onClick={() => takeAction('assassinar')} danger />
-                      <ActionBtn icon="🕵️" label="X9"            sub="ver carta do alvo"                                      onClick={() => takeAction('investigar')} />
+
+                    <div className={styles.actionSection}>
+                      <span className={styles.sectionLabel}>Ações Básicas</span>
+                      <div className={styles.actionGrid}>
+                        <Btn icon="💵" label="Trampo Suado"    sub="+1 moeda"            disabled={(me?.coins??0) >= 10} onClick={() => takeAction('renda')} />
+                        <Btn icon="💸" label="Imposto é Roubo" sub="+2 moedas"            disabled={(me?.coins??0) >= 10} onClick={() => takeAction('ajuda_externa')} />
+                        <Btn icon="💥" label="Golpe de Estado" sub="7💰 · precisa alvo"   disabled={(me?.coins??0) < 7} danger onClick={() => takeAction('golpe')} />
+                      </div>
                     </div>
+
+                    <div className={styles.actionSection}>
+                      <span className={styles.sectionLabel}>Personagens — pode blefar</span>
+                      <div className={styles.actionGrid}>
+                        <Btn icon="🏛️" label="Faz o L"          sub="+3 moedas (Político)" disabled={(me?.coins??0) >= 10} onClick={() => takeAction('taxar')} />
+                        <Btn icon="💼" label="Pegar o Arrego"   sub="2 moedas do alvo"     onClick={() => takeAction('roubar')} />
+                        <Btn icon="🔪" label="Mandar pro Vasco" sub="3💰 · elimina carta"  disabled={(me?.coins??0) < 3} danger onClick={() => takeAction('assassinar')} />
+                      </div>
+                    </div>
+
+                    <div className={styles.actionSection}>
+                      <span className={styles.sectionLabel}>X9 — qualquer um duvida, Juiz bloqueia</span>
+                      <div className={styles.actionGrid}>
+                        <Btn icon="🕵️" label="Meter o X9"      sub="ver carta do alvo"       onClick={() => takeAction('meter_x9')} />
+                        <Btn icon="🎭" label="Disfarce"         sub="trocar carta própria"    onClick={() => takeAction('disfarce')} />
+                        <Btn icon="🔄" label="Troca de Cartas"  sub="forçar alvo a trocar"    onClick={() => takeAction('trocar_carta')} />
+                      </div>
+                    </div>
+
                     <p className={styles.targetHint}>
                       {selectedTarget
-                        ? `✓ Alvo: ${players.find(p => p.id === selectedTarget)?.name} — clique em outro para trocar`
-                        : '⬆ Clique em um oponente para selecionar como alvo (obrigatório para Golpe, Roubar, Miliciano e X9)'}
+                        ? `✓ Alvo selecionado — clique em outro para trocar`
+                        : '⬆ Clique em um oponente para selecionar como alvo'}
                     </p>
                   </>
                 )}
 
                 {/* RESPONSE */}
-                {(canChallengeAction || canBlockAction) && (
+                {(canChallengeAct || canBlockAct) && (
                   <>
                     <p className={styles.responseTitle}>
                       <strong>{actorName}</strong> declara <strong>{ACTION_NAMES[pa?.type]}</strong>
                       {targetName && <> em <strong>{targetName}</strong></>}
                     </p>
                     <div className={styles.actionGrid}>
-                      {canChallengeAction && <ActionBtn icon="⚔️" label="DUVIDAR" sub="chamar de mentiroso" danger onClick={handleChallenge} />}
-                      {canBlockAction && blockOptions.map(char => (
-                        <ActionBtn key={char} icon={CHAR_CONFIG[char]?.icon}
+                      {canChallengeAct && <Btn icon="⚔️" label="DUVIDAR" sub="chamar o VAR!" danger onClick={() => emit('challenge', {})} />}
+                      {canBlockAct && blockOptions.map(char => (
+                        <Btn key={char} icon={CHAR_CONFIG[char]?.icon}
                           label={`Bloquear como ${CHAR_CONFIG[char]?.label}`}
                           sub="clique para selecionar"
                           selected={blockChar === char}
                           onClick={() => setBlockChar(prev => prev === char ? null : char)} />
                       ))}
-                      {blockChar && <ActionBtn icon="🛡️" label="Confirmar Bloqueio" sub={`como ${CHAR_CONFIG[blockChar]?.label}`} success onClick={handleBlock} />}
-                      <ActionBtn icon="✅" label="Passar" sub="deixar acontecer" onClick={handlePass} />
+                      {blockChar && (
+                        <Btn icon="🛡️" label="Confirmar Bloqueio" sub={`como ${CHAR_CONFIG[blockChar]?.label}`} success
+                          onClick={() => emit('block', { character: blockChar }, () => setBlockChar(null))} />
+                      )}
+                      <Btn icon="✅" label="Ignorar" sub="deixar acontecer" onClick={() => emit('pass', {})} />
                     </div>
                   </>
                 )}
@@ -338,33 +393,8 @@ export default function Game({ data, myId }) {
                       <strong>{blockerName}</strong> bloqueou como <strong>{CHAR_CONFIG[pa?.blocker?.character]?.label}</strong>
                     </p>
                     <div className={styles.actionGrid}>
-                      <ActionBtn icon="⚔️" label="Duvidar do Bloqueio" sub="acha que está blefando?" danger onClick={handleChallenge} />
-                      <ActionBtn icon="✅" label="Aceitar Bloqueio" sub="desistir da ação" onClick={handlePass} />
-                    </div>
-                  </>
-                )}
-
-                {/* LOSE INFLUENCE */}
-                {mustLoseInfluence && (
-                  <>
-                    <p className={styles.responseTitle} style={{ color: 'var(--red)' }}>Escolha uma carta para perder</p>
-                    <div className={styles.actionGrid}>
-                      <ActionBtn icon="💀" label="Perder carta selecionada"
-                        sub={selectedCardIndex !== null ? `Carta ${selectedCardIndex + 1}` : 'Selecione uma carta acima'}
-                        danger disabled={selectedCardIndex === null} onClick={handleLoseInfluence} />
-                    </div>
-                  </>
-                )}
-
-                {/* INVESTIGATE */}
-                {mustInvestigateDecide && pa?.investigationPeek && (
-                  <>
-                    <p className={styles.responseTitle}>
-                      Carta de <strong>{targetName}</strong>: {CHAR_CONFIG[pa.investigationPeek.character]?.icon} <strong>{CHAR_CONFIG[pa.investigationPeek.character]?.label}</strong>
-                    </p>
-                    <div className={styles.actionGrid}>
-                      <ActionBtn icon="🔄" label="Forçar Troca" sub={`${targetName} troca a carta`} danger onClick={() => handleInvestigateDecision(true)} />
-                      <ActionBtn icon="✅" label="Manter Carta" sub="deixar como está" onClick={() => handleInvestigateDecision(false)} />
+                      <Btn icon="⚔️" label="Duvidar do Bloqueio" sub="chama o VAR!" danger onClick={() => emit('challenge', {})} />
+                      <Btn icon="✅" label="Aceitar Bloqueio" sub="desistir da jogada" onClick={() => emit('pass', {})} />
                     </div>
                   </>
                 )}
@@ -375,7 +405,8 @@ export default function Game({ data, myId }) {
       </div>
 
       {/* Help button */}
-      <motion.button className={styles.helpBtn} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+      <motion.button className={styles.helpBtn}
+        whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
         onClick={() => setShowHelp(h => !h)}>
         ? Ajuda
       </motion.button>
@@ -396,6 +427,12 @@ export default function Game({ data, myId }) {
                   <span>{cfg.icon}</span><strong>{cfg.label}</strong><span>{cfg.desc}</span>
                 </div>
               ))}
+              <h2 style={{ marginTop: 16 }}>Ações</h2>
+              {Object.entries(ACTION_NAMES).map(([k, v]) => (
+                <div key={k} className={styles.helpRow}>
+                  <strong>{v}</strong>
+                </div>
+              ))}
               <motion.button className="btn btn-primary" style={{ marginTop: 16, width: '100%' }}
                 whileTap={{ scale: 0.97 }} onClick={() => setShowHelp(false)}>
                 Fechar
@@ -408,26 +445,22 @@ export default function Game({ data, myId }) {
   );
 }
 
-// ── Reusable action button ──────────────────────────────────────────────────
-function ActionBtn({ icon, label, sub, onClick, disabled, danger, success, selected }) {
+function Btn({ icon, label, sub, onClick, disabled, danger, success, selected }) {
   return (
     <motion.button
       className={`${styles.actionBtn}
-        ${danger   ? styles.actionBtnDanger   : ''}
-        ${success  ? styles.actionBtnSuccess  : ''}
-        ${selected ? styles.actionBtnSelected : ''}
+        ${danger   ? styles.btnDanger   : ''}
+        ${success  ? styles.btnSuccess  : ''}
+        ${selected ? styles.btnSelected : ''}
       `}
-      onClick={onClick}
       disabled={disabled}
+      onClick={onClick}
       whileHover={!disabled ? { scale: 1.03, y: -1 } : {}}
       whileTap={!disabled ? { scale: 0.96 } : {}}
       transition={{ type: 'spring', stiffness: 400, damping: 20 }}
     >
       <span className={styles.actionIcon}>{icon}</span>
-      <div>
-        <strong>{label}</strong>
-        <small>{sub}</small>
-      </div>
+      <div><strong>{label}</strong><small>{sub}</small></div>
     </motion.button>
   );
 }
