@@ -107,6 +107,14 @@ io.on('connection', socket => {
     };
   }
 
+  socket.on('restart_game', (_, cb) => {
+    const room = getRoomByPlayer(socket.id);
+    if (!room) return cb?.({ success: false });
+    startGameInRoom(room);
+    broadcast(room);
+    cb?.({ success: true });
+  });
+
   socket.on('take_action',       withRoom((room, { action, targetId }) => handleAction(room, socket.id, action, targetId)));
   socket.on('challenge',         withRoom(room => handleChallenge(room, socket.id)));
   socket.on('block',             withRoom((room, { character }) => handleBlock(room, socket.id, character)));

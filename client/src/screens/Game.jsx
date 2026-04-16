@@ -161,7 +161,7 @@ export default function Game({ data, myId }) {
           <h1>FIM DE JOGO</h1>
           <p className={styles.winnerName}>{w?.name} venceu o Golpe! 🇧🇷</p>
           <motion.button className="btn btn-primary" whileTap={{ scale:0.95 }}
-            onClick={() => window.location.reload()}>
+            onClick={() => socket.emit('restart_game', {})}>
             Jogar Novamente
           </motion.button>
         </motion.div>

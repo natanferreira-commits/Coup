@@ -2,7 +2,7 @@
 .board {
   height: 100vh;
   display: grid;
-  grid-template-columns: 240px 1fr 280px;
+  grid-template-columns: 240px 1fr 248px;
   overflow: hidden;
   background: #0d0d12;
   position: relative;
@@ -157,19 +157,19 @@
 .actionsTop {
   flex: 1;
   overflow-y: auto;
-  padding: 14px 12px 10px;
+  padding: 10px 10px 8px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 /* Character section — fixed bottom */
 .charSection {
   border-top: 1px solid var(--border);
-  padding: 10px 12px 12px;
+  padding: 7px 10px 10px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   flex-shrink: 0;
 }
 
@@ -177,7 +177,7 @@
 .charGrid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
+  gap: 5px;
 }
 
 .charCard {
