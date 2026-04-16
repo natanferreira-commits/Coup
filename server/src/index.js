@@ -19,94 +19,12 @@ const io = new Server(server, { cors: { origin: '*', methods: ['GET', 'POST'] } 
 
 app.get('/health', (_, res) => res.json({ ok: true }));
 
-// ── Phase timers ──────────────────────────────────────────────────────────────
-
-const roomTimers = new Map();
-
-function clearRoomTimer(code) {
-  if (roomTimers.has(code)) {
-    clearTimeout(roomTimers.get(code));
-    roomTimers.delete(code);
-  }
-}
-
-// Seconds per phase
-const PHASE_SECONDS = {
-  ACTION_SELECT:          60,
-  RESPONSE_WINDOW:        30,
-  BLOCK_CHALLENGE_WINDOW: 30,
-};
-
-function scheduleAutoAdvance(room) {
-  const game = room.game;
-  if (!game || game.winner) return;
-
-  clearRoomTimer(room.code);
-
-  const secs = PHASE_SECONDS[game.phase];
-  if (!secs) {
-    game.phaseDeadline = null;
-    return;
-  }
-
-  game.phaseDeadline = Date.now() + secs * 1000;
-  const snapshotDeadline = game.phaseDeadline;
-  const snapshotPhase    = game.phase;
-
-  roomTimers.set(room.code, setTimeout(() => {
-    roomTimers.delete(room.code);
-    // Stale check — phase may have already advanced
-    if (!room.game || room.game.phase !== snapshotPhase || room.game.phaseDeadline !== snapshotDeadline) return;
-
-    const g = room.game;
-    const pa = g.pendingAction;
-
-    if (snapshotPhase === 'ACTION_SELECT') {
-      // Penalty: player loses all coins, then skip turn
-      const currentPlayer = g.players.find(p => p.id === g.currentPlayerId);
-      if (currentPlayer) {
-        const lost = currentPlayer.coins;
-        currentPlayer.coins = 0;
-        if (lost > 0) g.log.push(`⏰ ${currentPlayer.name} deixou o tempo acabar e perdeu ${lost} moeda${lost !== 1 ? 's' : ''}!`);
-        else g.log.push(`⏰ ${currentPlayer.name} deixou o tempo acabar e perdeu a vez!`);
-      }
-      // Advance turn manually (no action taken)
-      const alive = g.players.filter(p => p.cards.some(c => !c.dead));
-      const idx = alive.findIndex(p => p.id === g.currentPlayerId);
-      const next = alive[(idx + 1) % alive.length];
-      g.currentPlayerId = next.id;
-      g.phase = 'ACTION_SELECT';
-      g.pendingAction = null;
-      g.log.push(`--- Vez de ${next.name}. Bora ver o que essa pessoa vai aprontar... 🤔`);
-
-    } else if (snapshotPhase === 'RESPONSE_WINDOW' && pa) {
-      // Pass for every player that hasn't responded yet
-      const pending = g.players.filter(p =>
-        p.cards.some(c => !c.dead) &&
-        p.id !== pa.actorId &&
-        !pa.respondedPlayers.includes(p.id)
-      );
-      for (const p of pending) {
-        if (g.phase === 'RESPONSE_WINDOW') handlePass(room, p.id);
-      }
-
-    } else if (snapshotPhase === 'BLOCK_CHALLENGE_WINDOW' && pa) {
-      // Actor accepts the block
-      handlePass(room, pa.actorId);
-    }
-
-    broadcast(room);
-    scheduleAutoAdvance(room);
-  }, secs * 1000));
-}
-
 // ── Sanitize ─────────────────────────────────────────────────────────────────
 
 function sanitizeGame(game, playerId) {
   return {
     players: game.players.map(p => ({
       id: p.id, name: p.name, coins: p.coins,
-      cardCount: p.cards.filter(c => !c.dead).length,
       alive: p.cards.some(c => !c.dead),
       cards: p.cards.map((c, i) => ({
         index: i, dead: c.dead,
@@ -115,7 +33,6 @@ function sanitizeGame(game, playerId) {
     })),
     currentPlayerId: game.currentPlayerId,
     phase: game.phase,
-    phaseDeadline: game.phaseDeadline ?? null,
     pendingAction: sanitizePA(game.pendingAction, playerId),
     log: game.log.slice(-25),
     winner: game.winner,
@@ -177,7 +94,6 @@ io.on('connection', socket => {
     if (room.players.length < 2) return cb?.({ success: false, error: 'Mínimo 2 jogadores' });
     startGameInRoom(room);
     broadcast(room);
-    scheduleAutoAdvance(room);
     cb?.({ success: true });
   });
 
@@ -187,7 +103,6 @@ io.on('connection', socket => {
       if (!room?.game) return ack?.({ success: false });
       const result = cb(room, payload);
       broadcast(room);
-      scheduleAutoAdvance(room);
       ack?.({ success: result?.success ?? true, error: result?.error });
     };
   }
@@ -205,7 +120,6 @@ io.on('connection', socket => {
     console.log('disconnected:', socket.id);
     const room = getRoomByPlayer(socket.id);
     if (!room) return;
-    if (room.players.length <= 1) clearRoomTimer(room.code);
     removePlayerFromRoom(room.code, socket.id);
     if (room.players.length > 0 && !room.game) broadcastLobby(room);
   });

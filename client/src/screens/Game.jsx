@@ -47,27 +47,15 @@ const CHAR_ACTIONS = {
   guarda_costas: [],
 };
 
-const PHASE_TOTAL = { ACTION_SELECT: 60, RESPONSE_WINDOW: 30, BLOCK_CHALLENGE_WINDOW: 30 };
-
 export default function Game({ data, myId }) {
   const [selectedTarget, setSelectedTarget] = useState(null);
   const [selectedChar,   setSelectedChar]   = useState(null);
   const [blockChar,      setBlockChar]       = useState(null);
   const [error,          setError]           = useState('');
   const [showHelp,       setShowHelp]        = useState(false);
-  const [timeLeft,       setTimeLeft]        = useState(null);
 
   const game = data?.game;
-  const { players, currentPlayerId, phase, pendingAction: pa, log, winner, phaseDeadline } = game || {};
-
-  // Countdown
-  useEffect(() => {
-    if (!phaseDeadline) { setTimeLeft(null); return; }
-    const update = () => setTimeLeft(Math.max(0, Math.ceil((phaseDeadline - Date.now()) / 1000)));
-    update();
-    const id = setInterval(update, 250);
-    return () => clearInterval(id);
-  }, [phaseDeadline]);
+  const { players, currentPlayerId, phase, pendingAction: pa, log, winner } = game || {};
 
   // Reset selections on phase change
   useEffect(() => {
@@ -123,14 +111,6 @@ export default function Game({ data, myId }) {
   const actorName    = pa ? players.find(p => p.id === pa.actorId)?.name  : null;
   const targetName   = pa?.targetId ? players.find(p => p.id === pa.targetId)?.name : null;
   const blockerName  = pa?.blocker  ? players.find(p => p.id === pa.blocker.playerId)?.name : null;
-
-  const totalSeconds = PHASE_TOTAL[phase] || 60;
-  const timerPct     = timeLeft !== null ? Math.max(0, timeLeft / totalSeconds) : 1;
-  const timerColor   = timeLeft !== null
-    ? (timeLeft <= 5 ? 'var(--red)' : timeLeft <= 15 ? '#ff9800' : 'var(--yellow)')
-    : 'var(--yellow)';
-
-  const hasRightAction = canAct || canChallengeAct || canBlockAct || canChallengeBlock || mustAcknowledgePeek;
 
   // ── Game over ────────────────────────────────────────────────────────────────
   if (winner) {
@@ -225,93 +205,90 @@ export default function Game({ data, myId }) {
           ))}
         </div>
 
-        {/* Mesa — uses mesa.svg as background */}
+        {/* Mesa — status label ABOVE the SVG */}
         <div className={styles.mesaWrapper}>
-          <div className={styles.mesaOuter}>
-            <img src={mesaImg} className={styles.mesaBg} alt="" />
-            <AnimatePresence mode="wait">
 
-              {phase === 'ACTION_SELECT' && (
-                <motion.div key="sel" className={styles.mesaContent}
-                  initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
-                  {isMyTurn
-                    ? <><span className={styles.mesaTitle} style={{ color: 'var(--yellow)' }}>SUA VEZ</span><p className={styles.mesaSub}>escolha uma ação →</p></>
-                    : <><span className={styles.mesaTitle}>{players.find(p => p.id === currentPlayerId)?.name}</span><p className={styles.mesaSub}>pensando...</p></>
-                  }
-                </motion.div>
-              )}
+          {/* Status text — floats above the diamond */}
+          <AnimatePresence mode="wait">
 
-              {(phase === 'RESPONSE_WINDOW' || phase === 'BLOCK_CHALLENGE_WINDOW') && pa && (
-                <motion.div key="resp" className={styles.mesaContent}
-                  initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
-                  <span className={styles.mesaIcon}>{pa.claimedCharacter ? CHAR_CONFIG[pa.claimedCharacter]?.icon : '⚡'}</span>
-                  <span className={styles.mesaTitle}>{ACTION_NAMES[pa.type]}</span>
-                  <div className={styles.mesaPlayers}>
-                    <span style={{ color: '#82b1ff' }}>{actorName}</span>
-                    {targetName && <><span style={{ color: 'var(--muted)' }}>→</span><span style={{ color: '#ef9a9a' }}>{targetName}</span></>}
-                  </div>
-                  {phase === 'BLOCK_CHALLENGE_WINDOW' && pa.blocker && (
-                    <div className={styles.mesaBlockBadge}>🛡️ {blockerName} bloqueou</div>
-                  )}
-                </motion.div>
-              )}
+            {phase === 'ACTION_SELECT' && (
+              <motion.div key="sel" className={styles.mesaStatus}
+                initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                {isMyTurn
+                  ? <span className={styles.mesaStatusMain} style={{ color: 'var(--yellow)' }}>✦ SUA VEZ — escolha uma ação</span>
+                  : <span className={styles.mesaStatusMain}>{players.find(p => p.id === currentPlayerId)?.name} está pensando...</span>
+                }
+              </motion.div>
+            )}
 
-              {phase === 'LOSE_INFLUENCE' && (
-                <motion.div key="lose" className={styles.mesaContent}
-                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                  <span className={styles.mesaIcon}>💀</span>
-                  <span className={styles.mesaTitle} style={{ color: 'var(--red)' }}>
-                    {players.find(p => p.id === pa?.loseInfluenceQueue?.[0]?.playerId)?.name}
-                  </span>
-                  <p className={styles.mesaSub}>perde uma carta</p>
-                </motion.div>
-              )}
+            {(phase === 'RESPONSE_WINDOW' || phase === 'BLOCK_CHALLENGE_WINDOW') && pa && (
+              <motion.div key="resp" className={styles.mesaStatus}
+                initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                <span className={styles.mesaStatusIcon}>{pa.claimedCharacter ? CHAR_CONFIG[pa.claimedCharacter]?.icon : '⚡'}</span>
+                <span className={styles.mesaStatusMain}>{ACTION_NAMES[pa.type]}</span>
+                <span className={styles.mesaStatusSub}>
+                  <span style={{ color: '#82b1ff' }}>{actorName}</span>
+                  {targetName && <>{' → '}<span style={{ color: '#ef9a9a' }}>{targetName}</span></>}
+                </span>
+                {phase === 'BLOCK_CHALLENGE_WINDOW' && pa.blocker && (
+                  <span className={styles.mesaStatusBlock}>🛡️ {blockerName} bloqueou</span>
+                )}
+              </motion.div>
+            )}
 
-              {(phase === 'X9_PEEK_SELECT' || phase === 'X9_PEEK_VIEW') && (
-                <motion.div key="x9" className={styles.mesaContent}
-                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                  <span className={styles.mesaIcon}>🕵️</span>
-                  <span className={styles.mesaTitle} style={{ color: '#ce93d8' }}>X9 em ação</span>
-                  <div className={styles.mesaPlayers}>
-                    <span style={{ color: '#82b1ff' }}>{actorName}</span>
-                    <span style={{ color: 'var(--muted)' }}>→</span>
-                    <span style={{ color: '#ef9a9a' }}>{targetName}</span>
-                  </div>
-                </motion.div>
-              )}
+            {phase === 'LOSE_INFLUENCE' && (
+              <motion.div key="lose" className={styles.mesaStatus}
+                initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                <span className={styles.mesaStatusIcon}>💀</span>
+                <span className={styles.mesaStatusMain} style={{ color: 'var(--red)' }}>
+                  {players.find(p => p.id === pa?.loseInfluenceQueue?.[0]?.playerId)?.name} perde uma carta
+                </span>
+              </motion.div>
+            )}
 
-              {phase === 'CARD_SWAP_SELECT' && (
-                <motion.div key="swap" className={styles.mesaContent}
-                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                  <span className={styles.mesaIcon}>🔄</span>
-                  <span className={styles.mesaTitle} style={{ color: '#82b1ff' }}>
-                    {pa?.swapContext === 'disfarce' ? 'Disfarce' : 'Troca de Cartas'}
-                  </span>
-                  <p className={styles.mesaSub}>
-                    {players.find(p => p.id === pa?.swapPlayerId)?.name} escolhe
-                  </p>
-                </motion.div>
-              )}
+            {(phase === 'X9_PEEK_SELECT' || phase === 'X9_PEEK_VIEW') && (
+              <motion.div key="x9" className={styles.mesaStatus}
+                initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                <span className={styles.mesaStatusIcon}>🕵️</span>
+                <span className={styles.mesaStatusMain} style={{ color: '#ce93d8' }}>X9 em ação</span>
+                <span className={styles.mesaStatusSub}>
+                  <span style={{ color: '#82b1ff' }}>{actorName}</span>
+                  {' → '}
+                  <span style={{ color: '#ef9a9a' }}>{targetName}</span>
+                </span>
+              </motion.div>
+            )}
 
-            </AnimatePresence>
-          </div>
+            {phase === 'CARD_SWAP_SELECT' && (
+              <motion.div key="swap" className={styles.mesaStatus}
+                initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                <span className={styles.mesaStatusIcon}>🔄</span>
+                <span className={styles.mesaStatusMain} style={{ color: '#82b1ff' }}>
+                  {pa?.swapContext === 'disfarce' ? 'Disfarce' : 'Troca de Cartas'}
+                </span>
+                <span className={styles.mesaStatusSub}>
+                  {players.find(p => p.id === pa?.swapPlayerId)?.name} escolhe uma carta
+                </span>
+              </motion.div>
+            )}
 
-          {/* Timer */}
-          {timeLeft !== null && (
-            <div className={styles.timerContainer}>
-              <div className={styles.timerOuter}>
-                <motion.div className={styles.timerFill}
-                  style={{ background: timerColor }}
-                  animate={{ width: `${timerPct * 100}%` }}
-                  transition={{ duration: 0.25 }} />
-              </div>
-              <motion.span className={styles.timerNum} style={{ color: timerColor }}
-                animate={timeLeft <= 5 ? { scale: [1, 1.25, 1] } : {}}
-                transition={{ repeat: Infinity, duration: 0.5 }}>
-                {timeLeft}s
-              </motion.span>
-            </div>
-          )}
+          </AnimatePresence>
+
+          {/* The diamond SVG — bigger, no text inside */}
+          <motion.img
+            src={mesaImg}
+            className={styles.mesaImg}
+            alt="mesa"
+            animate={
+              phase === 'RESPONSE_WINDOW'        ? { filter: 'brightness(1.15) drop-shadow(0 0 18px #ffd60088)' } :
+              phase === 'BLOCK_CHALLENGE_WINDOW'  ? { filter: 'brightness(1.1)  drop-shadow(0 0 18px #f4433688)' } :
+              phase === 'LOSE_INFLUENCE'          ? { filter: 'brightness(1.05) drop-shadow(0 0 16px #f4433666)' } :
+              phase === 'X9_PEEK_SELECT'          ? { filter: 'brightness(1.1)  drop-shadow(0 0 18px #9c27b088)' } :
+              phase === 'X9_PEEK_VIEW'            ? { filter: 'brightness(1.1)  drop-shadow(0 0 18px #9c27b088)' } :
+              { filter: 'brightness(1) drop-shadow(0 0 0px transparent)' }
+            }
+            transition={{ duration: 0.4 }}
+          />
         </div>
 
         {/* My cards — bigger, with coins on the left */}

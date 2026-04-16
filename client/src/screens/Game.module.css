@@ -93,50 +93,32 @@
   font-size: 0.54rem; font-weight: 800; padding: 1px 7px; border-radius: 4px;
 }
 
-/* ── Mesa — SVG-based ── */
+/* ── Mesa ── */
 .mesaWrapper {
   display: flex; flex-direction: column; align-items: center;
-  width: 100%; gap: 10px; flex: 1; min-height: 160px; justify-content: center;
+  width: 100%; gap: 10px; flex: 1; min-height: 200px; justify-content: center;
 }
 
-.mesaOuter {
-  position: relative;
-  width: 220px; height: 220px;
-  display: flex; align-items: center; justify-content: center;
+/* Status badge — floats above the diamond */
+.mesaStatus {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  text-align: center; max-width: 340px;
 }
+.mesaStatusIcon { font-size: 1.4rem; line-height: 1; }
+.mesaStatusMain {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.15rem; letter-spacing: 0.07em; line-height: 1.1;
+}
+.mesaStatusSub  { font-size: 0.76rem; color: var(--text); font-weight: 600; }
+.mesaStatusBlock { font-size: 0.7rem; color: var(--green); }
 
-/* The SVG already has the diamond shape */
-.mesaBg {
-  position: absolute; inset: 0;
-  width: 100%; height: 100%;
-  object-fit: contain;
+/* The diamond SVG itself */
+.mesaImg {
+  width: min(320px, 90%);
+  height: auto;
+  display: block;
   pointer-events: none;
 }
-
-.mesaContent {
-  position: relative; z-index: 1;
-  display: flex; flex-direction: column;
-  align-items: center; gap: 4px;
-  text-align: center;
-  max-width: 120px;
-}
-.mesaIcon    { font-size: 1.8rem; line-height: 1; }
-.mesaTitle   { font-family: 'Bebas Neue', sans-serif; font-size: 1rem; letter-spacing: 0.06em; line-height: 1.15; word-break: break-word; }
-.mesaSub     { font-size: 0.63rem; color: var(--muted); line-height: 1.3; }
-.mesaPlayers { display: flex; align-items: center; gap: 4px; font-size: 0.7rem; font-weight: 600; flex-wrap: wrap; justify-content: center; }
-.mesaBlockBadge { font-size: 0.62rem; color: var(--green); margin-top: 2px; }
-
-/* Timer */
-.timerContainer {
-  display: flex; align-items: center; gap: 8px;
-  width: 200px;
-}
-.timerOuter {
-  flex: 1; height: 5px; background: var(--surface2);
-  border-radius: 3px; overflow: hidden;
-}
-.timerFill  { height: 100%; border-radius: 3px; }
-.timerNum   { font-family: 'Bebas Neue', sans-serif; font-size: 0.95rem; min-width: 28px; text-align: right; }
 
 /* ── My area — row: coins LEFT + cards RIGHT ── */
 .myArea {
