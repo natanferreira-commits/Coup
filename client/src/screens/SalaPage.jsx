@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import socket from '../socket';
 import Room from './Room';
 import Game from './Game';
+import SpectatorView from './SpectatorView';
 import styles from './SalaPage.module.css';
 
 /**
@@ -11,7 +12,7 @@ import styles from './SalaPage.module.css';
  *  - If already in the room/game (App.jsx state) → render Room or Game directly
  *  - Otherwise → show the join-request flow (name input → waiting for host approval → denied)
  */
-export default function SalaPage({ roomData, gameData, myPlayerId, pendingRequests, onApprove, onDeny }) {
+export default function SalaPage({ roomData, gameData, myPlayerId, pendingRequests, isSpectator, spectatorData, onApprove, onDeny, onLeave }) {
   const { code }   = useParams();
   const location   = useLocation();
 
@@ -33,7 +34,11 @@ export default function SalaPage({ roomData, gameData, myPlayerId, pendingReques
     return () => socket.off('join_denied', onDenied);
   }, []);
 
-  // ── Already in room/game? ─────────────────────────────────────────────────
+  // ── Already in room/game/spectating? ─────────────────────────────────────
+  if (isSpectator && spectatorData) {
+    return <SpectatorView spectatorData={spectatorData} onLeave={onLeave} />;
+  }
+
   if (gameData) {
     return <Game data={gameData} myId={myPlayerId || socket.id} />;
   }
@@ -46,6 +51,7 @@ export default function SalaPage({ roomData, gameData, myPlayerId, pendingReques
         pendingRequests={pendingRequests}
         onApprove={onApprove}
         onDeny={onDeny}
+        onLeave={onLeave}
       />
     );
   }

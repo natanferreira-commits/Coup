@@ -178,3 +178,16 @@
   background: #c62828;
   color: #fff;
 }
+
+.leaveBtn {
+  width: 100%;
+  margin-top: 12px;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 6px;
+  transition: color 0.15s;
+}
+.leaveBtn:hover { color: rgba(255,255,255,0.7); }

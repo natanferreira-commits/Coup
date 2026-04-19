@@ -50,6 +50,26 @@ function sanitizeGame(game, playerId) {
   };
 }
 
+/** Spectators see the game without any hidden card info */
+function sanitizeGameForSpectator(game) {
+  return {
+    players: game.players.map(p => ({
+      id: p.id, name: p.name, coins: p.coins,
+      alive: p.cards.some(c => !c.dead),
+      cards: p.cards.map((c, i) => ({ index: i, dead: c.dead, character: c.dead ? c.character : null })),
+    })),
+    currentPlayerId: game.currentPlayerId,
+    phase: game.phase,
+    pendingAction: game.pendingAction ? {
+      type: game.pendingAction.type, actorId: game.pendingAction.actorId,
+      targetId: game.pendingAction.targetId, claimedCharacter: game.pendingAction.claimedCharacter,
+      blocker: game.pendingAction.blocker,
+    } : null,
+    log: game.log.slice(-25),
+    winner: game.winner,
+  };
+}
+
 function sanitizePA(pa, playerId) {
   if (!pa) return null;
   const base = {
@@ -80,12 +100,23 @@ function broadcast(room, extraForPlayer = null) {
     }
     io.to(sid).emit('game_state', payload);
   });
+  broadcastSpectators(room); // keep spectators in sync too
 }
 
 function broadcastLobby(room) {
   io.to(room.code).emit('room_updated', {
     code: room.code, hostId: room.hostId, status: 'waiting',
     players: room.players.map(p => ({ id: p.id, name: p.name })),
+  });
+}
+
+function broadcastSpectators(room) {
+  if (!room.game || !room.spectators?.length) return;
+  const game = sanitizeGameForSpectator(room.game);
+  room.spectators.forEach((s, i) => {
+    io.to(s.currentSocketId || s.id).emit('spectator_state', {
+      code: room.code, game, queuePosition: i + 1,
+    });
   });
 }
 
@@ -109,30 +140,38 @@ io.on('connection', socket => {
     const room = getRoomByCode(roomCode);
 
     if (room) {
-      const player = room.players.find(p => p.id === playerId);
+      const player    = room.players.find(p => p.id === playerId);
+      const spectator = room.spectators?.find(s => s.id === playerId);
+
       if (player) {
-        // Update the live socket for this player
         player.currentSocketId = socket.id;
         socket.join(roomCode);
-
         if (room.game) {
           socket.emit('game_state', {
             code: room.code, hostId: room.hostId, status: 'playing',
-            game: sanitizeGame(room.game, playerId),
-            reconnected: true,
-            playerId,
+            game: sanitizeGame(room.game, playerId), reconnected: true, playerId,
           });
-          console.log('session restored (game):', playerId, '→', socket.id);
         } else {
           socket.emit('room_updated', {
             code: room.code, hostId: room.hostId, status: 'waiting',
             players: room.players.map(p => ({ id: p.id, name: p.name })),
-            reconnected: true,
-            playerId,
+            reconnected: true, playerId,
           });
-          console.log('session restored (lobby):', playerId, '→', socket.id);
         }
-        // Early return — skip normal join flow
+        attachGameHandlers(socket);
+        return;
+      }
+
+      if (spectator) {
+        spectator.currentSocketId = socket.id;
+        socket.join(roomCode);
+        if (room.game) {
+          socket.emit('spectator_joined', {
+            code: room.code, game: sanitizeGameForSpectator(room.game),
+            queuePosition: room.spectators.indexOf(spectator) + 1,
+            reconnected: true,
+          });
+        }
         attachGameHandlers(socket);
         return;
       }
@@ -162,7 +201,22 @@ io.on('connection', socket => {
     const upper = (code || '').toUpperCase();
     const room  = getRoomByCode(upper);
     if (!room) return cb?.({ success: false, error: 'Sala não encontrada' });
-    if (room.game) return cb?.({ success: false, error: 'Partida já em andamento' });
+
+    // ── Game in progress → auto-approve as spectator (enters next round) ──
+    if (room.game) {
+      if (room.spectators.find(s => s.id === socket.id || s.currentSocketId === socket.id))
+        return cb?.({ success: true, status: 'spectating' }); // already spectating
+      const specName = (playerName || 'Espectador').slice(0, 20);
+      room.spectators.push({ id: socket.id, name: specName, currentSocketId: socket.id });
+      socket.join(upper);
+      if (pid) pidSessions.set(pid, { roomCode: upper, playerId: socket.id });
+      socket.emit('spectator_joined', {
+        code: room.code, game: sanitizeGameForSpectator(room.game),
+        queuePosition: room.spectators.length,
+      });
+      return cb?.({ success: true, status: 'spectating' });
+    }
+
     if (room.players.length >= 6) return cb?.({ success: false, error: 'Sala cheia' });
 
     // Already in room (edge case: player somehow double-requests)
@@ -276,9 +330,41 @@ function attachGameHandlers(socket) {
     cb?.({ success: true });
   });
 
+  /** Player voluntarily leaves — immediate removal, no grace period */
+  socket.on('leave_room', (_, cb) => {
+    const pid = socket._pid;
+
+    // Remove from players
+    const room = getRoomByPlayer(socket.id);
+    if (room) {
+      const player = room.players.find(p => p.id === socket.id || p.currentSocketId === socket.id);
+      if (player) {
+        if (pid) { clearTimeout(disconnectTimers.get(pid)); disconnectTimers.delete(pid); pidSessions.delete(pid); }
+        removePlayerFromRoom(room.code, player.id);
+        const liveRoom = getRoomByCode(room.code);
+        if (liveRoom?.players.length > 0 && !liveRoom.game) broadcastLobby(liveRoom);
+      }
+      // Also remove from spectators
+      if (room.spectators) {
+        const si = room.spectators.findIndex(s => s.id === socket.id || s.currentSocketId === socket.id);
+        if (si >= 0) room.spectators.splice(si, 1);
+      }
+      socket.leave(room.code);
+    }
+
+    if (pid) { pidSessions.delete(pid); }
+    cb?.({ success: true });
+  });
+
   socket.on('restart_game', (_, cb) => {
     const room = getRoomByPlayer(socket.id);
     if (!room) return cb?.({ success: false });
+
+    // Promote spectators to players for the new round (up to 6 total)
+    const slots = Math.max(0, 6 - room.players.length);
+    const promoted = (room.spectators || []).splice(0, slots);
+    promoted.forEach(s => room.players.push({ id: s.id, name: s.name, currentSocketId: s.currentSocketId || s.id }));
+
     startGameInRoom(room);
     broadcast(room);
     cb?.({ success: true });
@@ -295,6 +381,12 @@ function attachGameHandlers(socket) {
 
   socket.on('disconnect', () => {
     console.log('disconnected:', socket.id);
+
+    // Handle spectator disconnect — just remove immediately (no grace period)
+    for (const room of Object.values(rooms)) {
+      const si = room.spectators?.findIndex(s => s.id === socket.id || s.currentSocketId === socket.id);
+      if (si >= 0) { room.spectators.splice(si, 1); break; }
+    }
 
     // Find the room and the stable player id
     const room = getRoomByPlayer(socket.id);

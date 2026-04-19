@@ -19,6 +19,7 @@ function createRoom(hostId, hostName, hostPid) {
     hostId,
     hostPid: hostPid || null,
     players: [{ id: hostId, name: hostName, currentSocketId: hostId }],
+    spectators: [],      // [{ id, name, currentSocketId }] — watching, enter next round
     pendingRequests: [], // [{ requestId, socketId, playerName }]
     game: null,
   };

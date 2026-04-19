@@ -1,0 +1,163 @@
+.container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: radial-gradient(ellipse at 50% 0%, #1a1a2e 0%, #0f0f13 70%);
+  color: #fff;
+}
+
+/* ── Banner ─────────────────────────────────────────────────────── */
+.banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 24px;
+  background: rgba(255, 214, 0, 0.08);
+  border-bottom: 1px solid rgba(255, 214, 0, 0.2);
+}
+
+.bannerIcon { font-size: 1.6rem; flex-shrink: 0; }
+
+.bannerTitle {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--yellow);
+  margin: 0;
+}
+
+.bannerSub {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.55);
+  margin: 2px 0 0;
+}
+
+.leaveBtn {
+  margin-left: auto;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.2);
+  color: rgba(255,255,255,0.6);
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.leaveBtn:hover { border-color: rgba(255,255,255,0.5); color: #fff; }
+
+/* ── Content ────────────────────────────────────────────────────── */
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px;
+  max-width: 700px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* ── Phase box ──────────────────────────────────────────────────── */
+.phaseBox {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  padding: 12px 16px;
+}
+
+.phaseLabel {
+  font-size: 0.8rem;
+  color: var(--yellow);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.turnLabel {
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.65);
+}
+
+/* ── Players ────────────────────────────────────────────────────── */
+.players {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.playerCard {
+  flex: 1 1 140px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  position: relative;
+  transition: border-color 0.2s;
+}
+
+.playerCard.active {
+  border-color: var(--yellow);
+  background: rgba(255,214,0,0.06);
+}
+
+.playerCard.eliminated {
+  opacity: 0.4;
+}
+
+.playerName {
+  font-weight: 700;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.coins { font-size: 0.85rem; color: var(--yellow); }
+
+.cardPips { display: flex; gap: 6px; }
+.pip { font-size: 1.1rem; }
+.deadPip { opacity: 0.4; }
+
+.elim {
+  position: absolute;
+  top: 6px; right: 8px;
+  font-size: 0.6rem;
+  color: var(--red, #ef5350);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+/* ── Log ────────────────────────────────────────────────────────── */
+.logBox {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.logTitle {
+  font-size: 0.75rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0 0 10px;
+}
+
+.logList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.logLine {
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.6);
+  margin: 0;
+  padding: 3px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}

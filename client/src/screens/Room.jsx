@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import socket from '../socket';
 import styles from './Room.module.css';
 
-export default function Room({ room, myPlayerId, pendingRequests = [], onApprove, onDeny }) {
+export default function Room({ room, myPlayerId, pendingRequests = [], onApprove, onDeny, onLeave }) {
   if (!room) return null;
 
   const isHost = myPlayerId === room.hostId;
@@ -92,6 +92,13 @@ export default function Room({ room, myPlayerId, pendingRequests = [], onApprove
         ) : (
           <p className={styles.waiting}>Aguardando o host iniciar...</p>
         )}
+
+        <button
+          className={styles.leaveBtn}
+          onClick={onLeave}
+        >
+          ← Sair da Sala
+        </button>
       </div>
     </div>
   );
