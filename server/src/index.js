@@ -197,7 +197,43 @@ io.on('connection', socket => {
     cb?.({ success: true, status: 'pending' });
   });
 
-  /** Host approves a pending join request */
+  attachGameHandlers(socket);
+});
+
+function attachGameHandlers(socket) {
+  /**
+   * Resolve the stable game player id from either the original socket id or
+   * the updated currentSocketId (after reconnect).
+   */
+  function resolvePlayerId() {
+    const room = getRoomByPlayer(socket.id);
+    if (!room) return socket.id;
+    const p = room.players.find(rp => rp.id === socket.id || rp.currentSocketId === socket.id);
+    return p ? p.id : socket.id;
+  }
+
+  function withRoom(cb) {
+    return (payload, ack) => {
+      const room = getRoomByPlayer(socket.id);
+      if (!room?.game) return ack?.({ success: false });
+      const playerId = resolvePlayerId();
+      const result = cb(room, payload, playerId);
+      broadcast(room);
+      ack?.({ success: result?.success ?? true, error: result?.error });
+    };
+  }
+
+  socket.on('start_game', (_, cb) => {
+    const room = getRoomByPlayer(socket.id);
+    if (!room) return cb?.({ success: false, error: 'Sala não encontrada' });
+    const caller = room.players.find(p => p.id === socket.id || p.currentSocketId === socket.id);
+    if (!caller || room.hostId !== caller.id) return cb?.({ success: false, error: 'Só o host pode iniciar' });
+    if (room.players.length < 2) return cb?.({ success: false, error: 'Mínimo 2 jogadores' });
+    startGameInRoom(room);
+    broadcast(room);
+    cb?.({ success: true });
+  });
+
   socket.on('approve_join', ({ requestId }, cb) => {
     const room = getRoomByPlayer(socket.id);
     if (!room) return cb?.({ success: false });
@@ -226,7 +262,6 @@ io.on('connection', socket => {
     cb?.({ success: true });
   });
 
-  /** Host denies a pending join request */
   socket.on('deny_join', ({ requestId }, cb) => {
     const room = getRoomByPlayer(socket.id);
     if (!room) return cb?.({ success: false });
@@ -240,43 +275,6 @@ io.on('connection', socket => {
     io.to(req.socketId).emit('join_denied', { reason: 'Host negou sua entrada na sala' });
     cb?.({ success: true });
   });
-
-  socket.on('start_game', (_, cb) => {
-    const room = getRoomByPlayer(socket.id);
-    if (!room) return cb?.({ success: false, error: 'Sala não encontrada' });
-    const caller = room.players.find(p => p.id === socket.id || p.currentSocketId === socket.id);
-    if (!caller || room.hostId !== caller.id) return cb?.({ success: false, error: 'Só o host pode iniciar' });
-    if (room.players.length < 2) return cb?.({ success: false, error: 'Mínimo 2 jogadores' });
-    startGameInRoom(room);
-    broadcast(room);
-    cb?.({ success: true });
-  });
-
-  attachGameHandlers(socket);
-});
-
-function attachGameHandlers(socket) {
-  /**
-   * Resolve the stable game player id from either the original socket id or
-   * the updated currentSocketId (after reconnect).
-   */
-  function resolvePlayerId() {
-    const room = getRoomByPlayer(socket.id);
-    if (!room) return socket.id;
-    const p = room.players.find(rp => rp.id === socket.id || rp.currentSocketId === socket.id);
-    return p ? p.id : socket.id;
-  }
-
-  function withRoom(cb) {
-    return (payload, ack) => {
-      const room = getRoomByPlayer(socket.id);
-      if (!room?.game) return ack?.({ success: false });
-      const playerId = resolvePlayerId();
-      const result = cb(room, payload, playerId);
-      broadcast(room);
-      ack?.({ success: result?.success ?? true, error: result?.error });
-    };
-  }
 
   socket.on('restart_game', (_, cb) => {
     const room = getRoomByPlayer(socket.id);
