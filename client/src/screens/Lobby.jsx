@@ -1,11 +1,13 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import socket from '../socket';
 import styles from './Lobby.module.css';
 
-export default function Lobby({ onJoined }) {
-  const [name, setName] = useState('');
-  const [code, setCode] = useState('');
-  const [error, setError] = useState('');
+export default function Lobby({ onCreated }) {
+  const navigate  = useNavigate();
+  const [name,    setName]    = useState(() => localStorage.getItem('golpe_name') || '');
+  const [code,    setCode]    = useState('');
+  const [error,   setError]   = useState('');
   const [loading, setLoading] = useState(false);
   const [loadingMsg, setLoadingMsg] = useState('Conectando...');
 
@@ -15,20 +17,16 @@ export default function Lobby({ onJoined }) {
     setLoading(true);
     setLoadingMsg('Conectando...');
 
-    if (socket.connected) {
-      cb();
-      return;
-    }
+    if (socket.connected) { cb(); return; }
 
     socket.connect();
 
-    // Render free tier pode demorar até 60s pra acordar
     const warmupTimer = setTimeout(() => {
       setLoadingMsg('Servidor acordando, aguarde (~30s)...');
     }, 4000);
 
-    function onConnect() { cleanup(); cb(); }
-    function onError(err) {
+    function onConnect()   { cleanup(); cb(); }
+    function onError()     {
       cleanup();
       setLoading(false);
       const isLocalhost = (import.meta.env.VITE_SERVER_URL || '').includes('localhost');
@@ -37,36 +35,36 @@ export default function Lobby({ onJoined }) {
         : 'Não foi possível conectar. Tente novamente em alguns segundos.'
       );
     }
-
     function cleanup() {
       clearTimeout(warmupTimer);
-      socket.off('connect', onConnect);
+      socket.off('connect',       onConnect);
       socket.off('connect_error', onError);
     }
 
-    socket.once('connect', onConnect);
+    socket.once('connect',       onConnect);
     socket.once('connect_error', onError);
   }
 
   function handleCreate() {
     connect(() => {
+      localStorage.setItem('golpe_name', name.trim());
       socket.emit('create_room', { playerName: name.trim() }, res => {
         setLoading(false);
-        if (res.success) onJoined(res.room, name.trim());
-        else setError(res.error || 'Erro ao criar sala');
+        if (res.success) {
+          onCreated(res.room, name.trim());
+        } else {
+          setError(res.error || 'Erro ao criar sala');
+        }
       });
     });
   }
 
   function handleJoin() {
     if (!code.trim()) return setError('Digite o código da sala');
-    connect(() => {
-      socket.emit('join_room', { code: code.trim().toUpperCase(), playerName: name.trim() }, res => {
-        setLoading(false);
-        if (res.success) onJoined(res.room, name.trim());
-        else setError(res.error || 'Erro ao entrar na sala');
-      });
-    });
+    if (!name.trim()) return setError('Digite seu nome');
+    localStorage.setItem('golpe_name', name.trim());
+    // Navigate to the room — SalaPage will handle the join-request flow
+    navigate(`/sala/${code.trim().toUpperCase()}`, { state: { playerName: name.trim() } });
   }
 
   return (

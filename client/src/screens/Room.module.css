@@ -109,3 +109,72 @@
   font-size: 0.9rem;
   padding: 12px;
 }
+
+/* ── Pending join requests ─────────────────────────────────────────────── */
+.pendingSection {
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid rgba(255, 214, 0, 0.25);
+  border-radius: 10px;
+  padding: 14px;
+  background: rgba(255, 214, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pendingLabel {
+  font-size: 0.75rem;
+  color: var(--yellow);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0 0 4px;
+}
+
+.pendingRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  background: var(--surface2);
+  border-radius: 8px;
+}
+
+.pendingName {
+  font-size: 0.92rem;
+  color: #fff;
+  font-weight: 500;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pendingBtns {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.approveBtn, .denyBtn {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.approveBtn:hover, .denyBtn:hover { opacity: 0.82; }
+
+.approveBtn {
+  background: #2e7d32;
+  color: #fff;
+}
+
+.denyBtn {
+  background: #c62828;
+  color: #fff;
+}

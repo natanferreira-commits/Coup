@@ -10,14 +10,16 @@ function generateCode() {
   return code;
 }
 
-function createRoom(hostId, hostName) {
+function createRoom(hostId, hostName, hostPid) {
   let code;
   do { code = generateCode(); } while (rooms[code]);
 
   const room = {
     code,
     hostId,
-    players: [{ id: hostId, name: hostName }],
+    hostPid: hostPid || null,
+    players: [{ id: hostId, name: hostName, currentSocketId: hostId }],
+    pendingRequests: [], // [{ requestId, socketId, playerName }]
     game: null,
   };
 
@@ -32,7 +34,7 @@ function joinRoom(code, playerId, playerName) {
   if (room.players.length >= 6) return { success: false, error: 'Sala cheia' };
   if (room.players.find(p => p.id === playerId)) return { success: true, room };
 
-  room.players.push({ id: playerId, name: playerName });
+  room.players.push({ id: playerId, name: playerName, currentSocketId: playerId });
   return { success: true, room };
 }
 
@@ -74,11 +76,29 @@ function removePlayerFromRoom(code, playerId) {
   }
 }
 
+/**
+ * Find a room by either the player's original id or their current socket id.
+ * This handles both normal use and post-reconnect use.
+ */
 function getRoomByPlayer(socketId) {
   for (const room of Object.values(rooms)) {
-    if (room.players.find(p => p.id === socketId)) return room;
+    if (room.players.find(p => p.id === socketId || p.currentSocketId === socketId)) return room;
   }
   return null;
 }
 
-module.exports = { rooms, createRoom, joinRoom, startGame, removePlayerFromRoom, getRoomByPlayer };
+function getRoomByCode(code) {
+  return rooms[code] || null;
+}
+
+/** Serialise a room for the client (no internal fields like currentSocketId/hostPid/pendingRequests). */
+function generateRoomForClient(room) {
+  return {
+    code: room.code,
+    hostId: room.hostId,
+    status: 'waiting',
+    players: room.players.map(p => ({ id: p.id, name: p.name })),
+  };
+}
+
+module.exports = { rooms, createRoom, joinRoom, startGame, removePlayerFromRoom, getRoomByPlayer, getRoomByCode, generateRoomForClient };
