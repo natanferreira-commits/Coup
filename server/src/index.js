@@ -283,6 +283,8 @@ function attachGameHandlers(socket) {
     const caller = room.players.find(p => p.id === socket.id || p.currentSocketId === socket.id);
     if (!caller || room.hostId !== caller.id) return cb?.({ success: false, error: 'Só o host pode iniciar' });
     if (room.players.length < 2) return cb?.({ success: false, error: 'Mínimo 2 jogadores' });
+    // Discard any pending join requests — they'll spectate or wait for next round
+    room.pendingRequests = [];
     startGameInRoom(room);
     broadcast(room);
     cb?.({ success: true });
@@ -298,10 +300,30 @@ function attachGameHandlers(socket) {
     if (idx === -1) return cb?.({ success: false, error: 'Solicitação não encontrada' });
     const req = room.pendingRequests.splice(idx, 1)[0];
 
+    const guestSocket = io.sockets.sockets.get(req.socketId);
+
+    // ── Game already started while request was pending → add as spectator ──
+    if (room.game) {
+      if (guestSocket) {
+        const already = room.spectators.find(s => s.id === req.socketId || s.currentSocketId === req.socketId);
+        if (!already) {
+          room.spectators.push({ id: req.socketId, name: req.playerName, currentSocketId: req.socketId });
+          guestSocket.join(room.code);
+          const guestPid = guestSocket._pid;
+          if (guestPid) pidSessions.set(guestPid, { roomCode: room.code, playerId: req.socketId });
+          guestSocket.emit('spectator_joined', {
+            code: room.code, game: sanitizeGameForSpectator(room.game),
+            queuePosition: room.spectators.length,
+          });
+        }
+      }
+      return cb?.({ success: true });
+    }
+
+    // ── Normal lobby join ─────────────────────────────────────────────────
     const result = joinRoom(room.code, req.socketId, req.playerName);
     if (!result.success) return cb?.({ success: false, error: result.error });
 
-    const guestSocket = io.sockets.sockets.get(req.socketId);
     if (guestSocket) {
       guestSocket.join(room.code);
       const guestPid = guestSocket._pid;
