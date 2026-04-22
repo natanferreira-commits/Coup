@@ -547,3 +547,214 @@
   font-size: 0.45rem; color: rgba(255,255,255,0.7); padding: 2px 1px;
   font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+
+/* ── Opponent wrapper (for chat bubble positioning) ── */
+.opponentWrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ── Opponent name row (name + host badge) ── */
+.opponentNameRow {
+  display: flex; align-items: center; gap: 4px;
+}
+
+/* ── HOST badge ── */
+.hostBadge {
+  font-size: 0.48rem; font-weight: 900;
+  background: linear-gradient(135deg, #ffd600, #ff9800);
+  color: #000; border-radius: 4px; padding: 1px 5px;
+  letter-spacing: 0.05em; flex-shrink: 0;
+}
+
+/* ── VOCÊ badge (my area) ── */
+.youBadge {
+  font-size: 0.52rem; font-weight: 900;
+  background: linear-gradient(135deg, #2979ff, #1565c0);
+  color: #fff; border-radius: 4px; padding: 1px 5px;
+  letter-spacing: 0.05em; flex-shrink: 0;
+}
+
+/* ── My area meta row ── */
+.myMeta {
+  display: flex; align-items: center; gap: 5px;
+  margin-bottom: 4px;
+}
+.myName {
+  font-size: 0.72rem; font-weight: 700; color: var(--text);
+}
+
+/* ── My area cards wrapper ── */
+.myAreaCards {
+  display: flex; flex-direction: column; align-items: flex-start;
+  position: relative;
+}
+
+/* ── Chat bubble ── */
+.chatBubble {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%; transform: translateX(-50%);
+  background: rgba(255,255,255,0.97);
+  color: #111;
+  border-radius: 16px;
+  padding: 5px 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: 0 3px 14px rgba(0,0,0,0.4);
+  pointer-events: none;
+  z-index: 50;
+  max-width: 160px;
+  text-align: center;
+  white-space: normal;
+}
+/* Little triangle pointing down */
+.chatBubble::after {
+  content: '';
+  position: absolute;
+  top: 100%; left: 50%; transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: rgba(255,255,255,0.97);
+}
+.chatBubbleMine {
+  bottom: auto;
+  top: calc(100% + 6px);
+  background: rgba(41,121,255,0.95);
+  color: #fff;
+}
+.chatBubbleMine::after {
+  top: auto; bottom: 100%;
+  border-top-color: transparent;
+  border-bottom-color: rgba(41,121,255,0.95);
+}
+
+/* ── Quick chat section (left panel) ── */
+.quickChatSection {
+  display: flex; flex-direction: column; gap: 5px;
+  flex-shrink: 0;
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+}
+.quickChatGrid {
+  display: flex; flex-direction: column; gap: 4px;
+}
+.quickChatBtn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 5px 8px;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.15s, background 0.15s;
+}
+.quickChatBtn:hover {
+  border-color: rgba(255,214,0,0.4);
+  background: rgba(255,214,0,0.06);
+  color: var(--yellow);
+}
+
+/* ── Mute button ── */
+.muteBtn {
+  position: fixed; top: 14px; right: 90px;
+  background: transparent; border: 1px solid var(--border);
+  color: var(--muted); padding: 5px 10px; border-radius: 8px;
+  font-size: 0.85rem; cursor: pointer; z-index: 10;
+}
+.muteBtn:hover { border-color: var(--yellow); color: var(--yellow); }
+
+/* ── Screen shake ── */
+@keyframes screenShake {
+  0%  { transform: translateX(0); }
+  15% { transform: translateX(-6px) rotate(-0.4deg); }
+  30% { transform: translateX(6px) rotate(0.4deg); }
+  45% { transform: translateX(-4px); }
+  60% { transform: translateX(4px); }
+  75% { transform: translateX(-2px); }
+  90% { transform: translateX(2px); }
+  100%{ transform: translateX(0); }
+}
+.boardShake {
+  animation: screenShake 0.65s ease-out;
+}
+
+/* ── Mobile responsive ── */
+@media (max-width: 768px) {
+  .board {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr auto;
+    height: auto;
+    min-height: 100vh;
+    overflow-y: auto;
+  }
+
+  .leftPanel {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding: 10px;
+    gap: 6px;
+    max-height: 200px;
+    overflow: hidden;
+  }
+
+  .quickChatSection { display: none; } /* hide on mobile to save space */
+
+  .rightPanel {
+    border-left: none;
+    border-top: 1px solid var(--border);
+  }
+
+  .center {
+    padding: 8px 10px 12px;
+    gap: 6px;
+  }
+
+  .opponents {
+    gap: 6px;
+  }
+
+  .opponent {
+    min-width: 120px;
+    padding: 6px 8px;
+  }
+
+  .mesaImg {
+    width: min(240px, 80%);
+  }
+
+  .myArea {
+    gap: 10px;
+  }
+
+  .helpBtn {
+    top: auto;
+    bottom: 60px;
+    right: 12px;
+  }
+
+  .muteBtn {
+    top: auto;
+    bottom: 60px;
+    right: 90px;
+  }
+
+  .restartBtn {
+    bottom: 10px;
+    left: 10px;
+  }
+
+  .actionNotifCard {
+    padding: 16px 22px;
+    min-width: 200px;
+  }
+  .actionNotifLabel { font-size: 1.6rem; }
+  .actionNotifIcon  { font-size: 2.2rem; }
+
+  .charGrid { grid-template-columns: repeat(3, 1fr); gap: 4px; }
+}

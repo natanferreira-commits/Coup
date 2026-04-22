@@ -85,6 +85,23 @@ const ACTION_CATEGORIES = [
   },
 ];
 
+// ── Avatar color helper ────────────────────────────────────────────────────────
+const AVATAR_COLORS = [
+  'linear-gradient(135deg,#2979ff,#1a237e)',
+  'linear-gradient(135deg,#e53935,#7f0000)',
+  'linear-gradient(135deg,#00897b,#004d40)',
+  'linear-gradient(135deg,#8e24aa,#4a148c)',
+  'linear-gradient(135deg,#f57c00,#bf360c)',
+  'linear-gradient(135deg,#039be5,#01579b)',
+];
+function getAvatarColor(name) {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  return AVATAR_COLORS[h % AVATAR_COLORS.length];
+}
+
+const QUICK_MSGS = ['MENTIROSO 🤡', 'CONFIA 😂', 'me rouba não 😭', 'X9 safado 👀', 'FAZ O L 🇧🇷'];
+
 export default function Game({ data, myId }) {
   const [selectedTarget,   setSelectedTarget]   = useState(null);
   const [pendingConfirm,   setPendingConfirm]   = useState(null);
@@ -95,6 +112,11 @@ export default function Game({ data, myId }) {
   const [timeLeft,         setTimeLeft]         = useState(30);
   const [coinAnimating,    setCoinAnimating]    = useState(false); // 3s animation after flip
   const [actionNotif,      setActionNotif]      = useState(null);
+  const [muted,            setMuted]            = useState(() => {
+    try { return localStorage.getItem('golpe_muted') === 'true'; } catch { return false; }
+  });
+  const [chatBubbles,      setChatBubbles]      = useState({}); // { [playerId]: { message, key } }
+  const [screenShake,      setScreenShake]      = useState(false);
 
   const game = data?.game;
   const { players, currentPlayerId, phase, pendingAction: pa, log, winner } = game || {};
@@ -162,6 +184,51 @@ export default function Game({ data, myId }) {
     prevActionKeyRef.current = null;
     setActionNotif(null);
   }, [phase]);
+
+  // ── Sync sfx mute on mount ────────────────────────────────────────────────
+  useEffect(() => {
+    if (muted !== sfx.isMuted()) sfx.toggleMute();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Screen shake on challenge resolution ─────────────────────────────────
+  const prevPhaseRef = useRef(null);
+  useEffect(() => {
+    if (
+      (phase === 'CHALLENGE_WON' || phase === 'LOSE_INFLUENCE') &&
+      (prevPhaseRef.current === 'RESPONSE_WINDOW' || prevPhaseRef.current === 'BLOCK_CHALLENGE_WINDOW')
+    ) {
+      setScreenShake(true);
+      const t = setTimeout(() => setScreenShake(false), 700);
+      return () => clearTimeout(t);
+    }
+    prevPhaseRef.current = phase;
+  }, [phase]);
+
+  // ── Quick chat socket listener ────────────────────────────────────────────
+  useEffect(() => {
+    const handler = ({ playerId, message }) => {
+      sfx.chat();
+      const key = Date.now() + Math.random();
+      setChatBubbles(prev => ({ ...prev, [playerId]: { message, key } }));
+      setTimeout(() => {
+        setChatBubbles(prev => {
+          const next = { ...prev };
+          if (next[playerId]?.key === key) delete next[playerId];
+          return next;
+        });
+      }, 4000);
+    };
+    socket.on('quick_chat', handler);
+    return () => socket.off('quick_chat', handler);
+  }, []);
+
+  // ── Mute toggle helper ────────────────────────────────────────────────────
+  const toggleMute = () => {
+    sfx.toggleMute();
+    const m = sfx.isMuted();
+    setMuted(m);
+    try { localStorage.setItem('golpe_muted', String(m)); } catch {}
+  };
 
   if (!game) return <div className={styles.loading}>Carregando...</div>;
 
@@ -333,7 +400,7 @@ export default function Game({ data, myId }) {
       )}
     </AnimatePresence>
 
-    <div className={styles.board}>
+    <div className={`${styles.board}${screenShake ? ' ' + styles.boardShake : ''}`}>
 
       {/* ── Modals ── */}
       {mustLoseInfluence && (
@@ -363,6 +430,23 @@ export default function Game({ data, myId }) {
         <TurnCard player={players.find(p=>p.id===currentPlayerId)} isMe={isMyTurn} />
         <p className={styles.panelLabel}>Chat da Rodada</p>
         <GameLog log={log} />
+        {/* ── Quick chat panel ── */}
+        <div className={styles.quickChatSection}>
+          <p className={styles.panelLabel}>Zoeira 🎉</p>
+          <div className={styles.quickChatGrid}>
+            {QUICK_MSGS.map((msg, i) => (
+              <motion.button key={i} className={styles.quickChatBtn}
+                whileHover={{ scale: 1.04, y: -1 }}
+                whileTap={{ scale: 0.94 }}
+                onClick={() => {
+                  sfx.click();
+                  socket.emit('quick_chat', { msgIndex: i });
+                }}>
+                {msg}
+              </motion.button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* ── CENTER ── */}
@@ -370,46 +454,78 @@ export default function Game({ data, myId }) {
 
         {/* Opponents */}
         <div className={styles.opponents}>
-          {others.map(p => (
-            <motion.div key={p.id}
-              className={`${styles.opponent}
-                ${p.id===currentPlayerId?styles.opponentActive:''}
-                ${!p.alive?styles.opponentDead:''}
-                ${selectedTarget===p.id?styles.opponentTargeted:''}
-              `}
-              whileHover={canAct&&p.alive?{scale:1.03,y:-2}:{}}
-              whileTap={canAct&&p.alive?{scale:0.97}:{}}
-              onClick={()=>canAct&&p.alive&&setSelectedTarget(prev=>prev===p.id?null:p.id)}
-              style={{cursor:canAct&&p.alive?'pointer':'default'}}>
-              <div className={styles.opponentAvatar}>{p.name.charAt(0).toUpperCase()}</div>
-              <div className={styles.opponentInfo}>
-                <span className={styles.opponentName}>{p.name}</span>
-                <div className={styles.opponentCoins}>
-                  <img src={moedaImg} className={styles.coinIconSm} alt="" />
-                  <span>{p.coins}</span>
-                </div>
-              </div>
-              <div className={styles.opponentCards}>
-                {p.cards.map((c,i)=>{
-                  const cfg = CHAR_CONFIG[c.character] || {};
-                  return (
-                    <div key={i} className={`${styles.playerCard} ${c.dead?styles.playerCardDead:''}`}>
-                      {c.dead ? (
-                        cfg.img
-                          ? <img src={cfg.img} className={styles.playerCardImg} alt={cfg.label}/>
-                          : <span className={styles.playerCardFallback}>{cfg.icon||'?'}</span>
-                      ) : (
-                        <div className={styles.playerCardBack}>🃏</div>
-                      )}
-                      {c.dead&&<div className={styles.playerCardDeadBadge}>💀 {cfg.label}</div>}
+          {others.map(p => {
+            const bubble = chatBubbles[p.id];
+            const isHost = p.id === data?.hostId;
+            return (
+              <div key={p.id} className={styles.opponentWrapper}>
+                {/* Chat bubble */}
+                <AnimatePresence>
+                  {bubble && (
+                    <motion.div className={styles.chatBubble}
+                      key={bubble.key}
+                      initial={{ opacity: 0, y: 6, scale: 0.85 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -4, scale: 0.9 }}
+                      transition={{ type: 'spring', stiffness: 380, damping: 22 }}>
+                      {bubble.message}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                <motion.div
+                  className={`${styles.opponent}
+                    ${p.id===currentPlayerId?styles.opponentActive:''}
+                    ${!p.alive?styles.opponentDead:''}
+                    ${selectedTarget===p.id?styles.opponentTargeted:''}
+                  `}
+                  whileHover={canAct&&p.alive?{scale:1.03,y:-2}:{}}
+                  whileTap={canAct&&p.alive?{scale:0.97}:{}}
+                  onClick={()=>canAct&&p.alive&&setSelectedTarget(prev=>prev===p.id?null:p.id)}
+                  style={{cursor:canAct&&p.alive?'pointer':'default'}}>
+                  <div className={styles.opponentAvatar}
+                    style={{ background: getAvatarColor(p.name) }}>
+                    {p.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div className={styles.opponentInfo}>
+                    <div className={styles.opponentNameRow}>
+                      <span className={styles.opponentName}>{p.name}</span>
+                      {isHost && <span className={styles.hostBadge}>HOST</span>}
                     </div>
-                  );
-                })}
+                    <div className={styles.opponentCoins}>
+                      <img src={moedaImg} className={styles.coinIconSm} alt="" />
+                      <span>{p.coins}</span>
+                    </div>
+                  </div>
+                  <div className={styles.opponentCards}>
+                    {p.cards.map((c,i)=>{
+                      const cfg = CHAR_CONFIG[c.character] || {};
+                      return (
+                        <div key={i} className={`${styles.playerCard} ${c.dead?styles.playerCardDead:''}`}>
+                          {c.dead ? (
+                            cfg.img
+                              ? <img src={cfg.img} className={styles.playerCardImg} alt={cfg.label}/>
+                              : <span className={styles.playerCardFallback}>{cfg.icon||'?'}</span>
+                          ) : (
+                            <div className={styles.playerCardBack}>🃏</div>
+                          )}
+                          {c.dead&&<div className={styles.playerCardDeadBadge}>💀 {cfg.label}</div>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {p.id===currentPlayerId&&(
+                    <motion.div className={styles.turnBadge}
+                      animate={{ opacity:[1,0.5,1] }}
+                      transition={{ repeat:Infinity, duration:0.9 }}>
+                      🔥 VEZ
+                    </motion.div>
+                  )}
+                  {selectedTarget===p.id&&<div className={styles.targetBadge}>🎯 ALVO</div>}
+                </motion.div>
               </div>
-              {p.id===currentPlayerId&&<div className={styles.turnBadge}>VEZ</div>}
-              {selectedTarget===p.id&&<div className={styles.targetBadge}>ALVO</div>}
-            </motion.div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Mesa */}
@@ -565,8 +681,28 @@ export default function Game({ data, myId }) {
               </motion.span>
             )}
           </div>
-          <div className={styles.myCards}>
-            {me?.cards.map((c,i)=><Card key={i} character={c.character} dead={c.dead} size="xl"/>)}
+          <div className={styles.myAreaCards}>
+            {/* My chat bubble */}
+            <AnimatePresence>
+              {chatBubbles[myId] && (
+                <motion.div className={`${styles.chatBubble} ${styles.chatBubbleMine}`}
+                  key={chatBubbles[myId].key}
+                  initial={{ opacity: 0, y: 6, scale: 0.85 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -4, scale: 0.9 }}
+                  transition={{ type: 'spring', stiffness: 380, damping: 22 }}>
+                  {chatBubbles[myId].message}
+                </motion.div>
+              )}
+            </AnimatePresence>
+            <div className={styles.myMeta}>
+              <span className={styles.youBadge}>VOCÊ</span>
+              {isHost && <span className={styles.hostBadge}>HOST</span>}
+              <span className={styles.myName}>{me?.name}</span>
+            </div>
+            <div className={styles.myCards}>
+              {me?.cards.map((c,i)=><Card key={i} character={c.character} dead={c.dead} size="xl"/>)}
+            </div>
           </div>
         </div>
       </div>
@@ -913,6 +1049,14 @@ export default function Game({ data, myId }) {
           🔄 Reiniciar
         </motion.button>
       )}
+
+      {/* Mute */}
+      <motion.button className={styles.muteBtn}
+        whileHover={{scale:1.05}} whileTap={{scale:0.95}}
+        onClick={toggleMute}
+        title={muted ? 'Ativar sons' : 'Silenciar'}>
+        {muted ? '🔇' : '🔊'}
+      </motion.button>
 
       {/* Help */}
       <motion.button className={styles.helpBtn}

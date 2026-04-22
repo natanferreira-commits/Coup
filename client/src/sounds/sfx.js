@@ -6,6 +6,8 @@
  */
 
 let _ctx = null;
+let _muted = false;
+
 function ctx() {
   if (!_ctx) _ctx = new (window.AudioContext || window.webkitAudioContext)();
   // Resume if suspended (browsers block audio until user gesture)
@@ -53,32 +55,52 @@ function noise({ start = 0, duration = 0.08, gain = 0.15 }) {
 
 export const sfx = {
 
+  toggleMute() {
+    _muted = !_muted;
+    return _muted;
+  },
+
+  isMuted() {
+    return _muted;
+  },
+
+  /** Click — clique rápido de UI */
+  click() {
+    if (_muted) return;
+    tone({ freq: 720, type: 'sine', start: 0, duration: 0.06, gain: 0.12 });
+  },
+
   /** Sua vez — dois bips ascendentes */
   myTurn() {
+    if (_muted) return;
     tone({ freq: 523, type: 'sine', start: 0,    duration: 0.12, gain: 0.22 });
     tone({ freq: 784, type: 'sine', start: 0.14, duration: 0.18, gain: 0.18 });
   },
 
   /** Ação declarada — impacto suave */
   action() {
+    if (_muted) return;
     tone({ freq: 380, type: 'triangle', start: 0,   duration: 0.1,  gain: 0.3  });
     tone({ freq: 300, type: 'triangle', start: 0.08, duration: 0.18, gain: 0.15 });
   },
 
   /** Moedas ganhas — pingue metálico */
   coin() {
+    if (_muted) return;
     tone({ freq: 900,  type: 'sine', start: 0,    duration: 0.07, gain: 0.2  });
     tone({ freq: 1400, type: 'sine', start: 0.06, duration: 0.09, gain: 0.15 });
   },
 
   /** Bloqueio — baque sólido */
   block() {
+    if (_muted) return;
     tone({ freq: 180, type: 'square', start: 0,    duration: 0.08, gain: 0.28 });
     tone({ freq: 140, type: 'square', start: 0.07, duration: 0.12, gain: 0.18 });
   },
 
   /** Duvidou — sting dramático */
   challenge() {
+    if (_muted) return;
     tone({ freq: 440, type: 'sawtooth', start: 0,    duration: 0.06, gain: 0.3  });
     tone({ freq: 220, type: 'sawtooth', start: 0.05, duration: 0.08, gain: 0.28 });
     tone({ freq: 160, type: 'sawtooth', start: 0.12, duration: 0.18, gain: 0.22 });
@@ -86,6 +108,7 @@ export const sfx = {
 
   /** Carta eliminada — descida sombria */
   eliminate() {
+    if (_muted) return;
     tone({ freq: 280, type: 'sawtooth', start: 0,    duration: 0.15, gain: 0.3, pitchEnd: 180 });
     tone({ freq: 180, type: 'sawtooth', start: 0.13, duration: 0.2,  gain: 0.2, pitchEnd: 100 });
     noise({ start: 0, duration: 0.12, gain: 0.12 });
@@ -93,6 +116,7 @@ export const sfx = {
 
   /** X9 espionagem — sussurro eletrônico */
   x9() {
+    if (_muted) return;
     tone({ freq: 800,  type: 'sine', start: 0,    duration: 0.08, gain: 0.15 });
     tone({ freq: 1100, type: 'sine', start: 0.07, duration: 0.06, gain: 0.12 });
     tone({ freq: 900,  type: 'sine', start: 0.12, duration: 0.1,  gain: 0.1  });
@@ -100,6 +124,7 @@ export const sfx = {
 
   /** Vitória — fanfarra ascendente */
   win() {
+    if (_muted) return;
     [523, 659, 784, 1047, 1319].forEach((freq, i) =>
       tone({ freq, type: 'sine', start: i * 0.12, duration: 0.18, gain: 0.22 })
     );
@@ -107,6 +132,7 @@ export const sfx = {
 
   /** Derrota — descida triste */
   lose() {
+    if (_muted) return;
     [440, 370, 330, 262].forEach((freq, i) =>
       tone({ freq, type: 'triangle', start: i * 0.14, duration: 0.2, gain: 0.18 })
     );
@@ -114,7 +140,15 @@ export const sfx = {
 
   /** Carta virada / confirmação */
   cardFlip() {
+    if (_muted) return;
     noise({ start: 0, duration: 0.06, gain: 0.18 });
     tone({ freq: 600, type: 'sine', start: 0.03, duration: 0.08, gain: 0.12 });
+  },
+
+  /** Chat bubble — ping social */
+  chat() {
+    if (_muted) return;
+    tone({ freq: 1100, type: 'sine', start: 0,    duration: 0.07, gain: 0.1 });
+    tone({ freq: 1300, type: 'sine', start: 0.06, duration: 0.09, gain: 0.08 });
   },
 };

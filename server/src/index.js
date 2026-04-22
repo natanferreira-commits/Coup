@@ -502,6 +502,25 @@ function attachGameHandlers(socket) {
   socket.on('select_card_swap',      withRoom((room, { cardIndex }, pid) => handleSelectCardSwap(room, pid, cardIndex)));
   socket.on('challenge_won_choice',  withRoom((room, { wantsSwap }, pid) => handleChallengeWonChoice(room, pid, !!wantsSwap)));
 
+  socket.on('quick_chat', (payload, ack) => {
+    try {
+      const room = getRoomByPlayer(socket.id);
+      if (!room?.game) return ack?.({ success: false });
+      const playerId = resolvePlayerId();
+      const QUICK_MSGS = ['MENTIROSO 🤡', 'CONFIA 😂', 'me rouba não 😭', 'X9 safado 👀', 'FAZ O L 🇧🇷'];
+      const msg = QUICK_MSGS[payload?.msgIndex];
+      if (!msg) return ack?.({ success: false });
+      // Broadcast to all players in the room
+      room.players.forEach(p => {
+        io.to(p.currentSocketId || p.id).emit('quick_chat', { playerId, message: msg });
+      });
+      ack?.({ success: true });
+    } catch (e) {
+      console.error('[quick_chat] error:', e);
+      ack?.({ success: false });
+    }
+  });
+
   socket.on('restart_game', (_, cb) => {
     const room = getRoomByPlayer(socket.id);
     if (!room) return cb?.({ success: false });
