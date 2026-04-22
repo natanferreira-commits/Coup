@@ -192,6 +192,7 @@
 }
 .charCardMine     { border-color: var(--yellow) !important; box-shadow: 0 0 8px rgba(255,214,0,0.3); }
 .charCardSelected { border-color: #fff !important; box-shadow: 0 0 10px rgba(255,255,255,0.25); }
+.charCardDimmed   { opacity: 0.3; filter: grayscale(0.8); }
 
 .charCardImg {
   width: 100%; height: 100%;
@@ -388,9 +389,97 @@
 .gameOver {
   min-height: 100vh; display: flex; align-items: center; justify-content: center;
   background: radial-gradient(ellipse at 50% 50%, #1a1a2e 0%, #0f0f13 70%);
+  padding: 24px;
 }
-.gameOverCard { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 16px; }
-.gameOverCard h1 { font-size: 5rem; color: var(--yellow); }
-.winnerName { font-size: 1.4rem; }
+.gameOverLayout {
+  display: flex; gap: 24px; align-items: flex-start; justify-content: center;
+  width: 100%; max-width: 900px; flex-wrap: wrap;
+}
+.gameOverCard {
+  text-align: center; display: flex; flex-direction: column; align-items: center; gap: 14px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 20px; padding: 28px 32px; min-width: 260px; flex: 0 0 auto;
+}
+.crownIcon { font-size: 3.5rem; line-height: 1; }
+.winnerName {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2.6rem; letter-spacing: 0.08em; color: var(--yellow); line-height: 1;
+}
+.winnerSub { font-size: 0.9rem; color: var(--muted); margin-top: -6px; }
+
+.losersList { width: 100%; display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
+.losersTitle { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); font-weight: 700; text-align: left; }
+.loserRow {
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+  border-radius: 8px; padding: 5px 10px;
+}
+.loserAvatar {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: linear-gradient(135deg,#333,#555);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.75rem; font-weight: 700; flex-shrink: 0;
+}
+.loserName { flex: 1; font-size: 0.82rem; font-weight: 600; color: var(--muted); text-align: left; }
+.loserCards { display: flex; gap: 4px; }
+.loserCard { font-size: 1rem; }
+
+/* Game over log */
+.gameOverLog {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 16px; padding: 18px 16px;
+  display: flex; flex-direction: column; gap: 8px;
+  flex: 1; min-width: 220px; max-width: 480px; max-height: 500px;
+}
+.gameOverLogTitle { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; color: var(--muted); }
+.gameOverLogScroll { overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.gameOverLogMsg { font-size: 0.76rem; color: rgba(255,255,255,0.7); line-height: 1.55; padding: 2px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
 
 .loading { min-height: 100vh; display: flex; align-items: center; justify-content: center; color: var(--muted); }
+
+/* ── Coin flip ── */
+.coinFlipBox {
+  background: rgba(255,214,0,0.07); border: 1px solid rgba(255,214,0,0.3);
+  border-radius: 12px; padding: 14px; margin-bottom: 8px; text-align: center;
+  display: flex; flex-direction: column; gap: 8px; align-items: center;
+}
+.coinFlipTitle { font-size: 0.95rem; font-weight: 700; color: var(--yellow); }
+.coinFlipResultText { font-size: 2.2rem; font-weight: 900; }
+.coinFlipDesc { font-size: 0.76rem; color: var(--muted); }
+.coinSpin { font-size: 2.8rem; display: block; }
+.flipBtn {
+  background: linear-gradient(135deg, #ffd600, #ff9800);
+  color: #000; font-weight: 800; font-size: 0.9rem;
+  border: none; border-radius: 10px; padding: 10px 20px;
+  cursor: pointer; font-family: inherit; width: 100%;
+}
+.flipBtn:hover { filter: brightness(1.1); }
+
+/* ── Timer ── */
+.timerWrapper {
+  width: min(280px, 80%);
+  position: relative;
+  height: 6px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 4px;
+  overflow: visible;
+  margin: 0 auto;
+}
+.timerFill {
+  height: 100%; border-radius: 4px;
+  transition: width 0.5s linear, background 0.4s;
+}
+.timerNum {
+  position: absolute; right: -28px; top: 50%; transform: translateY(-50%);
+  font-size: 0.65rem; font-weight: 700; white-space: nowrap;
+}
+
+/* ── Restart button ── */
+.restartBtn {
+  position: fixed; bottom: 16px; left: 16px; top: auto; transform: none;
+  background: rgba(30,30,40,0.92); border: 1px solid #f44336;
+  color: #f44336; border-radius: 20px; padding: 5px 14px;
+  font-size: 0.75rem; font-weight: 600; cursor: pointer; z-index: 50;
+  white-space: nowrap;
+}
+.restartBtn:hover { background: rgba(244,67,54,0.12); }

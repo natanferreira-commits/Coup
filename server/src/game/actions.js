@@ -16,10 +16,16 @@ const ACTION_DEFS = {
   roubar: {
     character: 'empresario', challengeable: true, blockable: true,
     blockedBy: ['juiz', 'guarda_costas'], requiresTarget: true, anyoneCanBlock: false,
+    coinFlipBlock: true, // bloqueio custa 1 moeda e tem cara ou coroa
   },
   assassinar: {
     character: 'assassino', cost: 3, challengeable: true, blockable: true,
     blockedBy: ['guarda_costas'], requiresTarget: true, targetLosesInfluence: true, anyoneCanBlock: false,
+  },
+  // ── Juiz offensive ─────────────────────────────────────────────────────────
+  veredito: {
+    character: 'juiz', cost: 5, challengeable: true, blockable: false,
+    requiresTarget: true, anyoneCanBlock: false, anyoneCanChallenge: true,
   },
   // ── X9 trio ─────────────────────────────────────────────
   meter_x9: {
@@ -43,6 +49,7 @@ const ACTION_NAMES = {
   taxar:        'Faz o L',
   roubar:       'Pegar o Arrego',
   assassinar:   'Mandar pro Vasco',
+  veredito:     'Veredito',
   meter_x9:     'Meter o X9',
   disfarce:     'Disfarce',
   trocar_carta: 'Troca de Cartas',

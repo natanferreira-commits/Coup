@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import socket from '../socket';
 import Card from '../components/Card';
@@ -17,10 +17,11 @@ import styles from './Game.module.css';
 const ACTION_NAMES = {
   renda:'Trampo Suado', ajuda_externa:'Imposto é Roubo', golpe:'Golpe de Estado',
   taxar:'Faz o L', roubar:'Pegar o Arrego', assassinar:'Mandar pro Vasco',
+  veredito:'Veredito',
   meter_x9:'Meter o X9', disfarce:'Disfarce', trocar_carta:'Troca de Cartas',
 };
 
-const TARGET_ACTIONS = ['golpe','roubar','assassinar','meter_x9','trocar_carta'];
+const TARGET_ACTIONS = ['golpe','roubar','assassinar','veredito','meter_x9','trocar_carta'];
 
 const BLOCK_OPTIONS = {
   ajuda_externa:['politico'], roubar:['juiz','guarda_costas'],
@@ -30,7 +31,7 @@ const BLOCK_OPTIONS = {
 // Which character an action belongs to (null = basic, no character)
 const ACTION_TO_CHAR = {
   taxar:'politico', roubar:'empresario',
-  assassinar:'assassino',
+  assassinar:'assassino', veredito:'juiz',
   meter_x9:'investigador', disfarce:'investigador', trocar_carta:'investigador',
 };
 
@@ -60,19 +61,23 @@ const ACTION_CATEGORIES = [
   {
     id: 'ataque', label: '⚔️ Ataque', labelColor: '#ef5350', bg: 'rgba(244,67,54,0.04)',
     actions: [
-      { action:'assassinar',   icon:'🔫', label:'Mandar pro Vasco', sub:'Elimina · Bandido · 3💰', tooltip:'Afirma ser o Bandido. Gasta 3 moedas e elimina carta do alvo. Só o alvo pode duvidar ou bloquear (Miliciano).' },
-      { action:'meter_x9',     icon:'🕵️', label:'Meter o X9',       sub:'Espia · X9',              tooltip:'Afirma ser o X9. Vê uma carta secreta do alvo. Só o alvo pode duvidar. Juiz bloqueia.' },
-      { action:'trocar_carta', icon:'🔄', label:'Troca de Cartas',   sub:'Força troca · X9',        tooltip:'Afirma ser o X9. Força o alvo a trocar uma carta pelo baralho. Só o alvo pode duvidar. Juiz bloqueia.' },
+      { action:'assassinar',   icon:'🔫', label:'Mandar pro Vasco', sub:'Elimina · Miliciano · 3💰', tooltip:'Afirma ser o Miliciano. Gasta 3 moedas e elimina carta do alvo. Só o alvo pode duvidar ou bloquear (Segurança).' },
+      { action:'veredito',     icon:'⚖️', label:'Veredito',         sub:'Condena · Juiz · 5💰',     tooltip:'Afirma ser o Juiz. Gasta 5 moedas. Acusa o alvo de ter uma carta específica. Se acertar, o alvo perde aquela carta. Se errar, você perde as moedas. Qualquer um pode duvidar.' },
+      { action:'meter_x9',     icon:'🕵️', label:'Meter o X9',       sub:'Espia · X9',               tooltip:'Afirma ser o X9. Vê uma carta secreta do alvo. Só o alvo pode duvidar. Juiz bloqueia.' },
+      { action:'trocar_carta', icon:'🔄', label:'Troca de Cartas',  sub:'Força troca · X9',         tooltip:'Afirma ser o X9. Força o alvo a trocar uma carta pelo baralho. Só o alvo pode duvidar. Juiz bloqueia.' },
     ],
   },
 ];
 
 export default function Game({ data, myId }) {
-  const [selectedTarget, setSelectedTarget] = useState(null);
-  const [pendingConfirm, setPendingConfirm] = useState(null); // { action, charKey, targetId }
-  const [blockChar,      setBlockChar]      = useState(null);
-  const [error,          setError]          = useState('');
-  const [showHelp,       setShowHelp]       = useState(false);
+  const [selectedTarget,   setSelectedTarget]   = useState(null);
+  const [pendingConfirm,   setPendingConfirm]   = useState(null);
+  const [blockChar,        setBlockChar]        = useState(null);
+  const [vereditoChar,     setVereditoChar]     = useState(null);
+  const [error,            setError]            = useState('');
+  const [showHelp,         setShowHelp]         = useState(false);
+  const [timeLeft,         setTimeLeft]         = useState(30);
+  const [coinAnimating,    setCoinAnimating]    = useState(false); // 3s animation after flip
 
   const game = data?.game;
   const { players, currentPlayerId, phase, pendingAction: pa, log, winner } = game || {};
@@ -80,11 +85,43 @@ export default function Game({ data, myId }) {
   // ── Sound effects ──────────────────────────────────────────────────────────
   useSoundEffects(game, myId);
 
+  // ── Turn timer countdown ──────────────────────────────────────────────────
+  useEffect(() => {
+    if (!data?.timerStartedAt || !phase || phase === 'GAME_OVER') { setTimeLeft(30); return; }
+    const update = () => {
+      const elapsed = (Date.now() - data.timerStartedAt) / 1000;
+      setTimeLeft(Math.max(0, Math.round(30 - elapsed)));
+    };
+    update();
+    const interval = setInterval(update, 500);
+    return () => clearInterval(interval);
+  }, [data?.timerStartedAt, phase]);
+
+  // ── Coin flip: 3s animation, then actor auto-acknowledges ─────────────────
+  const prevCoinFlipResult = useRef(null);
+  useEffect(() => {
+    if (pa?.coinFlipResult && pa.coinFlipResult !== prevCoinFlipResult.current) {
+      prevCoinFlipResult.current = pa.coinFlipResult;
+      setCoinAnimating(true);
+      const t = setTimeout(() => {
+        setCoinAnimating(false);
+        // Após animação, ator (bicheiro) confirma automaticamente
+        if (pa.actorId === myId) {
+          socket.emit('acknowledge_coin_flip', {});
+        }
+      }, 3000);
+      return () => clearTimeout(t);
+    }
+  }, [pa?.coinFlipResult, myId]);
+
   // Reset on phase change
   useEffect(() => {
     setPendingConfirm(null);
     setBlockChar(null);
+    setVereditoChar(null);
     setError('');
+    prevCoinFlipResult.current = null;
+    setCoinAnimating(false);
   }, [phase]);
 
   if (!game) return <div className={styles.loading}>Carregando...</div>;
@@ -112,10 +149,17 @@ export default function Game({ data, myId }) {
 
   const confirmAction = () => {
     if (!pendingConfirm) return;
+    if (pendingConfirm.action === 'veredito' && !pendingConfirm.vereditoChar)
+      return setError('Selecione qual carta você acusa o alvo de ter ⬇');
     sfx.action();
-    emit('take_action', { action: pendingConfirm.action, targetId: pendingConfirm.targetId }, () => {
+    emit('take_action', {
+      action: pendingConfirm.action,
+      targetId: pendingConfirm.targetId,
+      accusedCharacter: pendingConfirm.vereditoChar || undefined,
+    }, () => {
       setSelectedTarget(null);
       setPendingConfirm(null);
+      setVereditoChar(null);
     });
   };
 
@@ -129,18 +173,25 @@ export default function Game({ data, myId }) {
   const alreadyResponded = pa?.respondedPlayers?.includes(myId);
   const iAmInLoseQueue   = pa?.loseInfluenceQueue?.[0]?.playerId === myId;
   const iAmSwapPlayer    = pa?.swapPlayerId === myId;
+  const iAmBlocker       = pa?.blocker?.playerId === myId;
 
   const canAct            = isMyTurn && phase === 'ACTION_SELECT' && me?.alive;
   const canRespond        = phase === 'RESPONSE_WINDOW' && !iAmActor && !alreadyResponded && me?.alive;
   const isTargetedAction  = TARGET_ACTIONS.includes(pa?.type);
-  const canChallengeAct   = canRespond && !!pa?.claimedCharacter && (!isTargetedAction || iAmTarget);
+  // Veredito permite qualquer jogador duvidar (anyoneCanChallenge)
+  const isAnyoneChallenge = pa?.type === 'veredito';
+  const canChallengeAct   = canRespond && !!pa?.claimedCharacter && (!isTargetedAction || iAmTarget || isAnyoneChallenge);
   const canBlockAct       = canRespond && (pa?.type === 'ajuda_externa' ? true : iAmTarget);
   const canChallengeBlock = phase === 'BLOCK_CHALLENGE_WINDOW' && iAmActor;
+  // Para veredito: não-alvo pode passar para não travar a resposta
+  const canPassForVeredito = canRespond && isAnyoneChallenge && !iAmTarget && !iAmActor;
 
   const mustLoseInfluence   = phase === 'LOSE_INFLUENCE'   && iAmInLoseQueue;
   const mustShowCard        = phase === 'X9_PEEK_SELECT'   && iAmTarget;
   const mustAcknowledgePeek = phase === 'X9_PEEK_VIEW'    && iAmActor;
   const mustSwapCard        = phase === 'CARD_SWAP_SELECT' && iAmSwapPlayer;
+  const mustAckCoinFlip     = phase === 'COIN_FLIP'        && iAmActor;
+  const isHost              = data?.hostId === myId;
 
   const blockOptions = pa ? (BLOCK_OPTIONS[pa.type] || []) : [];
   const actorName    = pa ? players.find(p => p.id === pa.actorId)?.name  : null;
@@ -153,18 +204,60 @@ export default function Game({ data, myId }) {
   // ── Game over ────────────────────────────────────────────────────────────────
   if (winner) {
     const w = players.find(p => p.id === winner);
+    const losers = players.filter(p => p.id !== winner);
     return (
       <motion.div className={styles.gameOver} initial={{ opacity:0 }} animate={{ opacity:1 }}>
-        <motion.div className={styles.gameOverCard}
-          initial={{ scale:0.7, y:40 }} animate={{ scale:1, y:0 }}
-          transition={{ type:'spring', stiffness:200, damping:18 }}>
-          <h1>FIM DE JOGO</h1>
-          <p className={styles.winnerName}>{w?.name} venceu o Golpe! 🇧🇷</p>
-          <motion.button className="btn btn-primary" whileTap={{ scale:0.95 }}
-            onClick={() => socket.emit('restart_game', {})}>
-            Jogar Novamente
-          </motion.button>
-        </motion.div>
+        <div className={styles.gameOverLayout}>
+          {/* Painel central: vencedor + perdedores */}
+          <motion.div className={styles.gameOverCard}
+            initial={{ scale:0.7, y:40 }} animate={{ scale:1, y:0 }}
+            transition={{ type:'spring', stiffness:200, damping:18 }}>
+            <div className={styles.crownIcon}>👑</div>
+            <h1 className={styles.winnerName}>{w?.name}</h1>
+            <p className={styles.winnerSub}>venceu o Golpe! 🇧🇷</p>
+
+            {losers.length > 0 && (
+              <div className={styles.losersList}>
+                <p className={styles.losersTitle}>Eliminados:</p>
+                {losers.map(p => (
+                  <div key={p.id} className={styles.loserRow}>
+                    <span className={styles.loserAvatar}>{p.name.charAt(0).toUpperCase()}</span>
+                    <span className={styles.loserName}>{p.name}</span>
+                    <div className={styles.loserCards}>
+                      {p.cards.map((c,i) => (
+                        <span key={i} className={styles.loserCard}>
+                          {c.dead ? (CHAR_CONFIG[c.character]?.icon || '💀') : '🃏'}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {isHost && (
+              <motion.button className="btn btn-primary" style={{marginTop:20,width:'100%'}}
+                whileTap={{ scale:0.95 }} onClick={() => socket.emit('restart_game', {})}>
+                🔄 Jogar Novamente
+              </motion.button>
+            )}
+            {!isHost && (
+              <p style={{color:'var(--muted)',fontSize:13,marginTop:12}}>Aguardando o host reiniciar...</p>
+            )}
+          </motion.div>
+
+          {/* Chat da rodada */}
+          <motion.div className={styles.gameOverLog}
+            initial={{ opacity:0, x:30 }} animate={{ opacity:1, x:0 }}
+            transition={{ delay:0.3 }}>
+            <p className={styles.gameOverLogTitle}>📜 Histórico da Partida</p>
+            <div className={styles.gameOverLogScroll}>
+              {(log || []).map((msg, i) => (
+                <p key={i} className={styles.gameOverLogMsg}>{msg}</p>
+              ))}
+            </div>
+          </motion.div>
+        </div>
       </motion.div>
     );
   }
@@ -176,7 +269,7 @@ export default function Game({ data, myId }) {
       {mustLoseInfluence && (
         <CardSelectorModal context="lose" title="Perdeu, mané 💀"
           description="Você deve perder uma carta. Escolha qual revelar para a mesa."
-          cards={me?.cards||[]} confirmLabel="Perder"
+          cards={(me?.cards||[]).filter(c => !c.dead)} confirmLabel="Perder"
           onConfirm={i => emit('lose_influence',{cardIndex:i})} />
       )}
       {mustShowCard && (
@@ -305,11 +398,60 @@ export default function Game({ data, myId }) {
 
           </AnimatePresence>
 
+          {phase==='COIN_FLIP'&&(
+            <motion.div key="coinflip" className={styles.mesaStatus}
+              initial={{opacity:0,y:-6}} animate={{opacity:1,y:0}} exit={{opacity:0}}>
+              {!pa?.coinFlipResult&&(
+                <>
+                  <motion.span className={styles.mesaStatusIcon}
+                    animate={{scale:[1,1.15,1]}} transition={{repeat:Infinity,duration:1.2}}>🪙</motion.span>
+                  <span className={styles.mesaStatusMain}>Cara ou Coroa!</span>
+                  <span className={styles.mesaStatusSub}>{blockerName} vai jogar a moeda...</span>
+                </>
+              )}
+              {pa?.coinFlipResult&&coinAnimating&&(
+                <>
+                  <motion.span style={{fontSize:'2rem',display:'block'}}
+                    animate={{rotateY:360}} transition={{repeat:Infinity,duration:0.35,ease:'linear'}}>🪙</motion.span>
+                  <span className={styles.mesaStatusMain}>Girando...</span>
+                </>
+              )}
+              {pa?.coinFlipResult&&!coinAnimating&&(
+                <>
+                  <span className={styles.mesaStatusIcon}>🪙</span>
+                  <span className={styles.mesaStatusMain} style={{
+                    color: pa.coinFlipResult==='cara' ? '#4caf50' : '#f44336', fontSize:22,
+                  }}>
+                    {pa.coinFlipResult==='cara' ? '🦅 CARA' : '🐉 COROA'}
+                  </span>
+                  <span className={styles.mesaStatusSub}>
+                    {pa.coinFlipResult==='cara' ? 'Bloqueio aprovado!' : 'Bloqueio cancelado!'}
+                  </span>
+                </>
+              )}
+            </motion.div>
+          )}
+
+          {/* Timer countdown */}
+          {phase&&phase!=='GAME_OVER'&&data?.timerStartedAt&&(
+            <div className={styles.timerWrapper}>
+              <div className={styles.timerFill} style={{
+                width:`${Math.round((timeLeft/30)*100)}%`,
+                background: timeLeft<=10?'var(--red)':timeLeft<=20?'#ffd600':'#4caf50',
+              }}/>
+              <span className={styles.timerNum}
+                style={{color: timeLeft<=10?'var(--red)':timeLeft<=20?'#ffd600':'#aaa'}}>
+                {timeLeft}s
+              </span>
+            </div>
+          )}
+
           <motion.img src={mesaImg} className={styles.mesaImg} alt="mesa"
             animate={
               phase==='RESPONSE_WINDOW'       ?{filter:'brightness(1.15) drop-shadow(0 0 18px #ffd60088)'}:
               phase==='BLOCK_CHALLENGE_WINDOW' ?{filter:'brightness(1.1) drop-shadow(0 0 18px #f4433688)'}:
               phase==='LOSE_INFLUENCE'         ?{filter:'brightness(1.05) drop-shadow(0 0 16px #f4433666)'}:
+              phase==='COIN_FLIP'              ?{filter:'brightness(1.15) drop-shadow(0 0 20px #ffd60099)'}:
               phase==='X9_PEEK_SELECT'         ?{filter:'brightness(1.1) drop-shadow(0 0 18px #9c27b088)'}:
               phase==='X9_PEEK_VIEW'           ?{filter:'brightness(1.1) drop-shadow(0 0 18px #9c27b088)'}:
               {filter:'brightness(1) drop-shadow(0 0 0px transparent)'}
@@ -341,6 +483,63 @@ export default function Game({ data, myId }) {
         {/* ── ACTIONS TOP ── */}
         <div className={styles.actionsTop}>
 
+          {/* ── Coin flip ── */}
+          {phase==='COIN_FLIP'&&(
+            <motion.div className={styles.coinFlipBox}
+              initial={{opacity:0,y:8}} animate={{opacity:1,y:0}}>
+
+              {/* Estado 1: aguardando bloqueador jogar */}
+              {!pa?.coinFlipResult&&(
+                <>
+                  <p className={styles.coinFlipTitle}>🪙 Hora do Cara ou Coroa!</p>
+                  {iAmBlocker?(
+                    <>
+                      <p className={styles.coinFlipDesc}>É a sua vez! Jogue a moeda para defender o bloqueio.</p>
+                      <motion.button className={styles.flipBtn}
+                        whileHover={{scale:1.04}} whileTap={{scale:0.94}}
+                        onClick={()=>emit('flip_coin',{})}>
+                        🪙 Jogar a Moeda
+                      </motion.button>
+                    </>
+                  ):(
+                    <p className={styles.coinFlipDesc}>
+                      ⌛ <strong>{blockerName}</strong> está se preparando para jogar a moeda...
+                    </p>
+                  )}
+                </>
+              )}
+
+              {/* Estado 2: moeda girando (animação 3s) */}
+              {pa?.coinFlipResult&&coinAnimating&&(
+                <>
+                  <p className={styles.coinFlipTitle}>🪙 A moeda está girando...</p>
+                  <motion.span className={styles.coinSpin}
+                    animate={{rotateY:360}}
+                    transition={{repeat:Infinity,duration:0.35,ease:'linear'}}>
+                    🪙
+                  </motion.span>
+                </>
+              )}
+
+              {/* Estado 3: resultado (exibido brevemente antes do auto-acknowledge) */}
+              {pa?.coinFlipResult&&!coinAnimating&&(
+                <>
+                  <p className={styles.coinFlipTitle}>🪙 Resultado da Moeda!</p>
+                  <div className={styles.coinFlipResultText}
+                    style={{color: pa.coinFlipResult==='cara' ? '#4caf50' : '#f44336'}}>
+                    {pa.coinFlipResult==='cara' ? '🦅 CARA' : '🐉 COROA'}
+                  </div>
+                  <p className={styles.coinFlipDesc}>
+                    {pa.coinFlipResult==='cara'
+                      ? `Bloqueio aprovado! ${blockerName} recupera a moeda.`
+                      : `Bloqueio cancelado! Bicheiro fica com a moeda e ainda rouba de ${targetName}!`
+                    }
+                  </p>
+                </>
+              )}
+            </motion.div>
+          )}
+
           {/* X9 peek */}
           {mustAcknowledgePeek&&pa?.x9Result&&(
             <motion.div className={styles.x9Result} initial={{opacity:0,y:8}} animate={{opacity:1,y:0}}>
@@ -368,6 +567,36 @@ export default function Game({ data, myId }) {
                   <p className={styles.confirmTarget}>
                     Alvo: <strong>{players.find(p=>p.id===pendingConfirm.targetId)?.name}</strong>
                   </p>
+                )}
+                {/* Seleção de carta para Veredito */}
+                {pendingConfirm.action==='veredito'&&(
+                  <div style={{marginTop:8}}>
+                    <p className={styles.confirmTitle} style={{fontSize:12,color:'var(--muted)'}}>
+                      Acusar o alvo de ter qual carta?
+                    </p>
+                    <div style={{display:'flex',flexWrap:'wrap',gap:4,justifyContent:'center',marginTop:4}}>
+                      {Object.entries(CHAR_CONFIG).map(([charKey,cfg])=>(
+                        <motion.button key={charKey}
+                          className={styles.actionBtn}
+                          style={{
+                            '--char-color':cfg.color,
+                            border: pendingConfirm.vereditoChar===charKey
+                              ? `2px solid ${cfg.color}` : '2px solid transparent',
+                            padding:'4px 8px', minWidth:0, flex:'0 0 auto',
+                          }}
+                          whileTap={{scale:0.96}}
+                          onClick={()=>setPendingConfirm(prev=>({...prev,vereditoChar:charKey}))}>
+                          <span>{cfg.icon}</span>
+                          <div><strong style={{fontSize:11}}>{cfg.label}</strong></div>
+                        </motion.button>
+                      ))}
+                    </div>
+                    {pendingConfirm.vereditoChar&&(
+                      <p style={{fontSize:12,color:'#ffd600',marginTop:4,textAlign:'center'}}>
+                        Acusando de ter: {CHAR_CONFIG[pendingConfirm.vereditoChar]?.icon} {CHAR_CONFIG[pendingConfirm.vereditoChar]?.label}
+                      </p>
+                    )}
+                  </div>
                 )}
                 <div className={styles.confirmBtns}>
                   <motion.button className={styles.confirmYes}
@@ -404,7 +633,8 @@ export default function Game({ data, myId }) {
                       const isDisabled =
                         (action!=='golpe'&&mustGolpe) ||
                         (action==='golpe'&&myCoins<7) ||
-                        (action==='assassinar'&&myCoins<3);
+                        (action==='assassinar'&&myCoins<3) ||
+                        (action==='veredito'&&myCoins<5);
                       return (
                         <Btn key={action}
                           icon={icon} label={label} sub={sub} tooltip={tooltip}
@@ -435,13 +665,36 @@ export default function Game({ data, myId }) {
           )}
 
           {/* ── Response window ── */}
-          {(canChallengeAct||canBlockAct)&&(
+          {(canChallengeAct||canBlockAct||canPassForVeredito)&&(
             <motion.div className={styles.responseBox}
               initial={{opacity:0,y:6}} animate={{opacity:1,y:0}}>
               <p className={styles.responseTitle}>
                 <strong>{actorName}</strong> declara <strong>{ACTION_NAMES[pa?.type]}</strong>
                 {targetName&&<> em <strong>{targetName}</strong></>}
               </p>
+              {/* Mostra a carta acusada no Veredito */}
+              {pa?.type==='veredito'&&pa?.vereditoCharacter&&(
+                <div style={{
+                  background:'rgba(255,214,0,0.1)', border:'1px solid #ffd600',
+                  borderRadius:8, padding:'6px 10px', marginBottom:4, fontSize:13,
+                }}>
+                  ⚖️ Acusado de ter:{' '}
+                  <strong>{CHAR_CONFIG[pa.vereditoCharacter]?.icon} {CHAR_CONFIG[pa.vereditoCharacter]?.label}</strong>
+                  {iAmTarget&&(
+                    <span style={{color:'#ef9a9a',display:'block',marginTop:2}}>
+                      Você {me?.cards?.some(c=>!c.dead&&c.character===pa.vereditoCharacter)
+                        ?'TEM essa carta 😬':'NÃO TEM essa carta 😌'}
+                    </span>
+                  )}
+                </div>
+              )}
+              {/* Aviso sobre custo do bloqueio para Bicheiro */}
+              {canBlockAct&&pa?.type==='roubar'&&(
+                <div style={{fontSize:12,color:'#ffb74d',marginBottom:4}}>
+                  🪙 Bloquear custa 1 moeda! O Bicheiro joga cara ou coroa.
+                  Cara = bloqueio ok + moeda de volta. Coroa = bloqueio cai + Bicheiro rouba.
+                </div>
+              )}
               {canChallengeAct&&(
                 <Btn icon="⚔️" label="DUVIDAR" sub="chamar o VAR!" danger
                   tooltip="Desafie a afirmação. Se errar, você perde uma carta."
@@ -451,14 +704,14 @@ export default function Game({ data, myId }) {
                 <Btn key={char}
                   icon={CHAR_CONFIG[char]?.icon}
                   label={`Bloquear como ${CHAR_CONFIG[char]?.label}`}
-                  sub="clique para selecionar"
+                  sub={pa?.type==='roubar' ? 'custa 1 moeda + cara ou coroa' : 'clique para selecionar'}
                   tooltip={`Afirma ser o ${CHAR_CONFIG[char]?.label} para bloquear esta ação.`}
                   selected={blockChar===char}
                   onClick={()=>setBlockChar(p=>p===char?null:char)} />
               ))}
               {blockChar&&(
                 <Btn icon="🛡️" label="Confirmar Bloqueio"
-                  sub={`como ${CHAR_CONFIG[blockChar]?.label}`} success
+                  sub={`como ${CHAR_CONFIG[blockChar]?.label}${pa?.type==='roubar'?' · 1 moeda':''}`} success
                   onClick={()=>{sfx.block();emit('block',{character:blockChar},()=>setBlockChar(null));}} />
               )}
               <Btn icon="✅" label="Ignorar" sub="deixar acontecer"
@@ -522,6 +775,18 @@ export default function Game({ data, myId }) {
           </div>
         </div>
       </div>
+
+      {/* Reiniciar (apenas host) */}
+      {isHost&&(
+        <motion.button className={styles.restartBtn}
+          whileHover={{scale:1.05}} whileTap={{scale:0.95}}
+          onClick={()=>{
+            if(window.confirm('Reiniciar a partida agora? O jogo atual será apagado.'))
+              socket.emit('restart_game',{});
+          }}>
+          🔄 Reiniciar
+        </motion.button>
+      )}
 
       {/* Help */}
       <motion.button className={styles.helpBtn}

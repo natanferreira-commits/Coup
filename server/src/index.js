@@ -9,7 +9,9 @@ const {
 } = require('./rooms');
 const {
   handleAction, handlePass, handleBlock, handleChallenge,
-  handleLoseInfluence, handleSelectCardShow, handleAcknowledgePeek, handleSelectCardSwap,
+  handleLoseInfluence, handleFlipCoin, handleAcknowledgeCoinFlip,
+  handleSelectCardShow, handleAcknowledgePeek, handleSelectCardSwap,
+  getAlivePlayers, getPlayer, resolveActionEffect,
 } = require('./game/engine');
 
 const app = express();
@@ -19,6 +21,94 @@ const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*', methods: ['GET', 'POST'] } });
 
 app.get('/health', (_, res) => res.json({ ok: true }));
+
+// ── Turn timer (30 s) ─────────────────────────────────────────────────────────
+
+const turnTimers = new Map(); // roomCode → setTimeout handle
+const TURN_TIMEOUT_MS = 30_000;
+
+function clearTurnTimer(roomCode) {
+  if (turnTimers.has(roomCode)) {
+    clearTimeout(turnTimers.get(roomCode));
+    turnTimers.delete(roomCode);
+  }
+}
+
+function setTurnTimer(room) {
+  clearTurnTimer(room.code);
+  const game = room.game;
+  if (!game || game.phase === 'GAME_OVER') return;
+
+  // Phases that don't need a timeout (player interaction expected but no rush)
+  const noTimerPhases = ['X9_PEEK_SELECT', 'X9_PEEK_VIEW', 'CARD_SWAP_SELECT'];
+  if (noTimerPhases.includes(game.phase)) return;
+
+  room._timerStartedAt = Date.now();
+
+  const timer = setTimeout(() => {
+    turnTimers.delete(room.code);
+    if (!room.game) return;
+    const g = room.game;
+    const pa = g.pendingAction;
+
+    try {
+      switch (g.phase) {
+        case 'ACTION_SELECT':
+          // Auto: Trampo Suado
+          handleAction(room, g.currentPlayerId, 'renda', null, {});
+          break;
+
+        case 'RESPONSE_WINDOW': {
+          if (!pa) break;
+          // Auto-pass para todos que não responderam
+          getAlivePlayers(g).filter(p => p.id !== pa.actorId).forEach(p => {
+            if (!pa.respondedPlayers.includes(p.id)) pa.respondedPlayers.push(p.id);
+          });
+          const all = getAlivePlayers(g).filter(p => p.id !== pa.actorId);
+          if (all.every(p => pa.respondedPlayers.includes(p.id))) resolveActionEffect(g);
+          break;
+        }
+
+        case 'BLOCK_CHALLENGE_WINDOW':
+          // Ator aceita o bloqueio automaticamente
+          if (pa) handlePass(room, pa.actorId);
+          break;
+
+        case 'LOSE_INFLUENCE': {
+          if (!pa || !pa.loseInfluenceQueue.length) break;
+          const loserId = pa.loseInfluenceQueue[0].playerId;
+          const loser = getPlayer(g, loserId);
+          if (!loser) break;
+          const alive = loser.cards.map((c, i) => ({ ...c, idx: i })).filter(c => !c.dead);
+          if (alive.length > 0) {
+            const pick = alive[Math.floor(Math.random() * alive.length)];
+            handleLoseInfluence(room, loserId, pick.idx);
+          }
+          break;
+        }
+
+        case 'COIN_FLIP': {
+          if (!pa) break;
+          if (!pa.coinFlipResult) {
+            // Auto-flip se bloqueador não jogou
+            handleFlipCoin(room, pa.blocker.playerId);
+          } else {
+            // Auto-resolve se ator não confirmou
+            handleAcknowledgeCoinFlip(room, pa.actorId);
+          }
+          break;
+        }
+      }
+    } catch (e) {
+      console.error('[timer] auto-action error:', e);
+    }
+
+    broadcast(room);
+    if (room.game && room.game.phase !== 'GAME_OVER') setTurnTimer(room);
+  }, TURN_TIMEOUT_MS);
+
+  turnTimers.set(room.code, timer);
+}
 
 // ── Reconnection state ────────────────────────────────────────────────────────
 
@@ -77,6 +167,9 @@ function sanitizePA(pa, playerId) {
     claimedCharacter: pa.claimedCharacter, blocker: pa.blocker,
     respondedPlayers: pa.respondedPlayers, loseInfluenceQueue: pa.loseInfluenceQueue,
     swapPlayerId: pa.swapPlayerId, swapContext: pa.swapContext,
+    vereditoCharacter: pa.vereditoCharacter || null,
+    coinFlipResult: pa.coinFlipResult || null,
+    coinFlipPending: pa.coinFlipPending || false,
   };
   if (pa.x9Result && pa.actorId === playerId) base.x9Result = pa.x9Result;
   return base;
@@ -88,19 +181,28 @@ function sanitizePA(pa, playerId) {
  * Optional extra fields (e.g. { reconnected, playerId }) are merged into the payload for one player.
  */
 function broadcast(room, extraForPlayer = null) {
+  if (!room.game) return;
+
+  // Reset timer when phase changes
+  const currentPhase = room.game.phase;
+  if (currentPhase !== room._lastPhase) {
+    room._lastPhase = currentPhase;
+    setTurnTimer(room);
+  }
+
   room.players.forEach(p => {
-    if (!room.game) return;
     const sid = p.currentSocketId || p.id;
     const payload = {
       code: room.code, hostId: room.hostId, status: 'playing',
       game: sanitizeGame(room.game, p.id),
+      timerStartedAt: room._timerStartedAt || null,
     };
     if (extraForPlayer && extraForPlayer.playerId === p.id) {
       Object.assign(payload, extraForPlayer);
     }
     io.to(sid).emit('game_state', payload);
   });
-  broadcastSpectators(room); // keep spectators in sync too
+  broadcastSpectators(room);
 }
 
 function broadcastLobby(room) {
@@ -378,28 +480,31 @@ function attachGameHandlers(socket) {
     cb?.({ success: true });
   });
 
+  socket.on('take_action',           withRoom((room, { action, targetId, accusedCharacter }, pid) => handleAction(room, pid, action, targetId, { accusedCharacter })));
+  socket.on('challenge',             withRoom((room, _, pid) => handleChallenge(room, pid)));
+  socket.on('block',                 withRoom((room, { character }, pid) => handleBlock(room, pid, character)));
+  socket.on('pass',                  withRoom((room, _, pid) => handlePass(room, pid)));
+  socket.on('lose_influence',        withRoom((room, { cardIndex }, pid) => handleLoseInfluence(room, pid, cardIndex)));
+  socket.on('flip_coin',             withRoom((room, _, pid) => handleFlipCoin(room, pid)));
+  socket.on('acknowledge_coin_flip', withRoom((room, _, pid) => handleAcknowledgeCoinFlip(room, pid)));
+  socket.on('select_card_show',      withRoom((room, { cardIndex }, pid) => handleSelectCardShow(room, pid, cardIndex)));
+  socket.on('acknowledge_peek',      withRoom((room, _, pid) => handleAcknowledgePeek(room, pid)));
+  socket.on('select_card_swap',      withRoom((room, { cardIndex }, pid) => handleSelectCardSwap(room, pid, cardIndex)));
+
   socket.on('restart_game', (_, cb) => {
     const room = getRoomByPlayer(socket.id);
     if (!room) return cb?.({ success: false });
-
-    // Promote spectators to players for the new round (up to 6 total)
+    const caller = room.players.find(p => p.id === socket.id || p.currentSocketId === socket.id);
+    if (!caller || caller.id !== room.hostId) return cb?.({ success: false, error: 'Só o host pode reiniciar' });
+    clearTurnTimer(room.code);
+    room._lastPhase = null;
     const slots = Math.max(0, 6 - room.players.length);
     const promoted = (room.spectators || []).splice(0, slots);
     promoted.forEach(s => room.players.push({ id: s.id, name: s.name, currentSocketId: s.currentSocketId || s.id }));
-
     startGameInRoom(room);
     broadcast(room);
     cb?.({ success: true });
   });
-
-  socket.on('take_action',       withRoom((room, { action, targetId }, pid) => handleAction(room, pid, action, targetId)));
-  socket.on('challenge',         withRoom((room, _, pid) => handleChallenge(room, pid)));
-  socket.on('block',             withRoom((room, { character }, pid) => handleBlock(room, pid, character)));
-  socket.on('pass',              withRoom((room, _, pid) => handlePass(room, pid)));
-  socket.on('lose_influence',    withRoom((room, { cardIndex }, pid) => handleLoseInfluence(room, pid, cardIndex)));
-  socket.on('select_card_show',  withRoom((room, { cardIndex }, pid) => handleSelectCardShow(room, pid, cardIndex)));
-  socket.on('acknowledge_peek',  withRoom((room, _, pid) => handleAcknowledgePeek(room, pid)));
-  socket.on('select_card_swap',  withRoom((room, { cardIndex }, pid) => handleSelectCardSwap(room, pid, cardIndex)));
 
   socket.on('disconnect', () => {
     console.log('disconnected:', socket.id);

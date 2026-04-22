@@ -4,11 +4,12 @@ import { CHAR_CONFIG } from './charConfig';
 import styles from './CardSelectorModal.module.css';
 
 export default function CardSelectorModal({ title, description, cards, confirmLabel, onConfirm, context }) {
-  const [selected, setSelected] = useState(null);
-
-  const aliveCards = cards
+  const aliveCards = (cards || [])
     .map((c, i) => ({ ...c, index: i }))
     .filter(c => !c.dead);
+
+  // Auto-seleciona se só tiver 1 carta viva
+  const [selected, setSelected] = useState(() => aliveCards.length === 1 ? aliveCards[0].index : null);
 
   return (
     <motion.div className={styles.overlay}
@@ -66,7 +67,11 @@ export default function CardSelectorModal({ title, description, cards, confirmLa
           whileTap={{ scale: 0.96 }}
         >
           {selected !== null
-            ? `${confirmLabel}: ${CHAR_CONFIG[aliveCards.find(c => c.index === selected)?.character]?.label}`
+            ? (() => {
+                const selCard = aliveCards.find(c => c.index === selected);
+                const charLabel = CHAR_CONFIG[selCard?.character]?.label || selCard?.character || 'Carta';
+                return `${confirmLabel}: ${charLabel}`;
+              })()
             : 'Selecione uma carta acima'}
         </motion.button>
       </motion.div>

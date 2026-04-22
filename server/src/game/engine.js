@@ -9,15 +9,20 @@ const FUNNY = {
   taxar:        (a)    => `${a} fez o L na galera e taxou 3 moedas do banco 🤙`,
   roubar:       (a, t) => `${a} tá querendo demais e tentou Pegar o Arrego de ${t}! 🤑`,
   assassinar:   (a, t) => `${a} mandou ${t} pro Vasco! F no chat ⚰️`,
+  veredito:     (a, t, ch) => `${a} bateu o martelo: ${t} é culpado de ter ${ch}! ⚖️`,
+  veredito_fail:(a, t, ch) => `${a} errou o Veredito! ${t} não tinha ${ch}. Inocente! ⚖️`,
   meter_x9:     (a, t) => `${a} meteu o X9 em ${t}! Cê tá sendo investigado 👀`,
   disfarce:     (a)    => `${a} botou o disfarce! Mas será que alguém acredita? 🎭`,
   trocar_carta: (a, t) => `${a} forçou ${t} a trocar uma carta! Não é justo, mas é o Golpe 🔄`,
-  challenge_success: (c, a) => `${c} DUVIDOU e acertou! ${a} tava blefando igual político em campanha 🤥 O clima esquentou, chamem o VAR!`,
-  challenge_fail:    (c, a) => `${c} DUVIDOU e se deu mal! ${a} tinha a carta mesmo. Passou vergonha na mesa 😳`,
+  challenge_success: (c, a) => `${c} DUVIDOU e acertou! ${a} tava blefando igual político em campanha 🤥`,
+  challenge_fail:    (c, a) => `${c} DUVIDOU e se deu mal! ${a} tinha a carta mesmo. Passou vergonha 😳`,
   block:             (b, act) => `${b} bloqueou a jogada! Ninguém passa fácil aqui 🛡️`,
+  block_coin_flip:   (b) => `${b} pagou 1 moeda pra tentar bloquear! Hora do cara ou coroa... 🪙`,
   block_accepted:    (a)    => `${a} aceitou o bloqueio. Covardia? Estratégia? 🤷`,
   block_challenge_success: (c, b) => `${c} descobriu o blefe de ${b}! Tá tudo gravado, brother 📹`,
   block_challenge_fail:    (c, b) => `${c} duvidou do bloqueio e se arrependeu. ${b} tinha mesmo 😎`,
+  coin_flip_cara:    (b, a) => `CARA! 🪙 Bloqueio aprovado! ${b} recupera a moeda. ${a} não rouba nada!`,
+  coin_flip_coroa:   (b, a, s) => `COROA! 🪙 Bloqueio cancelado! ${a} fica com a moeda e ainda rouba ${s} moedas!`,
   lose_influence: (p, ch)  => `${p} perdeu ${ch}. F no chat ⚰️`,
   eliminated:     (p)      => `${p} tá eliminado! Foi pro Vasco definitivamente 👋`,
   turn_start:     (p)      => `--- Vez de ${p}. Bora ver o que essa pessoa vai aprontar... 🤔`,
@@ -51,7 +56,7 @@ function advanceTurn(game) {
   if (checkGameOver(game)) return;
   const alive = getAlivePlayers(game);
   const idx = alive.findIndex(p => p.id === game.currentPlayerId);
-  const next = alive[(idx + 1) % alive.length];
+  const next = alive[(Math.max(idx, 0) + 1) % alive.length];
   game.currentPlayerId = next.id;
   game.phase = 'ACTION_SELECT';
   game.pendingAction = null;
@@ -94,6 +99,22 @@ function resolveActionEffect(game) {
       break;
     }
 
+    case 'veredito': {
+      const target = getPlayer(game, targetId);
+      const vereditoChar = pa.vereditoCharacter;
+      const cardIdx = target.cards.findIndex(c => !c.dead && c.character === vereditoChar);
+      if (cardIdx !== -1) {
+        log(game, FUNNY.veredito(actor.name, target.name, CHARACTER_NAMES[vereditoChar]));
+        target.cards[cardIdx].dead = true;
+        log(game, FUNNY.lose_influence(target.name, CHARACTER_NAMES[vereditoChar]));
+        if (!target.cards.some(c => !c.dead)) log(game, FUNNY.eliminated(target.name));
+        if (checkGameOver(game)) return;
+      } else {
+        log(game, FUNNY.veredito_fail(actor.name, target.name, CHARACTER_NAMES[vereditoChar]));
+      }
+      break;
+    }
+
     case 'golpe':
     case 'assassinar': {
       const target = getPlayer(game, targetId);
@@ -133,7 +154,7 @@ function resolveActionEffect(game) {
 
 // ── Public handlers ──────────────────────────────────────────────────────────
 
-function handleAction(room, actorId, actionType, targetId) {
+function handleAction(room, actorId, actionType, targetId, extraData = {}) {
   const game = room.game;
   if (game.phase !== 'ACTION_SELECT') return { success: false, error: 'Fase incorreta' };
   if (game.currentPlayerId !== actorId) return { success: false, error: 'Não é sua vez' };
@@ -145,6 +166,8 @@ function handleAction(room, actorId, actionType, targetId) {
   if (def.cost && actor.coins < def.cost) return { success: false, error: 'Moedas insuficientes' };
   if (actor.coins >= 10 && actionType !== 'golpe') return { success: false, error: 'Com 10+ moedas é obrigatório usar Golpe de Estado' };
   if (def.requiresTarget && !targetId) return { success: false, error: 'Escolha um alvo primeiro' };
+  if (actionType === 'veredito' && !extraData.accusedCharacter)
+    return { success: false, error: 'Selecione qual carta você está acusando o alvo de ter' };
   if (targetId) {
     const t = getPlayer(game, targetId);
     if (!t || !t.cards.some(c => !c.dead)) return { success: false, error: 'Alvo inválido' };
@@ -156,10 +179,21 @@ function handleAction(room, actorId, actionType, targetId) {
     type: actionType, actorId, targetId: targetId || null,
     claimedCharacter: def.character || null,
     blocker: null, respondedPlayers: [], loseInfluenceQueue: [],
+    vereditoCharacter: extraData.accusedCharacter || null,
   };
 
+  // Pré-adiciona não-alvo para ações direcionadas sem anyoneCanChallenge
+  if (def.requiresTarget && targetId && !def.anyoneCanChallenge) {
+    getAlivePlayers(game)
+      .filter(p => p.id !== actorId && p.id !== targetId)
+      .forEach(p => game.pendingAction.respondedPlayers.push(p.id));
+  }
+
   const tName = targetId ? getPlayer(game, targetId)?.name : null;
-  log(game, `${actor.name} declara: ${ACTION_NAMES[actionType]}${tName ? ` → ${tName}` : ''}`);
+  const vereditoInfo = actionType === 'veredito' && extraData.accusedCharacter
+    ? ` (acusando de ter ${CHARACTER_NAMES[extraData.accusedCharacter]})`
+    : '';
+  log(game, `${actor.name} declara: ${ACTION_NAMES[actionType]}${tName ? ` → ${tName}` : ''}${vereditoInfo}`);
 
   if (!def.challengeable && !def.blockable) {
     resolveActionEffect(game);
@@ -181,8 +215,15 @@ function handlePass(room, playerId) {
   }
 
   if (game.phase === 'BLOCK_CHALLENGE_WINDOW' && playerId === pa.actorId) {
-    log(game, FUNNY.block_accepted(getPlayer(game, pa.actorId).name));
-    advanceTurn(game);
+    if (pa.coinFlipPending) {
+      // Ator aceita o bloqueio com coin flip — transiciona para aguardar o bloqueador jogar a moeda
+      delete pa.coinFlipPending;
+      game.phase = 'COIN_FLIP';
+      log(game, `${getPlayer(game, pa.blocker.playerId).name} vai jogar a moeda! 🪙`);
+    } else {
+      log(game, FUNNY.block_accepted(getPlayer(game, pa.actorId).name));
+      advanceTurn(game);
+    }
     return { success: true };
   }
   return { success: true };
@@ -198,9 +239,23 @@ function handleBlock(room, blockerId, claimedCharacter) {
   if (!getBlockers(pa.type).includes(claimedCharacter)) return { success: false, error: 'Personagem não bloqueia isso' };
   if (!def.anyoneCanBlock && blockerId !== pa.targetId) return { success: false, error: 'Apenas o alvo pode bloquear' };
 
+  const blocker = getPlayer(game, blockerId);
+  const actor   = getPlayer(game, pa.actorId);
+
+  if (def.coinFlipBlock) {
+    if (blocker.coins < 1) return { success: false, error: 'Você precisa de 1 moeda para tentar bloquear' };
+    blocker.coins -= 1;
+    actor.coins += 1;
+    pa.coinFlipPending = true;
+    pa.blocker = { playerId: blockerId, character: claimedCharacter };
+    game.phase = 'BLOCK_CHALLENGE_WINDOW';
+    log(game, FUNNY.block_coin_flip(blocker.name));
+    return { success: true };
+  }
+
   pa.blocker = { playerId: blockerId, character: claimedCharacter };
   game.phase = 'BLOCK_CHALLENGE_WINDOW';
-  log(game, FUNNY.block(getPlayer(game, blockerId).name, ACTION_NAMES[pa.type]));
+  log(game, FUNNY.block(blocker.name, ACTION_NAMES[pa.type]));
   return { success: true };
 }
 
@@ -211,20 +266,18 @@ function handleChallenge(room, challengerId) {
 
   const challenger = getPlayer(game, challengerId);
 
-  // ── Challenge the action ──────────────────────────────────────────────────
   if (game.phase === 'RESPONSE_WINDOW') {
     if (!pa.claimedCharacter) return { success: false, error: 'Ação não pode ser desafiada' };
     if (challengerId === pa.actorId) return { success: false, error: 'Não pode se desafiar' };
-    // For targeted actions only the target may challenge
+
     const def = ACTION_DEFS[pa.type];
-    if (def.requiresTarget && pa.targetId && challengerId !== pa.targetId)
+    if (def.requiresTarget && pa.targetId && !def.anyoneCanChallenge && challengerId !== pa.targetId)
       return { success: false, error: 'Só o alvo pode duvidar desta ação' };
 
     const actor = getPlayer(game, pa.actorId);
     const cardIdx = actor.cards.findIndex(c => !c.dead && c.character === pa.claimedCharacter);
 
     if (cardIdx !== -1) {
-      // Actor had it — challenger loses, action continues
       log(game, FUNNY.challenge_fail(challenger.name, actor.name));
       const char = actor.cards[cardIdx].character;
       game.deck.push(char); shuffle(game.deck);
@@ -233,7 +286,6 @@ function handleChallenge(room, challengerId) {
       pa._afterLose = 'continue_action';
       game.phase = 'LOSE_INFLUENCE';
     } else {
-      // Bluff caught — actor loses, action cancelled
       log(game, FUNNY.challenge_success(challenger.name, actor.name));
       pa.loseInfluenceQueue.push({ playerId: pa.actorId });
       pa._afterLose = 'cancel_action';
@@ -242,7 +294,6 @@ function handleChallenge(room, challengerId) {
     return { success: true };
   }
 
-  // ── Challenge the block ───────────────────────────────────────────────────
   if (game.phase === 'BLOCK_CHALLENGE_WINDOW') {
     if (challengerId !== pa.actorId) return { success: false, error: 'Só quem foi bloqueado pode desafiar o bloqueio' };
 
@@ -251,18 +302,18 @@ function handleChallenge(room, challengerId) {
     const cardIdx = blocker.cards.findIndex(c => !c.dead && c.character === blockerChar);
 
     if (cardIdx !== -1) {
-      // Blocker had it — challenger loses, block stands
       log(game, FUNNY.block_challenge_fail(challenger.name, blocker.name));
       const char = blocker.cards[cardIdx].character;
       game.deck.push(char); shuffle(game.deck);
       blocker.cards[cardIdx].character = game.deck.pop();
       pa.loseInfluenceQueue.push({ playerId: challengerId });
-      pa._afterLose = 'block_stands';
+      // Se tinha coinFlip pendente, após perder carta vai pra coin flip
+      pa._afterLose = pa.coinFlipPending ? 'coin_flip_after_lose' : 'block_stands';
       game.phase = 'LOSE_INFLUENCE';
     } else {
-      // Block was bluff — blocker loses, action proceeds
       log(game, FUNNY.block_challenge_success(challenger.name, blocker.name));
       pa.loseInfluenceQueue.push({ playerId: blockerId });
+      delete pa.coinFlipPending;
       pa._afterLose = 'action_proceeds';
       game.phase = 'LOSE_INFLUENCE';
     }
@@ -285,6 +336,8 @@ function handleLoseInfluence(room, playerId, cardIndex) {
 
   card.dead = true;
   log(game, FUNNY.lose_influence(player.name, CHARACTER_NAMES[card.character]));
+  if (!player.cards.some(c => !c.dead)) log(game, FUNNY.eliminated(player.name));
+
   queue.shift();
 
   if (checkGameOver(game)) return { success: true };
@@ -293,12 +346,62 @@ function handleLoseInfluence(room, playerId, cardIndex) {
   const flag = pa._afterLose;
   delete pa._afterLose;
 
-  if (flag === 'continue_action')  resolveActionEffect(game);
-  else if (flag === 'cancel_action')  advanceTurn(game);
-  else if (flag === 'block_stands')   advanceTurn(game);
-  else if (flag === 'action_proceeds') resolveActionEffect(game);
+  if (flag === 'continue_action')        resolveActionEffect(game);
+  else if (flag === 'cancel_action')     advanceTurn(game);
+  else if (flag === 'block_stands')      advanceTurn(game);
+  else if (flag === 'action_proceeds')   resolveActionEffect(game);
+  else if (flag === 'coin_flip_after_lose') {
+    // Bloqueio validado (ator perdeu o desafio) → bloqueador agora joga a moeda
+    delete pa.coinFlipPending;
+    game.phase = 'COIN_FLIP';
+    log(game, `${getPlayer(game, pa.blocker.playerId).name} vai jogar a moeda! 🪙`);
+  }
   else advanceTurn(game);
 
+  return { success: true };
+}
+
+// ── Coin flip: bloqueador joga a moeda ──────────────────────────────────────
+
+function handleFlipCoin(room, flipperId) {
+  const game = room.game;
+  const pa = game.pendingAction;
+  if (game.phase !== 'COIN_FLIP') return { success: false, error: 'Fase incorreta' };
+  if (!pa || pa.blocker.playerId !== flipperId) return { success: false, error: 'Só o bloqueador pode jogar a moeda' };
+  if (pa.coinFlipResult) return { success: false, error: 'Moeda já foi jogada' };
+
+  const result = Math.random() < 0.5 ? 'cara' : 'coroa';
+  pa.coinFlipResult = result;
+  log(game, `A moeda foi jogada! Resultado: ${result === 'cara' ? '🦅 CARA' : '🐉 COROA'}`);
+  return { success: true };
+}
+
+// ── Resolução do coin flip (ator confirma após animação) ─────────────────────
+
+function handleAcknowledgeCoinFlip(room, actorId) {
+  const game = room.game;
+  const pa = game.pendingAction;
+  if (game.phase !== 'COIN_FLIP') return { success: false, error: 'Fase incorreta' };
+  if (!pa || !pa.coinFlipResult) return { success: false, error: 'Resultado da moeda ainda não definido' };
+  if (pa.actorId !== actorId) return { success: false, error: 'Só o Bicheiro pode confirmar' };
+
+  const result  = pa.coinFlipResult;
+  const actor   = getPlayer(game, pa.actorId);
+  const blocker = getPlayer(game, pa.blocker.playerId);
+  const target  = getPlayer(game, pa.targetId);
+
+  if (result === 'cara') {
+    actor.coins  -= 1;
+    blocker.coins += 1;
+    log(game, FUNNY.coin_flip_cara(blocker.name, actor.name));
+    advanceTurn(game);
+  } else {
+    const stolen = Math.min(2, target.coins);
+    target.coins -= stolen;
+    actor.coins  += stolen;
+    log(game, FUNNY.coin_flip_coroa(blocker.name, actor.name, stolen));
+    advanceTurn(game);
+  }
   return { success: true };
 }
 
@@ -314,7 +417,6 @@ function handleSelectCardShow(room, playerId, cardIndex) {
   const card = target.cards[cardIndex];
   if (!card || card.dead) return { success: false, error: 'Carta inválida' };
 
-  // Store privately — sanitized out for everyone except actor
   pa.x9Result = { character: card.character, cardIndex };
   game.phase = 'X9_PEEK_VIEW';
   log(game, FUNNY.x9_show(target.name));
@@ -353,5 +455,8 @@ function handleSelectCardSwap(room, playerId, cardIndex) {
 
 module.exports = {
   handleAction, handlePass, handleBlock, handleChallenge,
-  handleLoseInfluence, handleSelectCardShow, handleAcknowledgePeek, handleSelectCardSwap,
+  handleLoseInfluence, handleFlipCoin, handleAcknowledgeCoinFlip,
+  handleSelectCardShow, handleAcknowledgePeek, handleSelectCardSwap,
+  // Exposed for timer auto-actions
+  getAlivePlayers, getPlayer, resolveActionEffect,
 };
