@@ -45,8 +45,12 @@ export default function CoinFlipModal({
         >
           <h2 className={styles.title}>🪙 CARA OU COROA</h2>
           <p className={styles.subtitle}>
-            <strong style={{ color: '#82b1ff' }}>{blockerName}</strong> bloqueou a ação de{' '}
+            <strong style={{ color: '#82b1ff' }}>{blockerName}</strong> gastou 1 moeda para bloquear{' '}
             <strong style={{ color: '#ef9a9a' }}>{actorName}</strong>
+            <br />
+            <span style={{ fontSize: '0.7rem', opacity: 0.6 }}>
+              🦅 Cara → bloqueio vale, moeda volta · 🐉 Coroa → bloqueio falha, perde a moeda
+            </span>
           </p>
 
           {/* ── The Coin ── */}
@@ -111,8 +115,8 @@ export default function CoinFlipModal({
               </motion.div>
               <p className={styles.resultDesc}>
                 {cara
-                  ? `✅ Bloqueio aprovado! ${blockerName} defende e recupera a moeda.`
-                  : `❌ Bloqueio falhou! ${actorName} rouba de ${targetName}.`
+                  ? `✅ CARA! Bloqueio aprovado — ${blockerName} defendeu e recupera a moeda.`
+                  : `❌ COROA! Bloqueio falhou — ${blockerName} perde a moeda e ${actorName} rouba de ${targetName}.`
                 }
               </p>
             </>

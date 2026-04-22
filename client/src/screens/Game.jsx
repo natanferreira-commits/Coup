@@ -17,6 +17,7 @@ import VictoryOverlay      from '../components/VictoryOverlay';
 import QuickChatBubble     from '../components/QuickChatBubble';
 import ActionCinematic     from '../components/ActionCinematic';
 import CoinFlipModal       from '../components/CoinFlipModal';
+import ChatBubblesLayer    from '../components/ChatBubblesLayer';
 import moedaImg from '../assets/moeda.svg';
 import mesaImg  from '../assets/mesa.svg';
 import styles from './Game.module.css';
@@ -204,7 +205,8 @@ export default function Game({ data, myId }) {
     prevCoinFlipResult.current = null;
     setCoinAnimating(false);
     prevActionKeyRef.current = null;
-    setActionNotif(null);
+    // NÃO limpar actionNotif aqui — o ActionCinematic gerencia seu próprio ciclo de vida
+    // (auto-dismiss 3s). Limpar aqui matava o cinematic antes de mostrar.
   }, [phase]);
 
   // ── Sync sfx mute on mount ────────────────────────────────────────────────
@@ -218,6 +220,14 @@ export default function Game({ data, myId }) {
     if (!el) return { x: window.innerWidth / 2, y: window.innerHeight / 2 };
     const r = el.getBoundingClientRect();
     return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  }, []);
+
+  /** Posição do topo-centro do elemento para o chat bubble */
+  const getBubblePos = useCallback(playerId => {
+    const el = playerElRefs.current.get(playerId);
+    if (!el) return { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+    const r = el.getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top };
   }, []);
 
   const getTablePos = useCallback(() => ({
@@ -320,7 +330,8 @@ export default function Game({ data, myId }) {
     const handler = ({ playerId, message }) => {
       sfx.chat();
       const key = Date.now() + Math.random();
-      setChatBubbles(prev => ({ ...prev, [playerId]: { message, key } }));
+      const mine = playerId === myId;
+      setChatBubbles(prev => ({ ...prev, [playerId]: { message, key, mine } }));
       setTimeout(() => {
         setChatBubbles(prev => {
           const next = { ...prev };
@@ -331,7 +342,7 @@ export default function Game({ data, myId }) {
     };
     socket.on('quick_chat', handler);
     return () => socket.off('quick_chat', handler);
-  }, []);
+  }, [myId]);
 
   // ── Mute toggle helper ────────────────────────────────────────────────────
   const toggleMute = () => {
@@ -559,7 +570,6 @@ export default function Game({ data, myId }) {
         {/* Opponents */}
         <div className={styles.opponents}>
           {others.map(p => {
-            const bubble = chatBubbles[p.id];
             const isHost = p.id === data?.hostId;
             return (
               <div
@@ -567,12 +577,7 @@ export default function Game({ data, myId }) {
                 className={styles.opponentWrapper}
                 ref={el => { if (el) playerElRefs.current.set(p.id, el); else playerElRefs.current.delete(p.id); }}
               >
-                {/* Chat bubble */}
-                <AnimatePresence>
-                  {bubble && (
-                    <QuickChatBubble key={bubble.key} message={bubble.message} mine={false} />
-                  )}
-                </AnimatePresence>
+                {/* Chat bubbles gerenciados pelo ChatBubblesLayer (portal fixo) */}
 
                 <motion.div
                   className={`${styles.opponent}
@@ -762,12 +767,7 @@ export default function Game({ data, myId }) {
             )}
           </div>
           <div className={styles.myAreaCards}>
-            {/* My chat bubble */}
-            <AnimatePresence>
-              {chatBubbles[myId] && (
-                <QuickChatBubble key={chatBubbles[myId].key} message={chatBubbles[myId].message} mine />
-              )}
-            </AnimatePresence>
+            {/* My chat bubble também no ChatBubblesLayer */}
             <div className={styles.myMeta}>
               <span className={styles.youBadge}>VOCÊ</span>
               {isHost && <span className={styles.hostBadge}>HOST</span>}
@@ -1121,6 +1121,7 @@ export default function Game({ data, myId }) {
       isMe={isMyTurn}
       visible={turnVisible}
     />
+    <ChatBubblesLayer bubbles={chatBubbles} getPos={getBubblePos} />
     </>
   );
 }
