@@ -9,7 +9,7 @@ const {
 } = require('./rooms');
 const {
   handleAction, handlePass, handleBlock, handleChallenge,
-  handleLoseInfluence, handleFlipCoin, handleAcknowledgeCoinFlip,
+  handleLoseInfluence, handleChallengeWonChoice, handleFlipCoin, handleAcknowledgeCoinFlip,
   handleSelectCardShow, handleAcknowledgePeek, handleSelectCardSwap,
   getAlivePlayers, getPlayer, resolveActionEffect,
 } = require('./game/engine');
@@ -98,6 +98,10 @@ function setTurnTimer(room) {
           }
           break;
         }
+
+        case 'CHALLENGE_WON':
+          if (pa) handleChallengeWonChoice(room, pa.actorId, true); // auto-swap on timeout
+          break;
       }
     } catch (e) {
       console.error('[timer] auto-action error:', e);
@@ -170,6 +174,7 @@ function sanitizePA(pa, playerId) {
     vereditoCharacter: pa.vereditoCharacter || null,
     coinFlipResult: pa.coinFlipResult || null,
     coinFlipPending: pa.coinFlipPending || false,
+    challengeWonCharacter: pa.challengeWonCharacter || null,
   };
   if (pa.x9Result && pa.actorId === playerId) base.x9Result = pa.x9Result;
   return base;
@@ -495,6 +500,7 @@ function attachGameHandlers(socket) {
   socket.on('select_card_show',      withRoom((room, { cardIndex }, pid) => handleSelectCardShow(room, pid, cardIndex)));
   socket.on('acknowledge_peek',      withRoom((room, _, pid) => handleAcknowledgePeek(room, pid)));
   socket.on('select_card_swap',      withRoom((room, { cardIndex }, pid) => handleSelectCardSwap(room, pid, cardIndex)));
+  socket.on('challenge_won_choice',  withRoom((room, { wantsSwap }, pid) => handleChallengeWonChoice(room, pid, !!wantsSwap)));
 
   socket.on('restart_game', (_, cb) => {
     const room = getRoomByPlayer(socket.id);

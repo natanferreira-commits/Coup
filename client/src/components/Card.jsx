@@ -9,12 +9,23 @@ export default function Card({ character, dead = false, hidden = false, onClick,
     return (
       <motion.div
         className={`${styles.card} ${styles.dead} ${styles[size]}`}
-        initial={{ opacity: 1, scale: 1 }}
-        animate={{ opacity: 0.45, scale: 0.95, filter: 'grayscale(1)' }}
+        style={{ '--char-color': cfg.color }}
+        animate={{ opacity: 0.55, filter: 'grayscale(0.8) brightness(0.75)' }}
         transition={{ duration: 0.4 }}
       >
-        <span className={styles.deadIcon}>✕</span>
-        {character && <span className={styles.deadChar}>{cfg.label}</span>}
+        {cfg.img
+          ? <img src={cfg.img} alt={cfg.label} className={styles.cardImage} />
+          : (
+            <div className={styles.cardFallback} style={{ background: `linear-gradient(160deg, ${cfg.color}55, #000)` }}>
+              <span className={styles.fallbackIcon}>{cfg.icon}</span>
+              <span className={styles.fallbackName}>{cfg.label}</span>
+            </div>
+          )
+        }
+        <div className={styles.deadOverlay}>
+          <span className={styles.deadIcon}>💀</span>
+          <span className={styles.deadChar}>{cfg.label}</span>
+        </div>
       </motion.div>
     );
   }

@@ -279,12 +279,11 @@ function handleChallenge(room, challengerId) {
 
     if (cardIdx !== -1) {
       log(game, FUNNY.challenge_fail(challenger.name, actor.name));
-      const char = actor.cards[cardIdx].character;
-      game.deck.push(char); shuffle(game.deck);
-      actor.cards[cardIdx].character = game.deck.pop();
-      pa.loseInfluenceQueue.push({ playerId: challengerId });
+      pa.challengeWonCharacter = actor.cards[cardIdx].character;
+      pa.challengeWonCardIdx = cardIdx;
       pa._afterLose = 'continue_action';
-      game.phase = 'LOSE_INFLUENCE';
+      pa.loseInfluenceQueue.push({ playerId: challengerId });
+      game.phase = 'CHALLENGE_WON'; // actor will choose swap/keep
     } else {
       log(game, FUNNY.challenge_success(challenger.name, actor.name));
       pa.loseInfluenceQueue.push({ playerId: pa.actorId });
@@ -358,6 +357,33 @@ function handleLoseInfluence(room, playerId, cardIndex) {
   }
   else advanceTurn(game);
 
+  return { success: true };
+}
+
+function handleChallengeWonChoice(room, actorId, wantsSwap) {
+  const game = room.game;
+  const pa = game.pendingAction;
+  if (game.phase !== 'CHALLENGE_WON') return { success: false, error: 'Fase incorreta' };
+  if (!pa || pa.actorId !== actorId) return { success: false, error: 'Só o ator pode decidir' };
+
+  const actor = getPlayer(game, actorId);
+  if (wantsSwap) {
+    const idx = pa.challengeWonCardIdx;
+    if (idx !== undefined) {
+      const card = actor.cards[idx];
+      if (card && !card.dead) {
+        game.deck.push(card.character);
+        shuffle(game.deck);
+        card.character = game.deck.pop();
+        log(game, `${actor.name} provou a carta e trocou pelo baralho. 🔄`);
+      }
+    }
+  } else {
+    log(game, `${actor.name} provou a carta e decidiu mantê-la. ✊`);
+  }
+  delete pa.challengeWonCardIdx;
+  delete pa.challengeWonCharacter;
+  game.phase = 'LOSE_INFLUENCE';
   return { success: true };
 }
 
@@ -455,7 +481,7 @@ function handleSelectCardSwap(room, playerId, cardIndex) {
 
 module.exports = {
   handleAction, handlePass, handleBlock, handleChallenge,
-  handleLoseInfluence, handleFlipCoin, handleAcknowledgeCoinFlip,
+  handleLoseInfluence, handleChallengeWonChoice, handleFlipCoin, handleAcknowledgeCoinFlip,
   handleSelectCardShow, handleAcknowledgePeek, handleSelectCardSwap,
   // Exposed for timer auto-actions
   getAlivePlayers, getPlayer, resolveActionEffect,

@@ -40,7 +40,7 @@ function joinRoom(code, playerId, playerName) {
 }
 
 function startGame(room) {
-  const deck = createDeck();
+  const deck = createDeck(room.players.length);
   const players = room.players.map(p => ({
     id: p.id,
     name: p.name,

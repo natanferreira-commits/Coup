@@ -21,6 +21,12 @@ const ACTION_NAMES = {
   meter_x9:'Meter o X9', disfarce:'Disfarce', trocar_carta:'Troca de Cartas',
 };
 
+const ACTION_ICONS = {
+  renda:'💵', ajuda_externa:'💸', golpe:'💥',
+  taxar:'🏛️', roubar:'💼', assassinar:'🔫',
+  veredito:'⚖️', meter_x9:'🕵️', disfarce:'🎭', trocar_carta:'🔄',
+};
+
 const TARGET_ACTIONS = ['golpe','roubar','assassinar','veredito','meter_x9','trocar_carta'];
 
 const BLOCK_OPTIONS = {
@@ -88,6 +94,7 @@ export default function Game({ data, myId }) {
   const [showHelp,         setShowHelp]         = useState(false);
   const [timeLeft,         setTimeLeft]         = useState(30);
   const [coinAnimating,    setCoinAnimating]    = useState(false); // 3s animation after flip
+  const [actionNotif,      setActionNotif]      = useState(null);
 
   const game = data?.game;
   const { players, currentPlayerId, phase, pendingAction: pa, log, winner } = game || {};
@@ -109,6 +116,7 @@ export default function Game({ data, myId }) {
 
   // ── Coin flip: 5s girando + 5s resultado, depois ator confirma ──────────────
   const prevCoinFlipResult = useRef(null);
+  const prevActionKeyRef = useRef(null);
   useEffect(() => {
     if (pa?.coinFlipResult && pa.coinFlipResult !== prevCoinFlipResult.current) {
       prevCoinFlipResult.current = pa.coinFlipResult;
@@ -123,6 +131,26 @@ export default function Game({ data, myId }) {
     }
   }, [pa?.coinFlipResult, myId]);
 
+  // ── Action announcement popup ─────────────────────────────────────────────
+  useEffect(() => {
+    if (!pa?.type || !pa?.actorId) return;
+    const key = `${pa.actorId}:${pa.type}`;
+    if (key === prevActionKeyRef.current) return;
+    prevActionKeyRef.current = key;
+    const actorP = players?.find(p => p.id === pa.actorId);
+    const targetP = pa.targetId ? players?.find(p => p.id === pa.targetId) : null;
+    setActionNotif({
+      type: pa.type,
+      icon: ACTION_ICONS[pa.type] || '⚡',
+      label: ACTION_NAMES[pa.type],
+      actorName: actorP?.name,
+      targetName: targetP?.name,
+      claimedCharacter: pa.claimedCharacter,
+    });
+    const t = setTimeout(() => setActionNotif(null), 3000);
+    return () => clearTimeout(t);
+  }, [pa?.actorId, pa?.type]);
+
   // Reset on phase change
   useEffect(() => {
     setPendingConfirm(null);
@@ -131,6 +159,8 @@ export default function Game({ data, myId }) {
     setError('');
     prevCoinFlipResult.current = null;
     setCoinAnimating(false);
+    prevActionKeyRef.current = null;
+    setActionNotif(null);
   }, [phase]);
 
   if (!game) return <div className={styles.loading}>Carregando...</div>;
@@ -200,6 +230,7 @@ export default function Game({ data, myId }) {
   const mustAcknowledgePeek = phase === 'X9_PEEK_VIEW'    && iAmActor;
   const mustSwapCard        = phase === 'CARD_SWAP_SELECT' && iAmSwapPlayer;
   const mustAckCoinFlip     = phase === 'COIN_FLIP'        && iAmActor;
+  const mustChooseChallengeWon = phase === 'CHALLENGE_WON' && iAmActor;
   const isHost              = data?.hostId === myId;
 
   const blockOptions = pa ? (BLOCK_OPTIONS[pa.type] || []) : [];
@@ -272,6 +303,36 @@ export default function Game({ data, myId }) {
   }
 
   return (
+    <>
+    {/* Action notification overlay */}
+    <AnimatePresence>
+      {actionNotif&&(
+        <motion.div className={styles.actionNotifOverlay}
+          initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0,scale:0.9}}>
+          <motion.div className={styles.actionNotifCard}
+            initial={{scale:0.5,y:-40}} animate={{scale:1,y:0}}
+            exit={{scale:0.85,opacity:0}}
+            transition={{type:'spring',stiffness:420,damping:26}}>
+            <span className={styles.actionNotifIcon}>{actionNotif.icon}</span>
+            <span className={styles.actionNotifLabel}>{actionNotif.label}</span>
+            <div className={styles.actionNotifPlayers}>
+              <span style={{color:'#82b1ff'}}>{actionNotif.actorName}</span>
+              {actionNotif.targetName&&(
+                <><span style={{color:'var(--muted)'}}> → </span>
+                <span style={{color:'#ef9a9a'}}>{actionNotif.targetName}</span></>
+              )}
+            </div>
+            {actionNotif.claimedCharacter&&(
+              <div className={styles.actionNotifChar}>
+                {CHAR_CONFIG[actionNotif.claimedCharacter]?.icon}{' '}
+                {CHAR_CONFIG[actionNotif.claimedCharacter]?.label}
+              </div>
+            )}
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+
     <div className={styles.board}>
 
       {/* ── Modals ── */}
@@ -329,11 +390,21 @@ export default function Game({ data, myId }) {
                 </div>
               </div>
               <div className={styles.opponentCards}>
-                {p.cards.map((c,i)=>(
-                  <div key={i} className={`${styles.miniCard} ${c.dead?styles.miniCardDead:''}`}>
-                    {c.dead?'✕':c.character?CHAR_CONFIG[c.character]?.icon:'🃏'}
-                  </div>
-                ))}
+                {p.cards.map((c,i)=>{
+                  const cfg = CHAR_CONFIG[c.character] || {};
+                  return (
+                    <div key={i} className={`${styles.playerCard} ${c.dead?styles.playerCardDead:''}`}>
+                      {c.dead ? (
+                        cfg.img
+                          ? <img src={cfg.img} className={styles.playerCardImg} alt={cfg.label}/>
+                          : <span className={styles.playerCardFallback}>{cfg.icon||'?'}</span>
+                      ) : (
+                        <div className={styles.playerCardBack}>🃏</div>
+                      )}
+                      {c.dead&&<div className={styles.playerCardDeadBadge}>💀 {cfg.label}</div>}
+                    </div>
+                  );
+                })}
               </div>
               {p.id===currentPlayerId&&<div className={styles.turnBadge}>VEZ</div>}
               {selectedTarget===p.id&&<div className={styles.targetBadge}>ALVO</div>}
@@ -401,6 +472,20 @@ export default function Game({ data, myId }) {
                 </span>
                 <span className={styles.mesaStatusSub}>
                   {players.find(p=>p.id===pa?.swapPlayerId)?.name} escolhe uma carta
+                </span>
+              </motion.div>
+            )}
+
+            {phase==='CHALLENGE_WON'&&pa&&(
+              <motion.div key="chalwon" className={styles.mesaStatus}
+                initial={{opacity:0,y:-6}} animate={{opacity:1,y:0}} exit={{opacity:0}}>
+                <span className={styles.mesaStatusIcon}>✅</span>
+                <span className={styles.mesaStatusMain} style={{color:'#4caf50'}}>Duvidada Falhou!</span>
+                <span className={styles.mesaStatusSub}>
+                  <span style={{color:'#82b1ff'}}>{actorName}</span> provou ter{' '}
+                  {pa.challengeWonCharacter&&(
+                    <span style={{color:'var(--yellow)'}}>{CHAR_CONFIG[pa.challengeWonCharacter]?.icon} {CHAR_CONFIG[pa.challengeWonCharacter]?.label}</span>
+                  )}
                 </span>
               </motion.div>
             )}
@@ -545,6 +630,31 @@ export default function Game({ data, myId }) {
                     }
                   </p>
                 </>
+              )}
+            </motion.div>
+          )}
+
+          {/* ── CHALLENGE_WON: actor decides swap or keep ── */}
+          {phase==='CHALLENGE_WON'&&(
+            <motion.div className={styles.challengeWonBox}
+              initial={{opacity:0,y:8}} animate={{opacity:1,y:0}}>
+              <p className={styles.challengeWonTitle}>
+                ✅ Duvidada falhou! {pa?.challengeWonCharacter&&(
+                  <span>{CHAR_CONFIG[pa.challengeWonCharacter]?.icon} {CHAR_CONFIG[pa.challengeWonCharacter]?.label}</span>
+                )} foi comprovada!
+              </p>
+              {mustChooseChallengeWon?(
+                <>
+                  <p className={styles.challengeWonDesc}>Deseja trocar essa carta pelo baralho ou mantê-la?</p>
+                  <Btn icon="🔄" label="Trocar pelo Baralho" sub="pegar uma carta nova"
+                    onClick={()=>emit('challenge_won_choice',{wantsSwap:true})} />
+                  <Btn icon="✊" label="Manter a Carta" sub="continuar com essa"
+                    onClick={()=>emit('challenge_won_choice',{wantsSwap:false})} />
+                </>
+              ):(
+                <p className={styles.hint}>
+                  ⌛ {actorName} está decidindo se troca a carta...
+                </p>
               )}
             </motion.div>
           )}
@@ -835,6 +945,7 @@ export default function Game({ data, myId }) {
         )}
       </AnimatePresence>
     </div>
+    </>
   );
 }
 

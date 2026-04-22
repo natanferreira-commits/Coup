@@ -1,9 +1,10 @@
 const CHARACTERS = ['politico', 'empresario', 'investigador', 'juiz', 'assassino', 'guarda_costas'];
 
-function createDeck() {
+function createDeck(playerCount) {
+  const copies = playerCount <= 6 ? 3 : playerCount <= 8 ? 4 : 5;
   const deck = [];
   CHARACTERS.forEach(char => {
-    deck.push(char, char, char); // 3 copies each = 18 cards
+    for (let i = 0; i < copies; i++) deck.push(char);
   });
   return shuffle(deck);
 }
