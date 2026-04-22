@@ -35,36 +35,46 @@ const ACTION_TO_CHAR = {
   meter_x9:'investigador', disfarce:'investigador', trocar_carta:'investigador',
 };
 
-// Action categories shown in the right panel
+// Action categories shown in the right panel — agrupadas por personagem
 const ACTION_CATEGORIES = [
   {
-    id: 'basicas', label: '⚡ Básicas', labelColor: 'var(--muted)', bg: 'transparent',
+    id: 'basicas', label: '⚡ Básicas', labelColor: 'var(--muted)', bg: 'transparent', charKey: null,
     actions: [
-      { action:'renda',         icon:'💵', label:'Trampo Suado',    sub:'+1 moeda',           tooltip:'Pega 1 moeda do banco. Não pode ser bloqueada nem duvidada.' },
-      { action:'ajuda_externa', icon:'💸', label:'Imposto é Roubo', sub:'+2 moedas',           tooltip:'Pega 2 moedas. O Político pode bloquear. Qualquer um pode bloquear.' },
-      { action:'golpe',         icon:'💥', label:'Golpe de Estado',  sub:'7💰 · alvo obrig.',  tooltip:'Gasta 7 moedas e elimina uma carta do alvo. Sem bloqueio nem duvidada. Obrigatório com 10+ moedas.' },
+      { action:'renda',         icon:'💵', label:'Trampo Suado',    sub:'+1 moeda',          tooltip:'Pega 1 moeda do banco. Não pode ser bloqueada nem duvidada.' },
+      { action:'ajuda_externa', icon:'💸', label:'Imposto é Roubo', sub:'+2 moedas',          tooltip:'Pega 2 moedas. Qualquer Político pode bloquear.' },
+      { action:'golpe',         icon:'💥', label:'Golpe de Estado',  sub:'7💰 · alvo obrig.', tooltip:'Gasta 7 moedas e elimina uma carta do alvo. Obrigatório com 10+ moedas.' },
     ],
   },
   {
-    id: 'monetarias', label: '💰 Monetárias', labelColor: '#ffd600', bg: 'rgba(255,214,0,0.04)',
+    id: 'politico', label: '🏛️ Político', labelColor: '#1565c0', bg: 'rgba(21,101,192,0.04)', charKey: 'politico',
     actions: [
-      { action:'taxar',  icon:'🏛️', label:'Faz o L',        sub:'+3 moedas · Político', tooltip:'Afirma ser o Político. Pega 3 moedas. Qualquer um pode duvidar.' },
-      { action:'roubar', icon:'💼', label:'Pegar o Arrego', sub:'Rouba 2 · Bicheiro',    tooltip:'Afirma ser o Bicheiro. Rouba 2 moedas do alvo. Só o alvo pode duvidar ou bloquear (Juiz/Miliciano).' },
+      { action:'taxar', icon:'🏛️', label:'Faz o L', sub:'+3 moedas', tooltip:'Afirma ser o Político. Pega 3 moedas. Qualquer um pode duvidar.' },
     ],
   },
   {
-    id: 'defesa', label: '🛡️ Defesa', labelColor: '#64b5f6', bg: 'rgba(41,121,255,0.04)',
+    id: 'empresario', label: '💼 Bicheiro', labelColor: '#e65100', bg: 'rgba(230,81,0,0.04)', charKey: 'empresario',
     actions: [
-      { action:'disfarce', icon:'🎭', label:'Disfarce', sub:'Troca carta · X9', tooltip:'Afirma ser o X9. Troca uma de suas cartas pelo baralho em segredo. Juiz pode bloquear.' },
+      { action:'roubar', icon:'💼', label:'Pegar o Arrego', sub:'Rouba 2 moedas', tooltip:'Afirma ser o Bicheiro. Rouba 2 moedas do alvo. Juiz ou Miliciano podem bloquear (custa 1 moeda + cara ou coroa).' },
     ],
   },
   {
-    id: 'ataque', label: '⚔️ Ataque', labelColor: '#ef5350', bg: 'rgba(244,67,54,0.04)',
+    id: 'assassino', label: '🔫 Bandido', labelColor: '#b71c1c', bg: 'rgba(183,28,28,0.04)', charKey: 'assassino',
     actions: [
-      { action:'assassinar',   icon:'🔫', label:'Mandar pro Vasco', sub:'Elimina · Miliciano · 3💰', tooltip:'Afirma ser o Miliciano. Gasta 3 moedas e elimina carta do alvo. Só o alvo pode duvidar ou bloquear (Segurança).' },
-      { action:'veredito',     icon:'⚖️', label:'Veredito',         sub:'Condena · Juiz · 5💰',     tooltip:'Afirma ser o Juiz. Gasta 5 moedas. Acusa o alvo de ter uma carta específica. Se acertar, o alvo perde aquela carta. Se errar, você perde as moedas. Qualquer um pode duvidar.' },
-      { action:'meter_x9',     icon:'🕵️', label:'Meter o X9',       sub:'Espia · X9',               tooltip:'Afirma ser o X9. Vê uma carta secreta do alvo. Só o alvo pode duvidar. Juiz bloqueia.' },
-      { action:'trocar_carta', icon:'🔄', label:'Troca de Cartas',  sub:'Força troca · X9',         tooltip:'Afirma ser o X9. Força o alvo a trocar uma carta pelo baralho. Só o alvo pode duvidar. Juiz bloqueia.' },
+      { action:'assassinar', icon:'🔫', label:'Mandar pro Vasco', sub:'Elimina · 3💰', tooltip:'Afirma ser o Bandido. Gasta 3 moedas e elimina carta do alvo. O Miliciano pode bloquear.' },
+    ],
+  },
+  {
+    id: 'juiz', label: '⚖️ Juiz', labelColor: '#1b5e20', bg: 'rgba(27,94,32,0.04)', charKey: 'juiz',
+    actions: [
+      { action:'veredito', icon:'⚖️', label:'Veredito', sub:'Condena · 5💰', tooltip:'Afirma ser o Juiz. Gasta 5 moedas. Acusa o alvo de ter uma carta específica. Se acertar o alvo perde a carta; se errar você perde as moedas. Qualquer um pode duvidar.' },
+    ],
+  },
+  {
+    id: 'investigador', label: '🕵️ X9', labelColor: '#6a1b9a', bg: 'rgba(106,27,154,0.04)', charKey: 'investigador',
+    actions: [
+      { action:'meter_x9',     icon:'🕵️', label:'Meter o X9',      sub:'Espia carta',   tooltip:'Afirma ser o X9. Vê uma carta secreta do alvo. Juiz pode bloquear.' },
+      { action:'disfarce',     icon:'🎭', label:'Disfarce',          sub:'Troca sua carta', tooltip:'Afirma ser o X9. Troca uma de suas cartas pelo baralho em segredo. Juiz pode bloquear.' },
+      { action:'trocar_carta', icon:'🔄', label:'Troca de Cartas',   sub:'Força troca',   tooltip:'Afirma ser o X9. Força o alvo a trocar uma carta. Juiz pode bloquear.' },
     ],
   },
 ];
@@ -97,20 +107,19 @@ export default function Game({ data, myId }) {
     return () => clearInterval(interval);
   }, [data?.timerStartedAt, phase]);
 
-  // ── Coin flip: 3s animation, then actor auto-acknowledges ─────────────────
+  // ── Coin flip: 5s girando + 5s resultado, depois ator confirma ──────────────
   const prevCoinFlipResult = useRef(null);
   useEffect(() => {
     if (pa?.coinFlipResult && pa.coinFlipResult !== prevCoinFlipResult.current) {
       prevCoinFlipResult.current = pa.coinFlipResult;
       setCoinAnimating(true);
-      const t = setTimeout(() => {
-        setCoinAnimating(false);
-        // Após animação, ator (bicheiro) confirma automaticamente
-        if (pa.actorId === myId) {
-          socket.emit('acknowledge_coin_flip', {});
-        }
-      }, 3000);
-      return () => clearTimeout(t);
+      // Após 5s, para a animação e mostra o resultado
+      const t1 = setTimeout(() => setCoinAnimating(false), 5000);
+      // Após 10s (5s girando + 5s resultado), ator confirma automaticamente
+      const t2 = setTimeout(() => {
+        if (pa.actorId === myId) socket.emit('acknowledge_coin_flip', {});
+      }, 10000);
+      return () => { clearTimeout(t1); clearTimeout(t2); };
     }
   }, [pa?.coinFlipResult, myId]);
 
@@ -269,7 +278,7 @@ export default function Game({ data, myId }) {
       {mustLoseInfluence && (
         <CardSelectorModal context="lose" title="Perdeu, mané 💀"
           description="Você deve perder uma carta. Escolha qual revelar para a mesa."
-          cards={(me?.cards||[]).filter(c => !c.dead)} confirmLabel="Perder"
+          cards={me?.cards||[]} confirmLabel="Perder"
           onConfirm={i => emit('lose_influence',{cardIndex:i})} />
       )}
       {mustShowCard && (
@@ -612,10 +621,10 @@ export default function Game({ data, myId }) {
             )}
           </AnimatePresence>
 
-          {/* ── My turn: action categories ── */}
-          {canAct&&!pendingConfirm&&(
+          {/* ── Action categories (visíveis sempre na fase ACTION_SELECT) ── */}
+          {phase==='ACTION_SELECT'&&!pendingConfirm&&(
             <>
-              {selectedTarget&&(
+              {isMyTurn&&selectedTarget&&(
                 <div className={styles.targetPill}>
                   🎯 <strong>{players.find(p=>p.id===selectedTarget)?.name}</strong>
                   <button className={styles.clearTarget} onClick={()=>setSelectedTarget(null)}>✕</button>
@@ -623,14 +632,18 @@ export default function Game({ data, myId }) {
               )}
 
               {ACTION_CATEGORIES.map((cat,ci)=>{
-                // Disable section if must golpe
                 const mustGolpe = myCoins>=10;
+                const isMyCat = cat.charKey && me?.cards?.some(c=>!c.dead&&c.character===cat.charKey);
                 return (
-                  <div key={cat.id} className={styles.catSection} style={{'--cat-bg':cat.bg}}>
+                  <div key={cat.id} className={styles.catSection} style={{'--cat-bg':isMyTurn?cat.bg:'transparent'}}>
                     {ci>0&&<div className={styles.catDivider}/>}
-                    <span className={styles.catLabel} style={{color:cat.labelColor}}>{cat.label}</span>
+                    <div style={{display:'flex',alignItems:'center',gap:5}}>
+                      <span className={styles.catLabel} style={{color:cat.labelColor}}>{cat.label}</span>
+                      {isMyCat&&<span style={{fontSize:'0.55rem',color:cat.labelColor,fontWeight:800,border:`1px solid ${cat.labelColor}`,borderRadius:4,padding:'1px 4px'}}>SUA CARTA</span>}
+                    </div>
                     {cat.actions.map(({action,icon,label,sub,tooltip})=>{
                       const isDisabled =
+                        !isMyTurn ||
                         (action!=='golpe'&&mustGolpe) ||
                         (action==='golpe'&&myCoins<7) ||
                         (action==='assassinar'&&myCoins<3) ||
@@ -639,7 +652,7 @@ export default function Game({ data, myId }) {
                         <Btn key={action}
                           icon={icon} label={label} sub={sub} tooltip={tooltip}
                           disabled={isDisabled}
-                          onClick={()=>stageAction(action, ACTION_TO_CHAR[action]??null)}
+                          onClick={isMyTurn?()=>stageAction(action, ACTION_TO_CHAR[action]??null):undefined}
                         />
                       );
                     })}
@@ -647,20 +660,23 @@ export default function Game({ data, myId }) {
                 );
               })}
 
-              {!selectedTarget&&(
+              {isMyTurn&&!selectedTarget&&(
                 <p className={styles.hint}>⬆ Clique num oponente para selecionar alvo</p>
+              )}
+              {!isMyTurn&&me?.alive&&(
+                <p className={styles.hint}>⌛ Aguardando {players.find(p=>p.id===currentPlayerId)?.name} jogar...</p>
               )}
             </>
           )}
 
-          {/* ── Waiting ── */}
-          {!canAct&&!canChallengeAct&&!canBlockAct&&!canChallengeBlock&&!mustAcknowledgePeek&&me?.alive&&(
+          {/* ── Waiting (fases não-ACTION_SELECT) ── */}
+          {phase!=='ACTION_SELECT'&&!canChallengeAct&&!canBlockAct&&!canChallengeBlock&&!mustAcknowledgePeek&&phase!=='COIN_FLIP'&&me?.alive&&(
             <p className={styles.hint}>
               {phase==='RESPONSE_WINDOW'&&!iAmActor&&alreadyResponded
                 ?'✅ Aguardando outros jogadores...'
-                :phase==='RESPONSE_WINDOW'&&!iAmActor&&!iAmTarget&&isTargetedAction
+                :phase==='RESPONSE_WINDOW'&&!iAmActor&&!iAmTarget&&isTargetedAction&&!isAnyoneChallenge
                 ?'👀 Só o alvo pode responder esta ação'
-                :'⌛ Aguardando sua vez...'}
+                :'⌛ Aguardando...'}
             </p>
           )}
 

@@ -60,8 +60,8 @@ const CHARACTER_NAMES = {
   empresario:    'Bicheiro',
   investigador:  'X9',
   juiz:          'Juiz',
-  assassino:     'Miliciano',
-  guarda_costas: 'Segurança',
+  assassino:     'Bandido',
+  guarda_costas: 'Miliciano',
 };
 
 function getBlockers(actionType) {
