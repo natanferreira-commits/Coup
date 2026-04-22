@@ -1,0 +1,201 @@
+/* ── Overlay ── */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.82);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9400;
+}
+
+/* ── Card / window ── */
+.card {
+  background: linear-gradient(160deg, #141420 0%, #0d0d18 100%);
+  border: 1.5px solid rgba(255, 214, 0, 0.3);
+  border-radius: 24px;
+  padding: 36px 44px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  min-width: 320px;
+  max-width: 420px;
+  box-shadow: 0 0 80px rgba(255, 214, 0, 0.12), 0 24px 60px rgba(0,0,0,0.7);
+  position: relative;
+}
+
+/* ── Title ── */
+.title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.7rem;
+  letter-spacing: 0.12em;
+  color: var(--yellow);
+  text-align: center;
+  line-height: 1;
+}
+
+.subtitle {
+  font-size: 0.78rem;
+  color: var(--muted);
+  text-align: center;
+  margin-top: -12px;
+}
+
+/* ── 1 Real coin ── */
+.coinWrapper {
+  position: relative;
+  width: 160px;
+  height: 160px;
+  perspective: 600px;
+}
+
+/* 3D flip container */
+.coinFlipInner {
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  position: relative;
+}
+
+/* Both faces share this base */
+.coinFace {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  backface-visibility: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+/* CARA (front) */
+.coinFront {
+  background:
+    radial-gradient(ellipse at 35% 30%, #e8e2c8 0%, #c8b86a 30%, #9a8030 60%, #7a6020 100%);
+  box-shadow:
+    inset 0 3px 8px rgba(255,255,255,0.4),
+    inset 0 -3px 8px rgba(0,0,0,0.4),
+    0 0 0 7px #8a7030,
+    0 0 0 10px #b09040,
+    0 0 0 12px #8a7030,
+    0 8px 32px rgba(0,0,0,0.7);
+}
+
+/* COROA (back) */
+.coinBack {
+  background:
+    radial-gradient(ellipse at 35% 30%, #d8d8d8 0%, #b8b8b8 30%, #909090 60%, #707070 100%);
+  box-shadow:
+    inset 0 3px 8px rgba(255,255,255,0.35),
+    inset 0 -3px 8px rgba(0,0,0,0.3),
+    0 0 0 7px #707070,
+    0 0 0 10px #a0a0a0,
+    0 0 0 12px #707070,
+    0 8px 32px rgba(0,0,0,0.7);
+  transform: rotateY(180deg);
+}
+
+/* Text on coin face */
+.coinText {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 0.9rem;
+  letter-spacing: 0.12em;
+  text-align: center;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+  line-height: 1.1;
+}
+.coinFront .coinText { color: #3a2800; }
+.coinBack  .coinText { color: #1a1a1a; }
+
+.coinR {
+  font-size: 1.6rem;
+  font-weight: 900;
+  font-family: serif;
+  line-height: 1;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
+.coinFront .coinR { color: #2a1800; }
+.coinBack  .coinR { color: #111; }
+
+.coinSub {
+  font-size: 0.55rem;
+  letter-spacing: 0.18em;
+  opacity: 0.7;
+}
+
+/* Spinning keyframe (during flip) */
+@keyframes coinSpinFast {
+  from { transform: rotateY(0deg); }
+  to   { transform: rotateY(360deg); }
+}
+
+.spinning {
+  animation: coinSpinFast 0.28s linear infinite;
+}
+
+/* Result glow */
+.resultGlow {
+  position: absolute;
+  inset: -12px;
+  border-radius: 50%;
+  pointer-events: none;
+  transition: box-shadow 0.4s;
+}
+.resultGlowCara   { box-shadow: 0 0 40px 12px rgba(76,175,80,0.45); }
+.resultGlowCoroa  { box-shadow: 0 0 40px 12px rgba(244,67,54,0.45); }
+
+/* ── Result text ── */
+.resultLabel {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2.6rem;
+  letter-spacing: 0.12em;
+  line-height: 1;
+}
+.resultLabelCara  { color: #4caf50; text-shadow: 0 0 20px rgba(76,175,80,0.6); }
+.resultLabelCoroa { color: #f44336; text-shadow: 0 0 20px rgba(244,67,54,0.6); }
+
+.resultDesc {
+  font-size: 0.8rem;
+  color: var(--muted);
+  text-align: center;
+  max-width: 260px;
+  line-height: 1.5;
+}
+
+/* ── Flip button ── */
+.flipBtn {
+  background: linear-gradient(135deg, #ffd600, #ff9800);
+  color: #000;
+  font-weight: 900;
+  font-size: 1rem;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 28px;
+  cursor: pointer;
+  font-family: inherit;
+  letter-spacing: 0.04em;
+  width: 100%;
+  box-shadow: 0 4px 20px rgba(255,214,0,0.3);
+  transition: filter 0.15s;
+}
+.flipBtn:hover  { filter: brightness(1.1); }
+.flipBtn:active { transform: scale(0.97); }
+
+/* ── Waiting state ── */
+.waiting {
+  font-size: 0.8rem;
+  color: var(--muted);
+  text-align: center;
+}
+.waiting strong { color: var(--yellow); }
+
+/* ── Mobile ── */
+@media (max-width: 500px) {
+  .card { padding: 24px 20px 20px; min-width: 280px; }
+  .coinWrapper { width: 120px; height: 120px; }
+  .title { font-size: 1.3rem; }
+}

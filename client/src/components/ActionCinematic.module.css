@@ -1,0 +1,224 @@
+/* ── Fullscreen overlay ── */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9500;
+  display: flex;
+  align-items: stretch;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+/* Blurred dark background layer */
+.bg {
+  position: absolute;
+  inset: 0;
+  background: rgba(4, 4, 8, 0.93);
+  backdrop-filter: blur(4px);
+}
+
+/* Scanline texture */
+.scanlines {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 3px,
+    rgba(0,0,0,0.18) 3px,
+    rgba(0,0,0,0.18) 4px
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ── Layout: left info + right character ── */
+.layout {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  width: 100%;
+  align-items: stretch;
+}
+
+/* Left: text + particles */
+.leftSide {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 40px 36px 40px 48px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Right: character art */
+.rightSide {
+  width: min(40%, 420px);
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.charImg {
+  height: 100%;
+  width: 100%;
+  object-fit: contain;
+  object-position: bottom center;
+  filter: drop-shadow(0 0 40px var(--accent));
+  position: relative;
+  z-index: 2;
+}
+
+/* Character glow backdrop */
+.charGlow {
+  position: absolute;
+  bottom: -10%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120%;
+  height: 70%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 50% 80%, var(--accent), transparent 65%);
+  opacity: 0.25;
+  filter: blur(30px);
+  z-index: 1;
+}
+
+/* ── Text elements ── */
+.label {
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 6px;
+  opacity: 0.85;
+}
+
+.title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(3.2rem, 7vw, 5.5rem);
+  letter-spacing: 0.06em;
+  line-height: 0.92;
+  color: #fff;
+  text-shadow:
+    0 0 40px var(--accent),
+    2px 2px 0 rgba(0,0,0,0.8);
+  margin-bottom: 14px;
+}
+
+.players {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-bottom: 20px;
+}
+
+.actorName {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #82b1ff;
+}
+
+.arrow {
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.35);
+}
+
+.targetName {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #ef9a9a;
+}
+
+/* ── Coin delta badge ── */
+.deltaBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0,0,0,0.55);
+  border: 1.5px solid var(--accent);
+  border-radius: 10px;
+  padding: 6px 18px 6px 14px;
+  width: fit-content;
+  margin-bottom: 28px;
+}
+
+.deltaNum {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2rem;
+  letter-spacing: 0.05em;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.deltaCoin {
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+/* ── Character name pill ── */
+.charPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(0,0,0,0.5);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 20px;
+  padding: 4px 14px 4px 10px;
+  width: fit-content;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.75);
+}
+
+/* ── Timer bar ── */
+.timerBar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: rgba(255,255,255,0.08);
+}
+
+.timerFill {
+  height: 100%;
+  background: var(--accent);
+  transform-origin: left;
+  opacity: 0.7;
+}
+
+/* ── Skip hint ── */
+.skipHint {
+  position: absolute;
+  bottom: 14px;
+  right: 20px;
+  font-size: 0.6rem;
+  color: rgba(255,255,255,0.2);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  z-index: 10;
+}
+
+/* ── Accent border on left edge ── */
+.accentBorder {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(180deg, transparent, var(--accent), transparent);
+  opacity: 0.7;
+}
+
+/* ── Mobile ── */
+@media (max-width: 600px) {
+  .rightSide { width: min(35%, 160px); }
+  .title { font-size: 2.4rem; }
+  .leftSide { padding: 28px 16px 28px 22px; }
+}

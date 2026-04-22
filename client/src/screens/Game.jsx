@@ -8,13 +8,15 @@ import TurnCard from '../components/TurnCard';
 import CardSelectorModal from '../components/CardSelectorModal';
 import { useSoundEffects } from '../sounds/useSoundEffects';
 import { sfx } from '../sounds/sfx';
-import CoinAnimation     from '../components/CoinAnimation';
-import CardDeathAnimation from '../components/CardDeathAnimation';
-import BlockAnimation    from '../components/BlockAnimation';
-import ChallengeAnimation from '../components/ChallengeAnimation';
-import TurnIndicator     from '../components/TurnIndicator';
-import VictoryOverlay    from '../components/VictoryOverlay';
-import QuickChatBubble   from '../components/QuickChatBubble';
+import CoinAnimation      from '../components/CoinAnimation';
+import CardDeathAnimation  from '../components/CardDeathAnimation';
+import BlockAnimation      from '../components/BlockAnimation';
+import ChallengeAnimation  from '../components/ChallengeAnimation';
+import TurnIndicator       from '../components/TurnIndicator';
+import VictoryOverlay      from '../components/VictoryOverlay';
+import QuickChatBubble     from '../components/QuickChatBubble';
+import ActionCinematic     from '../components/ActionCinematic';
+import CoinFlipModal       from '../components/CoinFlipModal';
 import moedaImg from '../assets/moeda.svg';
 import mesaImg  from '../assets/mesa.svg';
 import styles from './Game.module.css';
@@ -173,24 +175,24 @@ export default function Game({ data, myId }) {
     }
   }, [pa?.coinFlipResult, myId]);
 
-  // ── Action announcement popup ─────────────────────────────────────────────
+  // ── Action cinematic (replaces small popup — synchronized via game state) ──
   useEffect(() => {
     if (!pa?.type || !pa?.actorId) return;
     const key = `${pa.actorId}:${pa.type}`;
     if (key === prevActionKeyRef.current) return;
     prevActionKeyRef.current = key;
-    const actorP = players?.find(p => p.id === pa.actorId);
+    const actorP  = players?.find(p => p.id === pa.actorId);
     const targetP = pa.targetId ? players?.find(p => p.id === pa.targetId) : null;
-    setActionNotif({
+    // Feed both the new ActionCinematic and legacy actionNotif (as fallback data)
+    const notif = {
       type: pa.type,
       icon: ACTION_ICONS[pa.type] || '⚡',
       label: ACTION_NAMES[pa.type],
       actorName: actorP?.name,
       targetName: targetP?.name,
       claimedCharacter: pa.claimedCharacter,
-    });
-    const t = setTimeout(() => setActionNotif(null), 3000);
-    return () => clearTimeout(t);
+    };
+    setActionNotif(notif);  // kept for legacy (no longer rendered as small popup)
   }, [pa?.actorId, pa?.type]);
 
   // Reset on phase change
@@ -483,36 +485,26 @@ export default function Game({ data, myId }) {
 
   return (
     <>
-    {/* Action notification overlay */}
-    <AnimatePresence>
-      {actionNotif&&(
-        <motion.div className={styles.actionNotifOverlay}
-          initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0,scale:0.9}}>
-          <motion.div className={styles.actionNotifCard}
-            initial={{scale:0.5,y:-40}} animate={{scale:1,y:0}}
-            exit={{scale:0.85,opacity:0}}
-            transition={{type:'spring',stiffness:420,damping:26}}>
-            <span className={styles.actionNotifIcon}>{actionNotif.icon}</span>
-            <span className={styles.actionNotifLabel}>{actionNotif.label}</span>
-            <div className={styles.actionNotifPlayers}>
-              <span style={{color:'#82b1ff'}}>{actionNotif.actorName}</span>
-              {actionNotif.targetName&&(
-                <><span style={{color:'var(--muted)'}}> → </span>
-                <span style={{color:'#ef9a9a'}}>{actionNotif.targetName}</span></>
-              )}
-            </div>
-            {actionNotif.claimedCharacter&&(
-              <div className={styles.actionNotifChar}>
-                {CHAR_CONFIG[actionNotif.claimedCharacter]?.icon}{' '}
-                {CHAR_CONFIG[actionNotif.claimedCharacter]?.label}
-              </div>
-            )}
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+    {/* ── Fullscreen action cinematic (synchronized for all players) ── */}
+    <ActionCinematic
+      cinematic={actionNotif}
+      onDismiss={() => setActionNotif(null)}
+    />
 
-    <div className={`${styles.board}${screenShake ? ' ' + styles.boardShake : ''}`}>
+    {/* ── Coin flip modal (centered, 1 Real coin) ── */}
+    <CoinFlipModal
+      phase={phase}
+      pa={pa}
+      blockerName={blockerName}
+      actorName={actorName}
+      targetName={targetName}
+      iAmBlocker={iAmBlocker}
+      iAmActor={iAmActor}
+      coinAnimating={coinAnimating}
+      onFlip={() => emit('flip_coin', {})}
+    />
+
+    <div className={`${styles.board}${screenShake?` ${styles.boardShake}`:''}`}>
 
       {/* ── Modals ── */}
       {mustLoseInfluence && (
@@ -720,34 +712,10 @@ export default function Game({ data, myId }) {
           {phase==='COIN_FLIP'&&(
             <motion.div key="coinflip" className={styles.mesaStatus}
               initial={{opacity:0,y:-6}} animate={{opacity:1,y:0}} exit={{opacity:0}}>
-              {!pa?.coinFlipResult&&(
-                <>
-                  <motion.span className={styles.mesaStatusIcon}
-                    animate={{scale:[1,1.15,1]}} transition={{repeat:Infinity,duration:1.2}}>🪙</motion.span>
-                  <span className={styles.mesaStatusMain}>Cara ou Coroa!</span>
-                  <span className={styles.mesaStatusSub}>{blockerName} vai jogar a moeda...</span>
-                </>
-              )}
-              {pa?.coinFlipResult&&coinAnimating&&(
-                <>
-                  <motion.span style={{fontSize:'2rem',display:'block'}}
-                    animate={{rotateY:360}} transition={{repeat:Infinity,duration:0.35,ease:'linear'}}>🪙</motion.span>
-                  <span className={styles.mesaStatusMain}>Girando...</span>
-                </>
-              )}
-              {pa?.coinFlipResult&&!coinAnimating&&(
-                <>
-                  <span className={styles.mesaStatusIcon}>🪙</span>
-                  <span className={styles.mesaStatusMain} style={{
-                    color: pa.coinFlipResult==='cara' ? '#4caf50' : '#f44336', fontSize:22,
-                  }}>
-                    {pa.coinFlipResult==='cara' ? '🦅 CARA' : '🐉 COROA'}
-                  </span>
-                  <span className={styles.mesaStatusSub}>
-                    {pa.coinFlipResult==='cara' ? 'Bloqueio aprovado!' : 'Bloqueio cancelado!'}
-                  </span>
-                </>
-              )}
+              <motion.span className={styles.mesaStatusIcon}
+                animate={{scale:[1,1.12,1]}} transition={{repeat:Infinity,duration:1.1}}>🪙</motion.span>
+              <span className={styles.mesaStatusMain}>Cara ou Coroa!</span>
+              {/* Detailed UI está no CoinFlipModal centralizado */}
             </motion.div>
           )}
 
@@ -818,61 +786,9 @@ export default function Game({ data, myId }) {
         {/* ── ACTIONS TOP ── */}
         <div className={styles.actionsTop}>
 
-          {/* ── Coin flip ── */}
+          {/* Coin flip agora no CoinFlipModal centralizado */}
           {phase==='COIN_FLIP'&&(
-            <motion.div className={styles.coinFlipBox}
-              initial={{opacity:0,y:8}} animate={{opacity:1,y:0}}>
-
-              {/* Estado 1: aguardando bloqueador jogar */}
-              {!pa?.coinFlipResult&&(
-                <>
-                  <p className={styles.coinFlipTitle}>🪙 Hora do Cara ou Coroa!</p>
-                  {iAmBlocker?(
-                    <>
-                      <p className={styles.coinFlipDesc}>É a sua vez! Jogue a moeda para defender o bloqueio.</p>
-                      <motion.button className={styles.flipBtn}
-                        whileHover={{scale:1.04}} whileTap={{scale:0.94}}
-                        onClick={()=>emit('flip_coin',{})}>
-                        🪙 Jogar a Moeda
-                      </motion.button>
-                    </>
-                  ):(
-                    <p className={styles.coinFlipDesc}>
-                      ⌛ <strong>{blockerName}</strong> está se preparando para jogar a moeda...
-                    </p>
-                  )}
-                </>
-              )}
-
-              {/* Estado 2: moeda girando (animação 3s) */}
-              {pa?.coinFlipResult&&coinAnimating&&(
-                <>
-                  <p className={styles.coinFlipTitle}>🪙 A moeda está girando...</p>
-                  <motion.span className={styles.coinSpin}
-                    animate={{rotateY:360}}
-                    transition={{repeat:Infinity,duration:0.35,ease:'linear'}}>
-                    🪙
-                  </motion.span>
-                </>
-              )}
-
-              {/* Estado 3: resultado (exibido brevemente antes do auto-acknowledge) */}
-              {pa?.coinFlipResult&&!coinAnimating&&(
-                <>
-                  <p className={styles.coinFlipTitle}>🪙 Resultado da Moeda!</p>
-                  <div className={styles.coinFlipResultText}
-                    style={{color: pa.coinFlipResult==='cara' ? '#4caf50' : '#f44336'}}>
-                    {pa.coinFlipResult==='cara' ? '🦅 CARA' : '🐉 COROA'}
-                  </div>
-                  <p className={styles.coinFlipDesc}>
-                    {pa.coinFlipResult==='cara'
-                      ? `Bloqueio aprovado! ${blockerName} recupera a moeda.`
-                      : `Bloqueio cancelado! Bicheiro fica com a moeda e ainda rouba de ${targetName}!`
-                    }
-                  </p>
-                </>
-              )}
-            </motion.div>
+            <p className={styles.hint}>🪙 Aguardando resultado da moeda...</p>
           )}
 
           {/* ── CHALLENGE_WON: actor decides swap or keep ── */}
