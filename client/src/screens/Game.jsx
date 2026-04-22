@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import socket from '../socket';
 import Card from '../components/Card';
@@ -8,6 +8,13 @@ import TurnCard from '../components/TurnCard';
 import CardSelectorModal from '../components/CardSelectorModal';
 import { useSoundEffects } from '../sounds/useSoundEffects';
 import { sfx } from '../sounds/sfx';
+import CoinAnimation     from '../components/CoinAnimation';
+import CardDeathAnimation from '../components/CardDeathAnimation';
+import BlockAnimation    from '../components/BlockAnimation';
+import ChallengeAnimation from '../components/ChallengeAnimation';
+import TurnIndicator     from '../components/TurnIndicator';
+import VictoryOverlay    from '../components/VictoryOverlay';
+import QuickChatBubble   from '../components/QuickChatBubble';
 import moedaImg from '../assets/moeda.svg';
 import mesaImg  from '../assets/mesa.svg';
 import styles from './Game.module.css';
@@ -118,6 +125,19 @@ export default function Game({ data, myId }) {
   const [chatBubbles,      setChatBubbles]      = useState({}); // { [playerId]: { message, key } }
   const [screenShake,      setScreenShake]      = useState(false);
 
+  // ── Animation state ───────────────────────────────────────────────────────
+  const [coinAnims,      setCoinAnims]      = useState([]); // [{ id, from, to, amount }]
+  const [cardDeathAnims, setCardDeathAnims] = useState([]); // [{ id, x, y }]
+  const [blockAnim,      setBlockAnim]      = useState(false);
+  const [challengeAnim,  setChallengeAnim]  = useState(false);
+  const [turnVisible,    setTurnVisible]    = useState(false);
+
+  // ── Refs ──────────────────────────────────────────────────────────────────
+  /** playerId → DOM element for position queries */
+  const playerElRefs = useRef(new Map());
+  /** previous game snapshot for diff detection */
+  const prevGameRef  = useRef(null);
+
   const game = data?.game;
   const { players, currentPlayerId, phase, pendingAction: pa, log, winner } = game || {};
 
@@ -189,6 +209,95 @@ export default function Game({ data, myId }) {
   useEffect(() => {
     if (muted !== sfx.isMuted()) sfx.toggleMute();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Helpers for animation positions ──────────────────────────────────────
+  const getPlayerPos = useCallback(playerId => {
+    const el = playerElRefs.current.get(playerId);
+    if (!el) return { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+    const r = el.getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  }, []);
+
+  const getTablePos = useCallback(() => ({
+    x: window.innerWidth / 2,
+    y: window.innerHeight * 0.48,
+  }), []);
+
+  const pushCoinAnim = useCallback((from, to, amount) => {
+    const id = Date.now() + Math.random();
+    setCoinAnims(q => [...q, { id, from, to, amount }]);
+    setTimeout(() => setCoinAnims(q => q.filter(a => a.id !== id)), 1100);
+  }, []);
+
+  const pushCardDeathAnim = useCallback((x, y) => {
+    const id = Date.now() + Math.random();
+    setCardDeathAnims(q => [...q, { id, x, y }]);
+    setTimeout(() => setCardDeathAnims(q => q.filter(a => a.id !== id)), 1000);
+  }, []);
+
+  // ── Game state diff → trigger animations ─────────────────────────────────
+  useEffect(() => {
+    if (!game) return;
+    const prev = prevGameRef.current;
+
+    if (prev) {
+      // ── COINS ──────────────────────────────────────────────────────────
+      const gainers = [];
+      const losers  = [];
+      game.players.forEach(p => {
+        const pp = prev.players.find(x => x.id === p.id);
+        if (!pp) return;
+        const diff = p.coins - pp.coins;
+        if (diff > 0) gainers.push({ id: p.id, diff });
+        if (diff < 0) losers.push({ id: p.id, diff: -diff });
+      });
+
+      if (gainers.length === 1 && losers.length === 1 && gainers[0].diff === losers[0].diff) {
+        // Roubo direto: target → actor
+        pushCoinAnim(getPlayerPos(losers[0].id), getPlayerPos(gainers[0].id), gainers[0].diff);
+      } else {
+        // Ganhos do banco
+        gainers.forEach(g => pushCoinAnim(getTablePos(), getPlayerPos(g.id), g.diff));
+        // Gastos para o banco (golpe, assassinar, veredito…)
+        losers.forEach(l => pushCoinAnim(getPlayerPos(l.id), getTablePos(), l.diff));
+      }
+
+      // ── CARD DEATHS ────────────────────────────────────────────────────
+      game.players.forEach(p => {
+        const pp = prev.players.find(x => x.id === p.id);
+        if (!pp) return;
+        p.cards.forEach((c, i) => {
+          if (!pp.cards[i]?.dead && c.dead) {
+            const pos = getPlayerPos(p.id);
+            pushCardDeathAnim(pos.x, pos.y);
+          }
+        });
+      });
+
+      // ── BLOCK ─────────────────────────────────────────────────────────
+      if (game.phase === 'BLOCK_CHALLENGE_WINDOW' && prev.phase !== 'BLOCK_CHALLENGE_WINDOW') {
+        setBlockAnim(true);
+        setTimeout(() => setBlockAnim(false), 950);
+      }
+
+      // ── CHALLENGE ─────────────────────────────────────────────────────
+      if (
+        (game.phase === 'CHALLENGE_WON' || game.phase === 'LOSE_INFLUENCE') &&
+        (prev.phase === 'RESPONSE_WINDOW' || prev.phase === 'BLOCK_CHALLENGE_WINDOW')
+      ) {
+        setChallengeAnim(true);
+        setTimeout(() => setChallengeAnim(false), 1000);
+      }
+
+      // ── TURN CHANGE ───────────────────────────────────────────────────
+      if (game.currentPlayerId !== prev.currentPlayerId && game.phase === 'ACTION_SELECT') {
+        setTurnVisible(true);
+        setTimeout(() => setTurnVisible(false), 2600);
+      }
+    }
+
+    prevGameRef.current = game;
+  }, [game, getPlayerPos, getTablePos, pushCoinAnim, pushCardDeathAnim]);
 
   // ── Screen shake on challenge resolution ─────────────────────────────────
   const prevPhaseRef = useRef(null);
@@ -313,6 +422,8 @@ export default function Game({ data, myId }) {
     const w = players.find(p => p.id === winner);
     const losers = players.filter(p => p.id !== winner);
     return (
+      <>
+      <VictoryOverlay active />
       <motion.div className={styles.gameOver} initial={{ opacity:0 }} animate={{ opacity:1 }}>
         <div className={styles.gameOverLayout}>
           {/* Painel central: vencedor + perdedores */}
@@ -366,6 +477,7 @@ export default function Game({ data, myId }) {
           </motion.div>
         </div>
       </motion.div>
+      </>
     );
   }
 
@@ -458,18 +570,15 @@ export default function Game({ data, myId }) {
             const bubble = chatBubbles[p.id];
             const isHost = p.id === data?.hostId;
             return (
-              <div key={p.id} className={styles.opponentWrapper}>
+              <div
+                key={p.id}
+                className={styles.opponentWrapper}
+                ref={el => { if (el) playerElRefs.current.set(p.id, el); else playerElRefs.current.delete(p.id); }}
+              >
                 {/* Chat bubble */}
                 <AnimatePresence>
                   {bubble && (
-                    <motion.div className={styles.chatBubble}
-                      key={bubble.key}
-                      initial={{ opacity: 0, y: 6, scale: 0.85 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -4, scale: 0.9 }}
-                      transition={{ type: 'spring', stiffness: 380, damping: 22 }}>
-                      {bubble.message}
-                    </motion.div>
+                    <QuickChatBubble key={bubble.key} message={bubble.message} mine={false} />
                   )}
                 </AnimatePresence>
 
@@ -670,7 +779,10 @@ export default function Game({ data, myId }) {
         </div>
 
         {/* My cards + coins */}
-        <div className={styles.myArea}>
+        <div
+          className={styles.myArea}
+          ref={el => { if (el && myId) { if (el) playerElRefs.current.set(myId, el); else playerElRefs.current.delete(myId); } }}
+        >
           <div className={styles.coinSide}>
             <img src={moedaImg} className={styles.coinIcon} alt="moeda" />
             <span className={styles.coinNum}>{myCoins}</span>
@@ -685,14 +797,7 @@ export default function Game({ data, myId }) {
             {/* My chat bubble */}
             <AnimatePresence>
               {chatBubbles[myId] && (
-                <motion.div className={`${styles.chatBubble} ${styles.chatBubbleMine}`}
-                  key={chatBubbles[myId].key}
-                  initial={{ opacity: 0, y: 6, scale: 0.85 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -4, scale: 0.9 }}
-                  transition={{ type: 'spring', stiffness: 380, damping: 22 }}>
-                  {chatBubbles[myId].message}
-                </motion.div>
+                <QuickChatBubble key={chatBubbles[myId].key} message={chatBubbles[myId].message} mine />
               )}
             </AnimatePresence>
             <div className={styles.myMeta}>
@@ -1089,6 +1194,17 @@ export default function Game({ data, myId }) {
         )}
       </AnimatePresence>
     </div>
+
+    {/* ── Overlays de animação ── */}
+    <CoinAnimation      queue={coinAnims} />
+    <CardDeathAnimation queue={cardDeathAnims} />
+    <BlockAnimation     active={blockAnim} />
+    <ChallengeAnimation active={challengeAnim} />
+    <TurnIndicator
+      playerName={players?.find(p => p.id === currentPlayerId)?.name}
+      isMe={isMyTurn}
+      visible={turnVisible}
+    />
     </>
   );
 }
