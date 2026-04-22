@@ -8,16 +8,16 @@ import styles from './ActionCinematic.module.css';
 
 // ── Per-action config ─────────────────────────────────────────────────────────
 const CINEMATIC_CONFIG = {
-  taxar:        { title: 'FAZER O L',       sub: 'Político pegou do banco',    delta: '+3', coinMode: 'rain',  accent: '#69f0ae', charKey: 'politico'      },
-  roubar:       { title: 'COBRA A TAXA',    sub: 'Bicheiro roubou moedas',     delta: '±2', coinMode: 'burst', accent: '#ffb74d', charKey: 'empresario'    },
-  assassinar:   { title: 'FOI DE ARRASTA',  sub: 'Bandido elimina influência', delta: '-3', coinMode: null,    accent: '#ef5350', charKey: 'assassino'     },
-  veredito:     { title: 'VEREDITO',        sub: 'O Juiz pronunciou sentença', delta: '-5', coinMode: null,    accent: '#66bb6a', charKey: 'juiz'           },
-  meter_x9:     { title: 'CAGUETOU',        sub: 'X9 espionou uma carta',      delta: null, coinMode: null,    accent: '#ce93d8', charKey: 'investigador'  },
-  disfarce:     { title: 'DISFARCE',        sub: 'Trocou carta em segredo',    delta: null, coinMode: null,    accent: '#ce93d8', charKey: 'investigador'  },
-  trocar_carta: { title: 'TROCA FORÇADA',   sub: 'Forçou troca de carta',      delta: null, coinMode: null,    accent: '#ce93d8', charKey: 'investigador'  },
-  golpe:        { title: 'GOLPE DE ESTADO', sub: 'Eliminação direta',          delta: '-7', coinMode: null,    accent: '#ff5252', charKey: null             },
-  renda:        { title: 'TRAMPO SUADO',    sub: 'Pegou 1 moeda do banco',     delta: '+1', coinMode: 'rain',  accent: '#b0bec5', charKey: null             },
-  ajuda_externa:{ title: 'IMPOSTO É ROUBO', sub: 'Pegou 2 moedas do banco',    delta: '+2', coinMode: 'rain',  accent: '#82b1ff', charKey: null             },
+  taxar:        { title: 'FAZER O L',       naturalName: 'fez o L',             sub: 'Político pegou do banco',    delta: '+3', coinMode: 'rain',  accent: '#69f0ae', charKey: null,         memeMode: true       },
+  roubar:       { title: 'COBRA A TAXA',    naturalName: 'pegou o arrego de',   sub: 'Bicheiro roubou moedas',     delta: '±2', coinMode: 'burst', accent: '#ffb74d', charKey: 'empresario'                      },
+  assassinar:   { title: 'FOI DE ARRASTA',  naturalName: 'mandou pro Vasco',    sub: 'Bandido elimina influência', delta: '-3', coinMode: null,    accent: '#ef5350', charKey: 'assassino'                      },
+  veredito:     { title: 'VEREDITO',        naturalName: 'usou Veredito em',    sub: 'O Juiz pronunciou sentença', delta: '-5', coinMode: null,    accent: '#66bb6a', charKey: 'juiz'                           },
+  meter_x9:     { title: 'CAGUETOU',        naturalName: 'meteu o X9 em',       sub: 'X9 espionou uma carta',      delta: null, coinMode: null,    accent: '#ce93d8', charKey: 'investigador'                   },
+  disfarce:     { title: 'DISFARCE',        naturalName: 'usou Disfarce',       sub: 'Trocou carta em segredo',    delta: null, coinMode: null,    accent: '#ce93d8', charKey: 'investigador'                   },
+  trocar_carta: { title: 'TROCA FORÇADA',   naturalName: 'forçou troca em',     sub: 'Forçou troca de carta',      delta: null, coinMode: null,    accent: '#ce93d8', charKey: 'investigador'                   },
+  golpe:        { title: 'GOLPE DE ESTADO', naturalName: 'deu um Golpe em',     sub: 'Eliminação direta',          delta: '-7', coinMode: null,    accent: '#ff5252', charKey: null                             },
+  renda:        { title: 'TRAMPO SUADO',    naturalName: 'pegou 1 moeda',       sub: 'Pegou 1 moeda do banco',     delta: '+1', coinMode: 'rain',  accent: '#b0bec5', charKey: null                             },
+  ajuda_externa:{ title: 'IMPOSTO É ROUBO', naturalName: 'pediu ajuda externa', sub: 'Pegou 2 moedas do banco',    delta: '+2', coinMode: 'rain',  accent: '#82b1ff', charKey: null                             },
 };
 
 const BG_COLORS = {
@@ -27,7 +27,7 @@ const BG_COLORS = {
   ajuda_externa: '#06080f',
 };
 
-const DURATION_MS = 3000;
+const DURATION_MS = 5000;
 
 /**
  * ActionCinematic — fullscreen cutscene sincronizada para todos os jogadores
@@ -88,17 +88,17 @@ export default function ActionCinematic({ cinematic, onDismiss }) {
                 {cfg.title || cinematic.type.toUpperCase()}
               </motion.h1>
 
-              {/* Actor → Target */}
+              {/* Sentence: "X fez o L" / "X mandou pro Vasco em Y" */}
               <motion.div className={styles.players}
                 initial={{ x: -30, opacity: 0 }} animate={{ x: 0, opacity: 1 }}
                 transition={{ delay: 0.14 }}>
                 <span className={styles.actorName}>⚡ {cinematic.actorName}</span>
-                {cinematic.targetName && (
-                  <>
-                    <span className={styles.arrow}>↓</span>
-                    <span className={styles.targetName}>🎯 {cinematic.targetName}</span>
-                  </>
-                )}
+                <span className={styles.actionSentence}>
+                  {cfg.naturalName || cfg.title?.toLowerCase() || cinematic.type}
+                  {cinematic.targetName && (
+                    <span className={styles.targetName}> 🎯 {cinematic.targetName}</span>
+                  )}
+                </span>
               </motion.div>
 
               {/* Coin delta */}
@@ -131,8 +131,24 @@ export default function ActionCinematic({ cinematic, onDismiss }) {
               )}
             </div>
 
-            {/* ── RIGHT: character art ── */}
-            {charCfg?.img ? (
+            {/* ── RIGHT: meme art / character art / emoji ── */}
+            {cfg.memeMode ? (
+              /* FAZER O L — meme especial */
+              <div className={styles.rightSide} style={{ alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                <div className={styles.memeGlow} style={{ background: `radial-gradient(ellipse, ${accent}44 0%, transparent 70%)` }} />
+                <motion.div
+                  className={styles.memeContainer}
+                  initial={{ scale: 0.4, opacity: 0, rotate: 15 }}
+                  animate={{ scale: 1, opacity: 1, rotate: 0 }}
+                  transition={{ delay: 0.06, type: 'spring', stiffness: 220, damping: 18 }}>
+                  {/* Big "L" in Brazilian flag green/yellow */}
+                  <div className={styles.memeLLetter}>L</div>
+                  <div className={styles.memeEmojis}>🤙🏽🤙🏽🤙🏽</div>
+                  <div className={styles.memeCaption}>PERDEU, MANÉ</div>
+                  <div className={styles.memeSubCaption}>🇧🇷 BRASIL 🇧🇷</div>
+                </motion.div>
+              </div>
+            ) : charCfg?.img ? (
               <div className={styles.rightSide}>
                 <div className={styles.charGlow} />
                 <motion.img

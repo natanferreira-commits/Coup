@@ -25,10 +25,23 @@ export function useSoundEffects(game, myId) {
 
     // ── Mudança de fase ───────────────────────────────────────────────────────
     if (phase !== prevPhase.current) {
-      if (phase === 'RESPONSE_WINDOW')        sfx.action();
+      if (phase === 'RESPONSE_WINDOW') {
+        // Som único por tipo de ação
+        switch (pa?.type) {
+          case 'assassinar':   sfx.gunshot(); break;
+          case 'taxar':        sfx.cashRegister(); break;
+          case 'roubar':       sfx.steal(); break;
+          case 'veredito':     sfx.gavel(); break;
+          case 'golpe':        sfx.boom(); break;
+          case 'meter_x9':     sfx.spy(); break;
+          case 'disfarce':     sfx.cardFlip(); break;
+          case 'trocar_carta': sfx.cardFlip(); break;
+          default:             sfx.action(); break;
+        }
+      }
       if (phase === 'BLOCK_CHALLENGE_WINDOW') sfx.block();
       if (phase === 'LOSE_INFLUENCE')         sfx.eliminate();
-      if (phase === 'X9_PEEK_SELECT')         sfx.x9();
+      if (phase === 'X9_PEEK_SELECT')         sfx.spy();
       if (phase === 'X9_PEEK_VIEW')           sfx.x9();
       if (phase === 'CARD_SWAP_SELECT')       sfx.cardFlip();
     }

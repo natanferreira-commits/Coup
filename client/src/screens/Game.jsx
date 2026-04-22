@@ -214,6 +214,9 @@ export default function Game({ data, myId }) {
     if (muted !== sfx.isMuted()) sfx.toggleMute();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── Stable dismiss for ActionCinematic (useCallback prevents timer resets) ──
+  const dismissCinematic = useCallback(() => setActionNotif(null), []);
+
   // ── Helpers for animation positions ──────────────────────────────────────
   const getPlayerPos = useCallback(playerId => {
     const el = playerElRefs.current.get(playerId);
@@ -367,16 +370,18 @@ export default function Game({ data, myId }) {
     });
   }
 
-  // Stage action for confirmation instead of firing immediately
+  // Stage action for confirmation — target can be picked inside the confirm overlay
   const stageAction = (action, charKey) => {
-    if (TARGET_ACTIONS.includes(action) && !selectedTarget)
-      return setError('Selecione um oponente como alvo primeiro ⬆');
     sfx.cardFlip();
-    setPendingConfirm({ action, charKey: charKey ?? null, targetId: selectedTarget });
+    setError('');
+    // Pre-fill targetId if one is already selected (convenience), otherwise null (picker shown)
+    setPendingConfirm({ action, charKey: charKey ?? null, targetId: selectedTarget ?? null });
   };
 
   const confirmAction = () => {
     if (!pendingConfirm) return;
+    if (TARGET_ACTIONS.includes(pendingConfirm.action) && !pendingConfirm.targetId)
+      return setError('Selecione um alvo abaixo ⬇');
     if (pendingConfirm.action === 'veredito' && !pendingConfirm.vereditoChar)
       return setError('Selecione qual carta você acusa o alvo de ter ⬇');
     sfx.action();
@@ -499,7 +504,7 @@ export default function Game({ data, myId }) {
     {/* ── Fullscreen action cinematic (synchronized for all players) ── */}
     <ActionCinematic
       cinematic={actionNotif}
-      onDismiss={() => setActionNotif(null)}
+      onDismiss={dismissCinematic}
     />
 
     {/* ── Coin flip modal (centered, 1 Real coin) ── */}
@@ -839,11 +844,40 @@ export default function Game({ data, myId }) {
                 exit={{opacity:0,scale:0.97}}>
                 <p className={styles.confirmTitle}>Confirmar ação?</p>
                 <p className={styles.confirmAction}>{ACTION_NAMES[pendingConfirm.action]}</p>
-                {pendingConfirm.targetId&&(
-                  <p className={styles.confirmTarget}>
-                    Alvo: <strong>{players.find(p=>p.id===pendingConfirm.targetId)?.name}</strong>
-                  </p>
+
+                {/* ── Target picker (shown when action needs target) ── */}
+                {TARGET_ACTIONS.includes(pendingConfirm.action)&&(
+                  <div style={{width:'100%',marginTop:6}}>
+                    <p className={styles.confirmTitle} style={{fontSize:11,color:'var(--muted)',marginBottom:4}}>
+                      🎯 Escolha o alvo:
+                    </p>
+                    <div style={{display:'flex',flexWrap:'wrap',gap:5,justifyContent:'center'}}>
+                      {others.filter(p=>p.alive).map(p=>(
+                        <motion.button key={p.id}
+                          className={styles.actionBtn}
+                          style={{
+                            '--char-color': pendingConfirm.targetId===p.id ? '#ef9a9a' : 'rgba(255,255,255,0.15)',
+                            border: pendingConfirm.targetId===p.id
+                              ? '2px solid #ef9a9a' : '2px solid rgba(255,255,255,0.12)',
+                            padding:'5px 10px', minWidth:0, flex:'0 0 auto',
+                            background: pendingConfirm.targetId===p.id
+                              ? 'rgba(239,154,154,0.12)' : 'rgba(255,255,255,0.04)',
+                          }}
+                          whileTap={{scale:0.96}}
+                          onClick={()=>setPendingConfirm(prev=>({...prev,targetId:p.id}))}>
+                          <strong style={{fontSize:12}}>{p.name}</strong>
+                          <div style={{fontSize:10,opacity:0.6}}>{p.coins}🪙</div>
+                        </motion.button>
+                      ))}
+                    </div>
+                    {pendingConfirm.targetId&&(
+                      <p style={{fontSize:11,color:'#ef9a9a',marginTop:4,textAlign:'center'}}>
+                        Alvo: <strong>{players.find(p=>p.id===pendingConfirm.targetId)?.name}</strong>
+                      </p>
+                    )}
+                  </div>
                 )}
+
                 {/* Seleção de carta para Veredito */}
                 {pendingConfirm.action==='veredito'&&(
                   <div style={{marginTop:8}}>
@@ -891,13 +925,6 @@ export default function Game({ data, myId }) {
           {/* ── Action categories (visíveis sempre na fase ACTION_SELECT) ── */}
           {phase==='ACTION_SELECT'&&!pendingConfirm&&(
             <>
-              {isMyTurn&&selectedTarget&&(
-                <div className={styles.targetPill}>
-                  🎯 <strong>{players.find(p=>p.id===selectedTarget)?.name}</strong>
-                  <button className={styles.clearTarget} onClick={()=>setSelectedTarget(null)}>✕</button>
-                </div>
-              )}
-
               {ACTION_CATEGORIES.map((cat,ci)=>{
                 const mustGolpe = myCoins>=10;
                 const isMyCat = cat.charKey && me?.cards?.some(c=>!c.dead&&c.character===cat.charKey);
@@ -927,9 +954,6 @@ export default function Game({ data, myId }) {
                 );
               })}
 
-              {isMyTurn&&!selectedTarget&&(
-                <p className={styles.hint}>⬆ Clique num oponente para selecionar alvo</p>
-              )}
               {!isMyTurn&&me?.alive&&(
                 <p className={styles.hint}>⌛ Aguardando {players.find(p=>p.id===currentPlayerId)?.name} jogar...</p>
               )}
