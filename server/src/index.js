@@ -118,7 +118,7 @@ const pidSessions = new Map();
 /** pid → setTimeout handle (30 s grace period before removing player) */
 const disconnectTimers = new Map();
 
-const GRACE_PERIOD_MS = 30_000;
+const GRACE_PERIOD_MS = 20_000; // 20s — dentro do janela de 35s do cliente
 
 // ── Sanitize ─────────────────────────────────────────────────────────────────
 
@@ -370,12 +370,17 @@ function attachGameHandlers(socket) {
 
   function withRoom(cb) {
     return (payload, ack) => {
-      const room = getRoomByPlayer(socket.id);
-      if (!room?.game) return ack?.({ success: false });
-      const playerId = resolvePlayerId();
-      const result = cb(room, payload, playerId);
-      broadcast(room);
-      ack?.({ success: result?.success ?? true, error: result?.error });
+      try {
+        const room = getRoomByPlayer(socket.id);
+        if (!room?.game) return ack?.({ success: false, error: 'Sala não encontrada' });
+        const playerId = resolvePlayerId();
+        const result = cb(room, payload, playerId);
+        broadcast(room);
+        ack?.({ success: result?.success ?? true, error: result?.error });
+      } catch (err) {
+        console.error('[withRoom] erro inesperado:', err);
+        ack?.({ success: false, error: 'Erro interno do servidor' });
+      }
     };
   }
 

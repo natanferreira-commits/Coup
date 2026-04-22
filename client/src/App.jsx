@@ -79,16 +79,34 @@ export default function App() {
     });
 
     // ── Disconnect / reconnect ────────────────────────────────────────────
-    socket.on('disconnect', () => {
+    socket.on('disconnect', reason => {
       const inSession = gameDataRef.current || roomDataRef.current || spectDataRef.current;
+      // 'io client disconnect' = saída voluntária (leave_room), não reconectar
+      if (reason === 'io client disconnect') {
+        if (!inSession) navigate('/', { replace: true });
+        return;
+      }
       if (inSession) {
         setIsReconnecting(true);
+        // 35s = tempo suficiente para Socket.IO reconectar (backoff 0.5→2s) + margem
         reconnTimerRef.current = setTimeout(() => {
           clearAll();
           navigate('/', { replace: true });
-        }, 12_000);
+        }, 35_000);
       } else {
         navigate('/', { replace: true });
+      }
+    });
+
+    // Quando socket reconecta, reseta o timer de desistência (servidor enviará game_state logo)
+    socket.on('connect', () => {
+      if (reconnTimerRef.current) {
+        clearTimeout(reconnTimerRef.current);
+        // Dá 8s para o servidor confirmar a sessão antes de desistir
+        reconnTimerRef.current = setTimeout(() => {
+          clearAll();
+          navigate('/', { replace: true });
+        }, 8_000);
       }
     });
 
@@ -106,6 +124,7 @@ export default function App() {
       socket.off('join_approved');
       socket.off('join_request');
       socket.off('disconnect');
+      socket.off('connect');
       socket.off('session_expired');
     };
   }, [navigate]);
