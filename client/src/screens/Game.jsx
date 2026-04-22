@@ -17,6 +17,7 @@ import VictoryOverlay      from '../components/VictoryOverlay';
 import QuickChatBubble     from '../components/QuickChatBubble';
 import ActionCinematic     from '../components/ActionCinematic';
 import CoinFlipModal       from '../components/CoinFlipModal';
+import DisfarceModal       from '../components/DisfarceModal';
 import ChatBubblesLayer    from '../components/ChatBubblesLayer';
 import moedaImg from '../assets/moeda.svg';
 import mesaImg  from '../assets/mesa.svg';
@@ -423,6 +424,7 @@ export default function Game({ data, myId }) {
   const mustShowCard        = phase === 'X9_PEEK_SELECT'   && iAmTarget;
   const mustAcknowledgePeek = phase === 'X9_PEEK_VIEW'    && iAmActor;
   const mustSwapCard        = phase === 'CARD_SWAP_SELECT' && iAmSwapPlayer;
+  const mustDisfarce        = phase === 'DISFARCE_SELECT'  && pa?.swapPlayerId === myId;
   const mustAckCoinFlip     = phase === 'COIN_FLIP'        && iAmActor;
   const mustChooseChallengeWon = phase === 'CHALLENGE_WON' && iAmActor;
   const isHost              = data?.hostId === myId;
@@ -543,6 +545,14 @@ export default function Game({ data, myId }) {
             :`${actorName} forçou uma troca. Escolha qual carta trocar.`}
           cards={me?.cards||[]} confirmLabel="Trocar"
           onConfirm={i => emit('select_card_swap',{cardIndex:i})} />
+      )}
+      {mustDisfarce && (
+        <DisfarceModal
+          pa={pa}
+          myCards={me?.cards || []}
+          onConfirm={({ myCardIndex, pickedOption }) => emit('select_disfarce', { myCardIndex, pickedOption })}
+          onSkip={() => emit('select_disfarce', { myCardIndex: 0, pickedOption: null })}
+        />
       )}
 
       {/* ── LEFT ── */}
@@ -1094,6 +1104,16 @@ export default function Game({ data, myId }) {
           🔄 Reiniciar
         </motion.button>
       )}
+
+      {/* Sair da Partida — todos os jogadores */}
+      <motion.button className={styles.leaveBtn}
+        whileHover={{scale:1.05}} whileTap={{scale:0.95}}
+        onClick={()=>{
+          if(window.confirm('Sair da partida? Você será eliminado.'))
+            socket.emit('leave_room', {}, () => { window.location.reload(); });
+        }}>
+        🚪 Sair
+      </motion.button>
 
       {/* Mute */}
       <motion.button className={styles.muteBtn}

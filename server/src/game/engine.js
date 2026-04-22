@@ -136,7 +136,12 @@ function resolveActionEffect(game) {
       log(game, FUNNY.disfarce(actor.name));
       pa.swapPlayerId = actorId;
       pa.swapContext = 'disfarce';
-      game.phase = 'CARD_SWAP_SELECT';
+      // Draw up to 2 random options from deck for player to choose
+      const opts = [];
+      if (game.deck.length >= 1) opts.push(game.deck.pop());
+      if (game.deck.length >= 1) opts.push(game.deck.pop());
+      pa.disfarceOptions = opts;
+      game.phase = 'DISFARCE_SELECT';
       return;
     }
 
@@ -479,10 +484,43 @@ function handleSelectCardSwap(room, playerId, cardIndex) {
   return { success: true };
 }
 
+function handleSelectDisfarce(room, playerId, { myCardIndex, pickedOption }) {
+  const game = room.game;
+  const pa = game.pendingAction;
+  if (game.phase !== 'DISFARCE_SELECT') return { success: false, error: 'Fase incorreta' };
+  if (pa.swapPlayerId !== playerId) return { success: false, error: 'Não é você que deve escolher' };
+
+  const player = getPlayer(game, playerId);
+  const card = player.cards[myCardIndex];
+  if (!card || card.dead) return { success: false, error: 'Carta inválida' };
+
+  const opts = pa.disfarceOptions || [];
+
+  if (pickedOption !== null && pickedOption !== undefined && opts[pickedOption] !== undefined) {
+    const chosen = opts[pickedOption];
+    const old = card.character;
+    card.character = chosen;
+    // Return old card + unchosen options to deck
+    const unchosen = opts.filter((_, i) => i !== Number(pickedOption));
+    game.deck.push(old, ...unchosen);
+    shuffle(game.deck);
+    log(game, `${player.name} botou o disfarce e trocou uma carta! 🎭`);
+  } else {
+    // Keep current cards, return all options to deck
+    game.deck.push(...opts);
+    shuffle(game.deck);
+    log(game, `${player.name} não quis trocar no disfarce. 🎭`);
+  }
+
+  delete pa.disfarceOptions;
+  advanceTurn(game);
+  return { success: true };
+}
+
 module.exports = {
   handleAction, handlePass, handleBlock, handleChallenge,
   handleLoseInfluence, handleChallengeWonChoice, handleFlipCoin, handleAcknowledgeCoinFlip,
-  handleSelectCardShow, handleAcknowledgePeek, handleSelectCardSwap,
+  handleSelectCardShow, handleAcknowledgePeek, handleSelectCardSwap, handleSelectDisfarce,
   // Exposed for timer auto-actions
   getAlivePlayers, getPlayer, resolveActionEffect,
 };

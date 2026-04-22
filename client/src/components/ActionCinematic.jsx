@@ -8,9 +8,9 @@ import styles from './ActionCinematic.module.css';
 
 // ── Per-action config ─────────────────────────────────────────────────────────
 const CINEMATIC_CONFIG = {
-  taxar:        { title: 'FAZER O L',       naturalName: 'fez o L',             sub: 'Político pegou do banco',    delta: '+3', coinMode: 'rain',  accent: '#69f0ae', charKey: null,         memeMode: true       },
+  taxar:        { title: 'FAZER O L',       naturalName: 'fez o L',             sub: 'Político pegou do banco',    delta: '+3', coinMode: 'rain',  accent: '#69f0ae', charKey: 'politico'                       },
   roubar:       { title: 'COBRA A TAXA',    naturalName: 'pegou o arrego de',   sub: 'Bicheiro roubou moedas',     delta: '±2', coinMode: 'burst', accent: '#ffb74d', charKey: 'empresario'                      },
-  assassinar:   { title: 'FOI DE ARRASTA',  naturalName: 'mandou pro Vasco',    sub: 'Bandido elimina influência', delta: '-3', coinMode: null,    accent: '#ef5350', charKey: 'assassino'                      },
+  assassinar:   { title: 'MANDOU JOGAR NO VASCO', naturalName: 'mandou pro Vasco', sub: 'Bandido elimina influência', delta: '-3', coinMode: null, accent: '#ef5350', charKey: 'assassino'                      },
   veredito:     { title: 'VEREDITO',        naturalName: 'usou Veredito em',    sub: 'O Juiz pronunciou sentença', delta: '-5', coinMode: null,    accent: '#66bb6a', charKey: 'juiz'                           },
   meter_x9:     { title: 'CAGUETOU',        naturalName: 'meteu o X9 em',       sub: 'X9 espionou uma carta',      delta: null, coinMode: null,    accent: '#ce93d8', charKey: 'investigador'                   },
   disfarce:     { title: 'DISFARCE',        naturalName: 'usou Disfarce',       sub: 'Trocou carta em segredo',    delta: null, coinMode: null,    accent: '#ce93d8', charKey: 'investigador'                   },
@@ -131,24 +131,8 @@ export default function ActionCinematic({ cinematic, onDismiss }) {
               )}
             </div>
 
-            {/* ── RIGHT: meme art / character art / emoji ── */}
-            {cfg.memeMode ? (
-              /* FAZER O L — meme especial */
-              <div className={styles.rightSide} style={{ alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                <div className={styles.memeGlow} style={{ background: `radial-gradient(ellipse, ${accent}44 0%, transparent 70%)` }} />
-                <motion.div
-                  className={styles.memeContainer}
-                  initial={{ scale: 0.4, opacity: 0, rotate: 15 }}
-                  animate={{ scale: 1, opacity: 1, rotate: 0 }}
-                  transition={{ delay: 0.06, type: 'spring', stiffness: 220, damping: 18 }}>
-                  {/* Big "L" in Brazilian flag green/yellow */}
-                  <div className={styles.memeLLetter}>L</div>
-                  <div className={styles.memeEmojis}>🤙🏽🤙🏽🤙🏽</div>
-                  <div className={styles.memeCaption}>PERDEU, MANÉ</div>
-                  <div className={styles.memeSubCaption}>🇧🇷 BRASIL 🇧🇷</div>
-                </motion.div>
-              </div>
-            ) : charCfg?.img ? (
+            {/* ── RIGHT: character art / emoji ── */}
+            {charCfg?.img ? (
               <div className={styles.rightSide}>
                 <div className={styles.charGlow} />
                 <motion.img

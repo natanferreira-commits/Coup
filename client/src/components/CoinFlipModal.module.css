@@ -127,16 +127,6 @@
   opacity: 0.7;
 }
 
-/* Spinning keyframe (during flip) */
-@keyframes coinSpinFast {
-  from { transform: rotateY(0deg); }
-  to   { transform: rotateY(360deg); }
-}
-
-.spinning {
-  animation: coinSpinFast 0.28s linear infinite;
-}
-
 /* Result glow */
 .resultGlow {
   position: absolute;

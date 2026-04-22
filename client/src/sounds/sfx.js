@@ -155,11 +155,25 @@ export const sfx = {
   /** Tiro — assassinar / Mandar pro Vasco */
   gunshot() {
     if (_muted) return;
-    // Estalo seco de tiro + reverberação surda
-    noise({ start: 0,    duration: 0.04, gain: 0.7 });
-    noise({ start: 0.03, duration: 0.12, gain: 0.35 });
-    tone({ freq: 110, type: 'square',   start: 0.01, duration: 0.18, gain: 0.5, pitchEnd: 45 });
-    tone({ freq: 200, type: 'triangle', start: 0.04, duration: 0.22, gain: 0.25, pitchEnd: 60 });
+    const ac = ctx();
+    // Estalo de tiro (ruído branco filtrado)
+    const bufSize = ac.sampleRate * 0.08;
+    const buf = ac.createBuffer(1, bufSize, ac.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < bufSize; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufSize, 1.5);
+    const src = ac.createBufferSource(); src.buffer = buf;
+    const filter = ac.createBiquadFilter();
+    filter.type = 'bandpass'; filter.frequency.value = 800; filter.Q.value = 0.5;
+    const vol = ac.createGain();
+    vol.gain.setValueAtTime(1.2, ac.currentTime);
+    vol.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.35);
+    src.connect(filter); filter.connect(vol); vol.connect(ac.destination);
+    src.start(ac.currentTime);
+    // Sub-boom grave
+    tone({ freq: 90,  type: 'sine',   start: 0,    duration: 0.35, gain: 0.6, pitchEnd: 30 });
+    tone({ freq: 180, type: 'square', start: 0,    duration: 0.08, gain: 0.3 });
+    // Eco / reverb
+    tone({ freq: 120, type: 'triangle', start: 0.12, duration: 0.28, gain: 0.18, pitchEnd: 50 });
   },
 
   /** Caixa registradora — taxar / Fazer o L */

@@ -1,4 +1,5 @@
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useAnimation } from 'framer-motion';
+import { useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import styles from './CoinFlipModal.module.css';
 
@@ -20,6 +21,47 @@ export default function CoinFlipModal({
   phase, pa, blockerName, actorName, targetName,
   iAmBlocker, iAmActor, coinAnimating, onFlip,
 }) {
+  const coinControls = useAnimation();
+  const lastResultRef = useRef(null);
+  const currentAngleRef = useRef(0);
+
+  // Fast spinning when waiting for result
+  useEffect(() => {
+    if (phase !== 'COIN_FLIP') { coinControls.stop(); return; }
+    if (!pa?.coinFlipResult) {
+      // Spin fast and continuously
+      (async function spin() {
+        while (true) {
+          try {
+            currentAngleRef.current += 360;
+            await coinControls.start({
+              rotateY: currentAngleRef.current,
+              transition: { duration: 0.22, ease: 'linear' },
+            });
+          } catch { break; }
+        }
+      })();
+    }
+  }, [phase, pa?.coinFlipResult]);  // eslint-disable-line
+
+  // When result arrives: decelerate to correct face
+  useEffect(() => {
+    const result = pa?.coinFlipResult;
+    if (!result || result === lastResultRef.current) return;
+    lastResultRef.current = result;
+    coinControls.stop();
+    // Round up to a multiple of 360, then add extra for the result face
+    const base = Math.ceil(currentAngleRef.current / 360) * 360;
+    // cara = front face (0 mod 360), coroa = back face (180 mod 360)
+    const extra = result === 'cara' ? 360 * 3 : 360 * 3 + 180;
+    const finalAngle = base + extra;
+    currentAngleRef.current = finalAngle;
+    coinControls.start({
+      rotateY: finalAngle,
+      transition: { duration: 3.5, ease: [0.15, 0, 0.05, 1] },
+    });
+  }, [pa?.coinFlipResult]);  // eslint-disable-line
+
   if (phase !== 'COIN_FLIP') return null;
 
   const result = pa?.coinFlipResult;    // null | 'cara' | 'coroa'
@@ -55,12 +97,10 @@ export default function CoinFlipModal({
 
           {/* ── The Coin ── */}
           <div className={styles.coinWrapper}>
-            <div className={`${styles.coinFlipInner} ${(!result || coinAnimating) ? styles.spinning : ''}`}
-              style={
-                result && !coinAnimating
-                  ? { transform: `rotateY(${cara ? '0deg' : '180deg'})`, transition: 'transform 0.6s ease-out' }
-                  : {}
-              }>
+            <motion.div
+              className={styles.coinFlipInner}
+              animate={coinControls}
+              style={{ transformStyle: 'preserve-3d' }}>
 
               {/* CARA (front face) */}
               <div className={`${styles.coinFace} ${styles.coinFront}`}>
@@ -74,7 +114,7 @@ export default function CoinFlipModal({
                 <span className={styles.coinR} style={{ fontSize: '2.4rem' }}>👑</span>
                 <span className={styles.coinText}>COROA</span>
               </div>
-            </div>
+            </motion.div>
 
             {/* Result glow */}
             {result && !coinAnimating && (

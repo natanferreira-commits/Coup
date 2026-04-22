@@ -10,7 +10,7 @@ const {
 const {
   handleAction, handlePass, handleBlock, handleChallenge,
   handleLoseInfluence, handleChallengeWonChoice, handleFlipCoin, handleAcknowledgeCoinFlip,
-  handleSelectCardShow, handleAcknowledgePeek, handleSelectCardSwap,
+  handleSelectCardShow, handleAcknowledgePeek, handleSelectCardSwap, handleSelectDisfarce,
   getAlivePlayers, getPlayer, resolveActionEffect,
 } = require('./game/engine');
 
@@ -40,7 +40,7 @@ function setTurnTimer(room) {
   if (!game || game.phase === 'GAME_OVER') return;
 
   // Phases that don't need a timeout (player interaction expected but no rush)
-  const noTimerPhases = ['X9_PEEK_SELECT', 'X9_PEEK_VIEW', 'CARD_SWAP_SELECT'];
+  const noTimerPhases = ['X9_PEEK_SELECT', 'X9_PEEK_VIEW', 'CARD_SWAP_SELECT', 'DISFARCE_SELECT'];
   if (noTimerPhases.includes(game.phase)) return;
 
   room._timerStartedAt = Date.now();
@@ -177,6 +177,7 @@ function sanitizePA(pa, playerId) {
     challengeWonCharacter: pa.challengeWonCharacter || null,
   };
   if (pa.x9Result && pa.actorId === playerId) base.x9Result = pa.x9Result;
+  if (pa.disfarceOptions && pa.actorId === playerId) base.disfarceOptions = pa.disfarceOptions;
   return base;
 }
 
@@ -474,9 +475,41 @@ function attachGameHandlers(socket) {
       const player = room.players.find(p => p.id === socket.id || p.currentSocketId === socket.id);
       if (player) {
         if (pid) { clearTimeout(disconnectTimers.get(pid)); disconnectTimers.delete(pid); pidSessions.delete(pid); }
+        const gameInProgress = !!room.game;
+        const leavingPlayerId = player.id;
         removePlayerFromRoom(room.code, player.id);
         const liveRoom = getRoomByCode(room.code);
-        if (liveRoom?.players.length > 0 && !liveRoom.game) broadcastLobby(liveRoom);
+        if (liveRoom) {
+          if (gameInProgress && liveRoom.game) {
+            // Eliminate all cards of the leaving player
+            const gamePlayer = liveRoom.game.players.find(p => p.id === leavingPlayerId);
+            if (gamePlayer) {
+              gamePlayer.cards.forEach(c => { c.dead = true; });
+              liveRoom.game.log.push(`${gamePlayer.name} saiu da partida. ⬅️`);
+            }
+            // If it was their turn, advance
+            if (liveRoom.game.currentPlayerId === leavingPlayerId && liveRoom.game.phase === 'ACTION_SELECT') {
+              const alive = getAlivePlayers(liveRoom.game);
+              if (alive.length <= 1) {
+                liveRoom.game.winner = alive[0]?.id || null;
+                liveRoom.game.phase = 'GAME_OVER';
+              } else {
+                const idx = alive.findIndex(p => p.id === leavingPlayerId);
+                const next = alive[Math.max(idx, 0) % alive.length] || alive[0];
+                liveRoom.game.currentPlayerId = next.id;
+              }
+            }
+            // Check game over
+            const alive2 = liveRoom.game.players.filter(p => p.cards.some(c => !c.dead));
+            if (alive2.length === 1 && liveRoom.game.phase !== 'GAME_OVER') {
+              liveRoom.game.winner = alive2[0].id;
+              liveRoom.game.phase = 'GAME_OVER';
+            }
+            broadcast(liveRoom);
+          } else if (liveRoom.players.length > 0 && !liveRoom.game) {
+            broadcastLobby(liveRoom);
+          }
+        }
       }
       // Also remove from spectators
       if (room.spectators) {
@@ -500,6 +533,7 @@ function attachGameHandlers(socket) {
   socket.on('select_card_show',      withRoom((room, { cardIndex }, pid) => handleSelectCardShow(room, pid, cardIndex)));
   socket.on('acknowledge_peek',      withRoom((room, _, pid) => handleAcknowledgePeek(room, pid)));
   socket.on('select_card_swap',      withRoom((room, { cardIndex }, pid) => handleSelectCardSwap(room, pid, cardIndex)));
+  socket.on('select_disfarce',       withRoom((room, { myCardIndex, pickedOption }, pid) => handleSelectDisfarce(room, pid, { myCardIndex, pickedOption })));
   socket.on('challenge_won_choice',  withRoom((room, { wantsSwap }, pid) => handleChallengeWonChoice(room, pid, !!wantsSwap)));
 
   socket.on('quick_chat', (payload, ack) => {

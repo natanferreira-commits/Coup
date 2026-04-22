@@ -1,0 +1,161 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.78);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9600;
+}
+
+.modal {
+  background: linear-gradient(160deg, #14001a 0%, #0a000f 100%);
+  border: 1.5px solid rgba(206,147,216,0.35);
+  border-radius: 20px;
+  padding: 28px 32px;
+  max-width: 520px;
+  width: 95%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 0 60px rgba(206,147,216,0.15), 0 20px 50px rgba(0,0,0,0.7);
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.icon { font-size: 2rem; line-height: 1; }
+
+.title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.6rem;
+  letter-spacing: 0.1em;
+  color: #ce93d8;
+  line-height: 1;
+}
+
+.desc {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+.sectionLabel {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(206,147,216,0.7);
+  margin-bottom: -6px;
+}
+
+.cardRow {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.card {
+  flex: 1;
+  min-width: 110px;
+  max-width: 160px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.04);
+  border: 2px solid rgba(255,255,255,0.1);
+  cursor: pointer;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.cardSelectedDeck {
+  border-color: #ce93d8 !important;
+  background: rgba(206,147,216,0.12) !important;
+  box-shadow: 0 0 16px rgba(206,147,216,0.3);
+}
+
+.cardSelectedMine {
+  border-color: #ef9a9a !important;
+  background: rgba(239,154,154,0.12) !important;
+  box-shadow: 0 0 16px rgba(239,154,154,0.3);
+}
+
+.cardImg {
+  width: 100%;
+  height: 100px;
+  object-fit: cover;
+  object-position: top center;
+}
+
+.cardIcon {
+  font-size: 2.8rem;
+  padding: 18px 0 10px;
+}
+
+.cardFooter {
+  width: 100%;
+  padding: 6px 8px;
+  background: rgba(0,0,0,0.4);
+  text-align: center;
+}
+
+.cardName {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.85);
+  letter-spacing: 0.05em;
+}
+
+.selectedBadge {
+  display: block;
+  font-size: 0.6rem;
+  color: var(--yellow);
+  font-weight: 800;
+  margin-top: 2px;
+}
+
+.btnRow {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.confirmBtn {
+  flex: 1;
+  background: linear-gradient(135deg, #8e24aa, #6a1b9a);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 11px 16px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: filter 0.15s;
+}
+.confirmBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.confirmBtn:not(:disabled):hover { filter: brightness(1.12); }
+
+.skipBtn {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: var(--muted);
+  border-radius: 10px;
+  padding: 11px 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+.skipBtn:hover { background: rgba(255,255,255,0.1); }
