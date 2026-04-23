@@ -1,26 +1,31 @@
 .log {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 12px;
-  height: 160px;
+  background: rgba(0,0,0,0.35);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 12px;
+  padding: 10px 8px;
+  height: 180px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
   scrollbar-width: thin;
-  scrollbar-color: var(--border) transparent;
+  scrollbar-color: rgba(255,255,255,0.1) transparent;
 }
 
 .entry {
-  font-size: 0.8rem;
-  color: var(--text);
-  line-height: 1.4;
-  padding: 2px 0;
-  border-bottom: 1px solid rgba(255,255,255,0.04);
+  font-size: 0.73rem;
+  color: rgba(255,255,255,0.65);
+  line-height: 1.45;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background 0.15s;
 }
 
+.entry:hover { background: rgba(255,255,255,0.04); }
+
+/* Last entry gets highlight */
 .entry:last-child {
-  color: var(--yellow);
-  border-bottom: none;
+  color: rgba(255,255,255,0.9);
+  background: rgba(255,214,0,0.06);
+  border: 1px solid rgba(255,214,0,0.12);
 }

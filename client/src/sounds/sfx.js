@@ -8,11 +8,85 @@
 let _ctx = null;
 let _muted = false;
 
+let _sfxGain = null;
+let _musicGain = null;
+let _sfxVolume = 0.8;
+let _musicVolume = 0.35;
+
 function ctx() {
   if (!_ctx) _ctx = new (window.AudioContext || window.webkitAudioContext)();
   // Resume if suspended (browsers block audio until user gesture)
   if (_ctx.state === 'suspended') _ctx.resume();
   return _ctx;
+}
+
+function getSfxGain() {
+  if (!_sfxGain) {
+    const ac = ctx();
+    _sfxGain = ac.createGain();
+    _sfxGain.gain.value = _sfxVolume;
+    _sfxGain.connect(ac.destination);
+  }
+  return _sfxGain;
+}
+
+function getMusicGain() {
+  if (!_musicGain) {
+    const ac = ctx();
+    _musicGain = ac.createGain();
+    _musicGain.gain.value = _musicVolume;
+    _musicGain.connect(ac.destination);
+  }
+  return _musicGain;
+}
+
+// Ambient music state
+let _ambientNodes = [];
+let _ambientRunning = false;
+
+function playAmbientLoop() {
+  if (_ambientRunning) return;
+  _ambientRunning = true;
+  const ac = ctx();
+  const mg = getMusicGain();
+
+  // Bass drone on C2 (65.4 Hz) with slow oscillation
+  const drones = [65.4, 98.0, 130.8]; // C2, G2, C3
+  drones.forEach((freq, i) => {
+    const osc = ac.createOscillator();
+    const lfo = ac.createOscillator();
+    const lfoGain = ac.createGain();
+    const vol = ac.createGain();
+
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+
+    lfo.type = 'sine';
+    lfo.frequency.value = 0.08 + i * 0.03; // very slow wobble
+    lfoGain.gain.value = freq * 0.004;
+
+    lfo.connect(lfoGain);
+    lfoGain.connect(osc.frequency);
+
+    vol.gain.value = 0.04 - i * 0.008;
+    osc.connect(vol);
+    vol.connect(mg);
+
+    osc.start();
+    lfo.start();
+    _ambientNodes.push(osc, lfo);
+  });
+
+  // Subtle high shimmer
+  const shimmer = ac.createOscillator();
+  const shimmerVol = ac.createGain();
+  shimmer.type = 'sine';
+  shimmer.frequency.value = 523.25; // C5
+  shimmerVol.gain.value = 0.006;
+  shimmer.connect(shimmerVol);
+  shimmerVol.connect(mg);
+  shimmer.start();
+  _ambientNodes.push(shimmer);
 }
 
 // ── Low-level helpers ─────────────────────────────────────────────────────────
@@ -22,7 +96,7 @@ function tone({ freq = 440, type = 'sine', start = 0, duration = 0.15, gain = 0.
   const osc  = ac.createOscillator();
   const vol  = ac.createGain();
   osc.connect(vol);
-  vol.connect(ac.destination);
+  vol.connect(getSfxGain());
 
   osc.type = type;
   osc.frequency.setValueAtTime(freq, ac.currentTime + start);
@@ -45,7 +119,7 @@ function noise({ start = 0, duration = 0.08, gain = 0.15 }) {
   src.buffer = buffer;
   const vol = ac.createGain();
   src.connect(vol);
-  vol.connect(ac.destination);
+  vol.connect(getSfxGain());
   vol.gain.setValueAtTime(gain, ac.currentTime + start);
   vol.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + start + duration);
   src.start(ac.currentTime + start);
@@ -62,6 +136,34 @@ export const sfx = {
 
   isMuted() {
     return _muted;
+  },
+
+  getVolume(type) {
+    if (type === 'sfx') return _sfxVolume;
+    if (type === 'music') return _musicVolume;
+    return 0;
+  },
+
+  setVolume(type, value) {
+    if (type === 'sfx') {
+      _sfxVolume = value;
+      if (_sfxGain) _sfxGain.gain.value = value;
+      _muted = value === 0;
+    }
+    if (type === 'music') {
+      _musicVolume = value;
+      if (_musicGain) _musicGain.gain.value = value;
+    }
+  },
+
+  startAmbient() {
+    playAmbientLoop();
+  },
+
+  stopAmbient() {
+    _ambientRunning = false;
+    _ambientNodes.forEach(n => { try { n.stop(); } catch {} });
+    _ambientNodes = [];
   },
 
   /** Click — clique rápido de UI */
@@ -167,7 +269,7 @@ export const sfx = {
     const vol = ac.createGain();
     vol.gain.setValueAtTime(1.2, ac.currentTime);
     vol.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.35);
-    src.connect(filter); filter.connect(vol); vol.connect(ac.destination);
+    src.connect(filter); filter.connect(vol); vol.connect(getSfxGain());
     src.start(ac.currentTime);
     // Sub-boom grave
     tone({ freq: 90,  type: 'sine',   start: 0,    duration: 0.35, gain: 0.6, pitchEnd: 30 });

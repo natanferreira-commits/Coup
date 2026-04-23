@@ -18,6 +18,8 @@ import QuickChatBubble     from '../components/QuickChatBubble';
 import ActionCinematic     from '../components/ActionCinematic';
 import CoinFlipModal       from '../components/CoinFlipModal';
 import DisfarceModal       from '../components/DisfarceModal';
+import ChallengeWonModal   from '../components/ChallengeWonModal';
+import SettingsPanel       from '../components/SettingsPanel';
 import ChatBubblesLayer    from '../components/ChatBubblesLayer';
 import moedaImg from '../assets/moeda.svg';
 import mesaImg  from '../assets/mesa.svg';
@@ -128,6 +130,7 @@ export default function Game({ data, myId }) {
   });
   const [chatBubbles,      setChatBubbles]      = useState({}); // { [playerId]: { message, key } }
   const [screenShake,      setScreenShake]      = useState(false);
+  const [showSettings,     setShowSettings]     = useState(false);
 
   // ── Animation state ───────────────────────────────────────────────────────
   const [coinAnims,      setCoinAnims]      = useState([]); // [{ id, from, to, amount }]
@@ -232,6 +235,13 @@ export default function Game({ data, myId }) {
     if (muted !== sfx.isMuted()) sfx.toggleMute();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Start ambient music once user interacts (autoplay policy)
+  useEffect(() => {
+    const start = () => { sfx.startAmbient(); window.removeEventListener('click', start); };
+    window.addEventListener('click', start, { once: true });
+    return () => window.removeEventListener('click', start);
+  }, []);
+
   // ── Stable dismiss for ActionCinematic (useCallback prevents timer resets) ──
   const dismissCinematic = useCallback(() => setActionNotif(null), []);
 
@@ -310,7 +320,7 @@ export default function Game({ data, myId }) {
       // ── BLOCK ─────────────────────────────────────────────────────────
       if (game.phase === 'BLOCK_CHALLENGE_WINDOW' && prev.phase !== 'BLOCK_CHALLENGE_WINDOW') {
         setBlockAnim(true);
-        setTimeout(() => setBlockAnim(false), 950);
+        setTimeout(() => setBlockAnim(false), 2800);
       }
 
       // ── CHALLENGE ─────────────────────────────────────────────────────
@@ -537,6 +547,23 @@ export default function Game({ data, myId }) {
       iAmActor={iAmActor}
       coinAnimating={coinAnimating}
       onFlip={() => emit('flip_coin', {})}
+    />
+
+    <ChallengeWonModal
+      pa={pa}
+      iAmActor={iAmActor}
+      actorName={actorName}
+      onSwap={() => emit('challenge_won_choice', { wantsSwap: true })}
+      onKeep={() => emit('challenge_won_choice', { wantsSwap: false })}
+    />
+
+    <SettingsPanel
+      open={showSettings}
+      onClose={() => setShowSettings(false)}
+      onLeave={() => {
+        if (window.confirm('Sair da partida? Você será eliminado.'))
+          socket.emit('leave_room', {}, () => { window.location.reload(); });
+      }}
     />
 
     <div className={`${styles.board}${screenShake?` ${styles.boardShake}`:''}`}>
@@ -1122,22 +1149,12 @@ export default function Game({ data, myId }) {
         </motion.button>
       )}
 
-      {/* Sair da Partida — todos os jogadores */}
-      <motion.button className={styles.leaveBtn}
-        whileHover={{scale:1.05}} whileTap={{scale:0.95}}
-        onClick={()=>{
-          if(window.confirm('Sair da partida? Você será eliminado.'))
-            socket.emit('leave_room', {}, () => { window.location.reload(); });
-        }}>
-        🚪 Sair
-      </motion.button>
-
-      {/* Mute */}
+      {/* Settings */}
       <motion.button className={styles.muteBtn}
         whileHover={{scale:1.05}} whileTap={{scale:0.95}}
-        onClick={toggleMute}
-        title={muted ? 'Ativar sons' : 'Silenciar'}>
-        {muted ? '🔇' : '🔊'}
+        onClick={() => { sfx.click(); setShowSettings(true); }}
+        title="Configurações">
+        ⚙️
       </motion.button>
 
       {/* Help */}
@@ -1175,7 +1192,7 @@ export default function Game({ data, myId }) {
     {/* ── Overlays de animação ── */}
     <CoinAnimation      queue={coinAnims} />
     <CardDeathAnimation queue={cardDeathAnims} />
-    <BlockAnimation     active={blockAnim} />
+    <BlockAnimation     active={blockAnim} blockerCharacter={pa?.blocker?.character} />
     <ChallengeAnimation active={challengeAnim} />
     <TurnIndicator
       playerName={players?.find(p => p.id === currentPlayerId)?.name}

@@ -1,0 +1,54 @@
+.overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 9200;
+}
+.panel {
+  background: linear-gradient(160deg, #13131e 0%, #0a0a14 100%);
+  border: 1.5px solid rgba(255,255,255,0.1);
+  border-radius: 20px;
+  padding: 28px 32px;
+  min-width: 320px;
+  max-width: 400px;
+  display: flex; flex-direction: column; gap: 20px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.7);
+}
+.header {
+  display: flex; align-items: center; justify-content: space-between;
+}
+.title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.5rem; letter-spacing: 0.1em; color: var(--yellow);
+}
+.closeBtn {
+  background: none; border: none; color: var(--muted);
+  font-size: 1.1rem; cursor: pointer; padding: 4px 8px;
+  border-radius: 6px; transition: background 0.15s;
+}
+.closeBtn:hover { background: rgba(255,255,255,0.08); color: #fff; }
+.section { display: flex; flex-direction: column; gap: 8px; }
+.label { font-size: 0.78rem; font-weight: 700; color: rgba(255,255,255,0.7); letter-spacing: 0.06em; }
+.sliderRow { display: flex; align-items: center; gap: 10px; }
+.volIcon { font-size: 1.1rem; width: 24px; text-align: center; }
+.slider {
+  flex: 1; -webkit-appearance: none; height: 4px;
+  border-radius: 4px; background: rgba(255,255,255,0.15);
+  outline: none; cursor: pointer;
+}
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 16px; height: 16px;
+  border-radius: 50%; background: var(--yellow); cursor: pointer;
+  box-shadow: 0 0 6px rgba(255,214,0,0.5);
+}
+.volNum { font-size: 0.72rem; color: var(--muted); width: 36px; text-align: right; }
+.divider { height: 1px; background: rgba(255,255,255,0.07); }
+.leaveBtn {
+  background: rgba(183,28,28,0.18); border: 1px solid rgba(244,67,54,0.35);
+  color: #ef9a9a; border-radius: 12px; padding: 12px 18px;
+  font-size: 0.88rem; font-weight: 700; cursor: pointer; font-family: inherit;
+  letter-spacing: 0.04em; text-align: center;
+  transition: background 0.15s;
+}
+.leaveBtn:hover { background: rgba(183,28,28,0.32); }
