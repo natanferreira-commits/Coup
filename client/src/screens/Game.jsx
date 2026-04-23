@@ -210,6 +210,23 @@ export default function Game({ data, myId }) {
     // (auto-dismiss 3s). Limpar aqui matava o cinematic antes de mostrar.
   }, [phase]);
 
+  // ── Auto-lose quando só resta 1 carta (não precisa de escolha) ──────────
+  const autoLoseFiredRef = useRef(false);
+  useEffect(() => {
+    if (!game) return;
+    const { phase: ph, pendingAction: pa2 } = game;
+    if (ph !== 'LOSE_INFLUENCE') { autoLoseFiredRef.current = false; return; }
+    if (!pa2?.loseInfluenceQueue?.length) return;
+    if (pa2.loseInfluenceQueue[0].playerId !== myId) return;
+    const myPlayer = game.players.find(p => p.id === myId);
+    const aliveCards = myPlayer?.cards?.filter(c => !c.dead) || [];
+    if (aliveCards.length === 1 && !autoLoseFiredRef.current) {
+      autoLoseFiredRef.current = true;
+      const cardIdx = myPlayer.cards.findIndex(c => !c.dead);
+      socket.emit('lose_influence', { cardIndex: cardIdx });
+    }
+  }, [game, myId]);
+
   // ── Sync sfx mute on mount ────────────────────────────────────────────────
   useEffect(() => {
     if (muted !== sfx.isMuted()) sfx.toggleMute();
@@ -970,15 +987,15 @@ export default function Game({ data, myId }) {
             </>
           )}
 
-          {/* ── Waiting (fases não-ACTION_SELECT) ── */}
+          {/* ── Waiting — tela informativa por fase ── */}
           {phase!=='ACTION_SELECT'&&!canChallengeAct&&!canBlockAct&&!canChallengeBlock&&!mustAcknowledgePeek&&phase!=='COIN_FLIP'&&me?.alive&&(
-            <p className={styles.hint}>
-              {phase==='RESPONSE_WINDOW'&&!iAmActor&&alreadyResponded
-                ?'✅ Aguardando outros jogadores...'
-                :phase==='RESPONSE_WINDOW'&&!iAmActor&&!iAmTarget&&isTargetedAction&&!isAnyoneChallenge
-                ?'👀 Só o alvo pode responder esta ação'
-                :'⌛ Aguardando...'}
-            </p>
+            <WaitingBox
+              phase={phase} pa={pa}
+              actorName={actorName} targetName={targetName} blockerName={blockerName}
+              iAmActor={iAmActor} alreadyResponded={alreadyResponded}
+              isTargetedAction={isTargetedAction} isAnyoneChallenge={isAnyoneChallenge}
+              players={players}
+            />
           )}
 
           {/* ── Response window ── */}
@@ -1171,6 +1188,92 @@ export default function Game({ data, myId }) {
 }
 
 // ── Btn component with tooltip ─────────────────────────────────────────────────
+// ── WaitingBox — tela de espera contextual ───────────────────────────────────
+function WaitingBox({ phase, pa, actorName, targetName, blockerName, iAmActor, alreadyResponded, isTargetedAction, isAnyoneChallenge, players }) {
+  let icon = '⏳';
+  let title = 'Aguardando...';
+  let sub = null;
+
+  if (phase === 'RESPONSE_WINDOW') {
+    if (iAmActor) {
+      icon = '👀';
+      title = 'Aguardando reação dos outros jogadores';
+      sub = 'Eles podem duvidar ou bloquear sua ação.';
+    } else if (alreadyResponded) {
+      icon = '✅';
+      title = 'Você já passou';
+      sub = 'Aguardando os outros responderem...';
+    } else if (!iAmActor && isTargetedAction && !isAnyoneChallenge) {
+      icon = '👀';
+      title = `Ação direcionada a ${targetName}`;
+      sub = 'Somente o alvo pode responder esta ação.';
+    } else {
+      icon = '🔔';
+      title = `${actorName} declarou uma ação`;
+      sub = 'Aguardando resolução...';
+    }
+  } else if (phase === 'BLOCK_CHALLENGE_WINDOW') {
+    if (iAmActor) {
+      icon = '🛡️';
+      title = `${blockerName} bloqueou sua ação!`;
+      sub = 'Você pode duvidar do bloqueio ou aceitar.';
+    } else {
+      icon = '🛡️';
+      title = `${blockerName} bloqueou ${actorName}`;
+      sub = `${actorName} decidindo se aceita ou duvida do bloqueio...`;
+    }
+  } else if (phase === 'LOSE_INFLUENCE') {
+    const loserName = players?.find(p => p.id === pa?.loseInfluenceQueue?.[0]?.playerId)?.name;
+    icon = '💀';
+    title = `${loserName || 'Alguém'} está perdendo uma carta`;
+    sub = 'Aguardando a escolha...';
+  } else if (phase === 'CHALLENGE_WON') {
+    icon = '✅';
+    title = `${actorName} provou ter a carta!`;
+    sub = 'Decidindo se troca pelo baralho ou mantém...';
+  } else if (phase === 'X9_PEEK_SELECT') {
+    icon = '🕵️';
+    title = `${targetName} está escolhendo qual carta mostrar`;
+    sub = `${actorName} aguarda para espionar...`;
+  } else if (phase === 'X9_PEEK_VIEW') {
+    icon = '🕵️';
+    title = `${actorName} está vendo a carta de ${targetName}`;
+    sub = 'Aguardando o X9 confirmar...';
+  } else if (phase === 'CARD_SWAP_SELECT') {
+    const swapName = players?.find(p => p.id === pa?.swapPlayerId)?.name;
+    icon = '🔄';
+    title = `${swapName || '...'} está escolhendo qual carta trocar`;
+    sub = 'Aguardando a troca...';
+  } else if (phase === 'DISFARCE_SELECT') {
+    icon = '🎭';
+    title = `${actorName} está analisando as opções de disfarce`;
+    sub = 'Aguardando a escolha do X9...';
+  } else if (phase === 'COIN_FLIP') {
+    icon = '🪙';
+    title = 'Cara ou Coroa em andamento!';
+    sub = 'Veja o modal da moeda.';
+  }
+
+  return (
+    <motion.div
+      className={styles.waitingBox}
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ type: 'spring', stiffness: 300, damping: 24 }}>
+      <motion.span
+        className={styles.waitingIcon}
+        animate={{ scale: [1, 1.15, 1] }}
+        transition={{ repeat: Infinity, duration: 1.6, ease: 'easeInOut' }}>
+        {icon}
+      </motion.span>
+      <div className={styles.waitingContent}>
+        <span className={styles.waitingTitle}>{title}</span>
+        {sub && <span className={styles.waitingSub}>{sub}</span>}
+      </div>
+    </motion.div>
+  );
+}
+
 function Btn({ icon, label, sub, onClick, disabled, danger, success, selected, tooltip }) {
   return (
     <motion.button

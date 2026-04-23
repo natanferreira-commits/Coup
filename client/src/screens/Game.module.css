@@ -503,6 +503,39 @@
 }
 .leaveBtn:hover { background: rgba(183,28,28,0.32); }
 
+/* ── Waiting box — tela de espera contextual ── */
+.waitingBox {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-top: 6px;
+}
+.waitingIcon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+  display: inline-block;
+}
+.waitingContent {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.waitingTitle {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.88);
+  line-height: 1.35;
+}
+.waitingSub {
+  font-size: 0.71rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
 /* ── Action notification overlay ── */
 .actionNotifOverlay {
   position: fixed; inset: 0;
