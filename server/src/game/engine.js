@@ -3,7 +3,7 @@ const { ACTION_DEFS, ACTION_NAMES, CHARACTER_NAMES, getBlockers } = require('./a
 
 // ── Funny logs ────────────────────────────────────────────────────────────────
 const FUNNY = {
-  renda:        (a)    => `${a} foi no trampo suado e ganhou 1 real 😤`,
+  renda:        (a)    => `${a} trampou suado e ganhou 1 real 😤`,
   ajuda_externa:(a)    => `${a} declarou que imposto é roubo e pegou mais 2 moedas 💸`,
   golpe:        (a, t) => `${a} deu o Golpe em ${t}! O Brasil não é pra amadores 🪖`,
   taxar:        (a)    => `${a} fez o L na galera e taxou 3 moedas do banco 🤙`,

@@ -50,43 +50,100 @@ function playAmbientLoop() {
   const ac = ctx();
   const mg = getMusicGain();
 
-  // Bass drone on C2 (65.4 Hz) with slow oscillation
-  const drones = [65.4, 98.0, 130.8]; // C2, G2, C3
-  drones.forEach((freq, i) => {
-    const osc = ac.createOscillator();
-    const lfo = ac.createOscillator();
-    const lfoGain = ac.createGain();
-    const vol = ac.createGain();
+  // ── Warm pad chords (Cmaj9 blend: C3, E3, G3, B3, D4) ──
+  // Two slightly detuned oscillators per note → chorus warmth
+  const padFreqs = [130.81, 164.81, 196.00, 246.94, 293.66]; // C3 E3 G3 B3 D4
+  padFreqs.forEach((freq, i) => {
+    [-3, 3].forEach((cents, j) => {
+      const osc = ac.createOscillator();
+      const lfo = ac.createOscillator();
+      const lfoG = ac.createGain();
+      const vol = ac.createGain();
 
-    osc.type = 'sine';
-    osc.frequency.value = freq;
+      osc.type = 'sine';
+      osc.frequency.value = freq * Math.pow(2, cents / 1200);
 
-    lfo.type = 'sine';
-    lfo.frequency.value = 0.08 + i * 0.03; // very slow wobble
-    lfoGain.gain.value = freq * 0.004;
+      // Ultra-slow breathing (different rate per voice)
+      lfo.type = 'sine';
+      lfo.frequency.value = 0.03 + i * 0.013 + j * 0.007;
+      lfoG.gain.value = 0.005;
+      lfo.connect(lfoG);
+      lfoG.connect(vol.gain);
 
-    lfo.connect(lfoGain);
-    lfoGain.connect(osc.frequency);
-
-    vol.gain.value = 0.04 - i * 0.008;
-    osc.connect(vol);
-    vol.connect(mg);
-
-    osc.start();
-    lfo.start();
-    _ambientNodes.push(osc, lfo);
+      // High notes softer; detuned pair softer than main
+      vol.gain.value = Math.max(0.004, 0.016 - i * 0.0025);
+      osc.connect(vol);
+      vol.connect(mg);
+      osc.start();
+      lfo.start();
+      _ambientNodes.push(osc, lfo);
+    });
   });
 
-  // Subtle high shimmer
-  const shimmer = ac.createOscillator();
-  const shimmerVol = ac.createGain();
-  shimmer.type = 'sine';
-  shimmer.frequency.value = 523.25; // C5
-  shimmerVol.gain.value = 0.006;
-  shimmer.connect(shimmerVol);
-  shimmerVol.connect(mg);
-  shimmer.start();
-  _ambientNodes.push(shimmer);
+  // ── Deep bass: C2 with gentle low-freq wobble ──
+  const bass = ac.createOscillator();
+  const bassLfo = ac.createOscillator();
+  const bassLfoG = ac.createGain();
+  const bassVol = ac.createGain();
+  bass.type = 'sine';
+  bass.frequency.value = 65.41; // C2
+  bassLfo.type = 'sine';
+  bassLfo.frequency.value = 0.06;
+  bassLfoG.gain.value = 0.6; // slight wobble in Hz
+  bassLfo.connect(bassLfoG);
+  bassLfoG.connect(bass.frequency);
+  bassVol.gain.value = 0.038;
+  bass.connect(bassVol);
+  bassVol.connect(mg);
+  bass.start();
+  bassLfo.start();
+  _ambientNodes.push(bass, bassLfo);
+
+  // ── Gentle pentatonic melody (C major pentatonic: C D E G A) ──
+  // Notes span two octaves for variety
+  const melNotes = [
+    261.63, 293.66, 329.63, 392.00, 440.00,   // C4 D4 E4 G4 A4
+    523.25, 587.33, 659.25, 783.99, 880.00,   // C5 D5 E5 G5 A5
+    1046.50,                                   // C6 (rare high note)
+  ];
+  let melIdx = 0;
+  let _melTimeout = null;
+
+  const scheduleMel = () => {
+    if (!_ambientRunning) return;
+    // ~30% chance to skip a beat — creates breathing space
+    if (Math.random() < 0.28) {
+      _melTimeout = setTimeout(scheduleMel, 300 + Math.random() * 500);
+      return;
+    }
+    const freq = melNotes[melIdx % melNotes.length];
+    // Walk mostly up, occasionally jump down
+    melIdx = Math.random() < 0.15
+      ? Math.floor(Math.random() * melNotes.length)
+      : (melIdx + 1) % melNotes.length;
+
+    const osc = ac.createOscillator();
+    const vol = ac.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    // Soft attack, long warm tail
+    const now = ac.currentTime;
+    vol.gain.setValueAtTime(0.001, now);
+    vol.gain.linearRampToValueAtTime(0.018, now + 0.1);
+    vol.gain.exponentialRampToValueAtTime(0.001, now + 2.2);
+    osc.connect(vol);
+    vol.connect(mg);
+    osc.start(now);
+    osc.stop(now + 2.4);
+
+    // Next note: 400–900ms later
+    _melTimeout = setTimeout(scheduleMel, 400 + Math.random() * 500);
+  };
+
+  // Start melody after short intro pause
+  _melTimeout = setTimeout(scheduleMel, 1200);
+  // Push a stopper so stopAmbient() can clear the pending timeout
+  _ambientNodes.push({ stop() { clearTimeout(_melTimeout); _melTimeout = null; } });
 }
 
 // ── Low-level helpers ─────────────────────────────────────────────────────────

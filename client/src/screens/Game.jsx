@@ -152,16 +152,23 @@ export default function Game({ data, myId }) {
   useSoundEffects(game, myId);
 
   // ── Turn timer countdown ──────────────────────────────────────────────────
+  // Use a ref so the interval never has a stale closure on timerStartedAt
+  const timerStartRef = useRef(null);
   useEffect(() => {
-    if (!data?.timerStartedAt || !phase || phase === 'GAME_OVER') { setTimeLeft(30); return; }
-    const update = () => {
-      const elapsed = (Date.now() - data.timerStartedAt) / 1000;
-      setTimeLeft(Math.max(0, Math.round(30 - elapsed)));
+    timerStartRef.current = data?.timerStartedAt ?? null;
+  }); // runs every render — keeps ref always fresh
+
+  useEffect(() => {
+    if (phase === 'GAME_OVER') { setTimeLeft(30); return; }
+    const tick = () => {
+      const s = timerStartRef.current;
+      if (!s) { setTimeLeft(30); return; }
+      setTimeLeft(Math.max(0, Math.round(30 - (Date.now() - s) / 1000)));
     };
-    update();
-    const interval = setInterval(update, 500);
-    return () => clearInterval(interval);
-  }, [data?.timerStartedAt, phase]);
+    tick();
+    const id = setInterval(tick, 300); // 300ms = snappy, no freeze
+    return () => clearInterval(id);
+  }, [phase]); // interval restarts only on phase change
 
   // ── Coin flip: 5s girando + 5s resultado, depois ator confirma ──────────────
   const prevCoinFlipResult = useRef(null);
@@ -783,17 +790,11 @@ export default function Game({ data, myId }) {
             </motion.div>
           )}
 
-          {/* Timer countdown */}
-          {phase&&phase!=='GAME_OVER'&&data?.timerStartedAt&&(
-            <div className={styles.timerWrapper}>
-              <div className={styles.timerFill} style={{
-                width:`${Math.round((timeLeft/30)*100)}%`,
-                background: timeLeft<=10?'var(--red)':timeLeft<=20?'#ffd600':'#4caf50',
-              }}/>
-              <span className={styles.timerNum}
-                style={{color: timeLeft<=10?'var(--red)':timeLeft<=20?'#ffd600':'#aaa'}}>
-                {timeLeft}s
-              </span>
+          {/* Timer — lateral, só número */}
+          {phase&&phase!=='GAME_OVER'&&timerStartRef.current&&(
+            <div className={styles.timerLateral}
+              style={{color: timeLeft<=10?'var(--red)':timeLeft<=20?'#ffd600':'rgba(255,255,255,0.22)'}}>
+              {timeLeft}
             </div>
           )}
 

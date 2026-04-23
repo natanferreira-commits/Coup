@@ -455,23 +455,21 @@
 }
 .flipBtn:hover { filter: brightness(1.1); }
 
-/* ── Timer ── */
-.timerWrapper {
-  width: min(280px, 80%);
-  position: relative;
-  height: 6px;
-  background: rgba(255,255,255,0.08);
-  border-radius: 4px;
-  overflow: visible;
-  margin: 0 auto;
-}
-.timerFill {
-  height: 100%; border-radius: 4px;
-  transition: width 0.5s linear, background 0.4s;
-}
-.timerNum {
-  position: absolute; right: -28px; top: 50%; transform: translateY(-50%);
-  font-size: 0.65rem; font-weight: 700; white-space: nowrap;
+/* ── Timer lateral — só número, fixo na borda direita do centro ── */
+.timerLateral {
+  position: fixed;
+  right: 258px; /* right panel (248px) + 10px margin */
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 5.5rem;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  pointer-events: none;
+  z-index: 20;
+  transition: color 0.4s;
+  text-shadow: 0 0 30px currentColor;
+  user-select: none;
 }
 
 /* ── Restart button ── */
