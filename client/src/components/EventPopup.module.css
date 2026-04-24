@@ -191,3 +191,66 @@
   text-transform: uppercase;
   margin-top: 2px;
 }
+
+/* ── Botão Girar (Jogo do Bicho) ── */
+.rollBtn {
+  margin: 4px 0 2px;
+  padding: 12px 28px;
+  border: 2px solid var(--ev-color);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--ev-color) 15%, transparent);
+  color: var(--ev-color);
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.5rem;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  box-shadow:
+    0 0 20px color-mix(in srgb, var(--ev-glow) 30%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  transition: box-shadow 0.2s;
+}
+.rollBtn:hover {
+  box-shadow:
+    0 0 36px color-mix(in srgb, var(--ev-glow) 55%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+/* ── Hint durante animação dos dados ── */
+.rollingHint {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.5);
+  letter-spacing: 0.06em;
+  margin: 2px 0 -4px;
+}
+
+/* ── Dado idle (antes de rolar) ── */
+.diceIdle {
+  display: inline-block;
+  opacity: 0.4;
+}
+
+/* ── Overlay no_event: menor destaque ── */
+.overlayNoEvent .bg {
+  background: radial-gradient(
+    ellipse 50% 40% at 50% 50%,
+    rgba(15, 15, 15, 0.92),
+    rgba(4, 4, 10, 0.98) 70%
+  );
+}
+
+/* ── Card no_event: menor e mais discreto ── */
+.cardNoEvent {
+  width: min(340px, 88vw);
+  padding: 24px 28px 14px;
+  gap: 6px;
+}
+
+.cardNoEvent .emoji {
+  font-size: 3rem;
+}
+
+.titleNoEvent {
+  font-size: clamp(1.6rem, 5vw, 2.2rem) !important;
+  opacity: 0.75;
+}

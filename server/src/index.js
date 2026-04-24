@@ -191,10 +191,12 @@ function sanitizePA(pa, playerId) {
 function broadcast(room, extraForPlayer = null) {
   if (!room.game) return;
 
-  // Reset timer when phase changes
-  const currentPhase = room.game.phase;
-  if (currentPhase !== room._lastPhase) {
-    room._lastPhase = currentPhase;
+  // Reset timer when phase OR current player changes
+  const currentPhase    = room.game.phase;
+  const currentPlayerNow = room.game.currentPlayerId;
+  if (currentPhase !== room._lastPhase || currentPlayerNow !== room._lastCurrentPlayer) {
+    room._lastPhase         = currentPhase;
+    room._lastCurrentPlayer = currentPlayerNow;
     setTurnTimer(room);
   }
 
@@ -563,7 +565,8 @@ function attachGameHandlers(socket) {
     const caller = room.players.find(p => p.id === socket.id || p.currentSocketId === socket.id);
     if (!caller || caller.id !== room.hostId) return cb?.({ success: false, error: 'Só o host pode reiniciar' });
     clearTurnTimer(room.code);
-    room._lastPhase = null;
+    room._lastPhase         = null;
+    room._lastCurrentPlayer = null;
     const slots = Math.max(0, 6 - room.players.length);
     const promoted = (room.spectators || []).splice(0, slots);
     promoted.forEach(s => room.players.push({ id: s.id, name: s.name, currentSocketId: s.currentSocketId || s.id }));

@@ -155,23 +155,24 @@ export default function Game({ data, myId }) {
   useSoundEffects(game, myId);
 
   // ── Turn timer countdown ──────────────────────────────────────────────────
-  // Use a ref so the interval never has a stale closure on timerStartedAt
-  const timerStartRef = useRef(null);
+  // Captura timerStartedAt diretamente no closure — reinicia tanto na mudança
+  // de fase quanto na mudança de jogador (ACTION_SELECT → ACTION_SELECT)
+  const timerStartRef = useRef(null); // ainda usado para a condição de exibição do timer
   useEffect(() => {
     timerStartRef.current = data?.timerStartedAt ?? null;
   }); // runs every render — keeps ref always fresh
 
   useEffect(() => {
     if (phase === 'GAME_OVER') { setTimeLeft(30); return; }
+    const startedAt = data?.timerStartedAt;
+    if (!startedAt) { setTimeLeft(30); return; }
     const tick = () => {
-      const s = timerStartRef.current;
-      if (!s) { setTimeLeft(30); return; }
-      setTimeLeft(Math.max(0, Math.round(30 - (Date.now() - s) / 1000)));
+      setTimeLeft(Math.max(0, Math.round(30 - (Date.now() - startedAt) / 1000)));
     };
     tick();
     const id = setInterval(tick, 300); // 300ms = snappy, no freeze
     return () => clearInterval(id);
-  }, [phase]); // interval restarts only on phase change
+  }, [phase, data?.timerStartedAt]); // reinicia em qualquer mudança de turno
 
   // ── Random event popup: detecta novo evento e exibe popup por 5s ────────────
   const prevEventIdRef = useRef(null);
@@ -266,8 +267,9 @@ export default function Game({ data, myId }) {
     return () => window.removeEventListener('click', start);
   }, []);
 
-  // ── Stable dismiss for ActionCinematic (useCallback prevents timer resets) ──
-  const dismissCinematic = useCallback(() => setActionNotif(null), []);
+  // ── Stable dismiss callbacks (useCallback evita resets de timer por nova referência) ──
+  const dismissCinematic   = useCallback(() => setActionNotif(null), []);
+  const dismissEventPopup  = useCallback(() => setActiveEventPopup(null), []);
 
   // ── Helpers for animation positions ──────────────────────────────────────
   const getPlayerPos = useCallback(playerId => {
@@ -488,6 +490,14 @@ export default function Game({ data, myId }) {
   // Which character card to highlight in the fingir grid
   const activeChar = pendingConfirm?.charKey ?? null;
 
+  // ── Ações bloqueadas pelo evento ativo (feedback visual imediato) ───────────
+  const blockedActions = (() => {
+    const evType = game?.activeEvent?.type;
+    if (evType === 'operacao_pf') return ['roubar'];
+    if (evType === 'fake_news')   return ['meter_x9', 'disfarce', 'trocar_carta'];
+    return [];
+  })();
+
   // ── Game over ────────────────────────────────────────────────────────────────
   if (winner) {
     const w = players.find(p => p.id === winner);
@@ -592,7 +602,7 @@ export default function Game({ data, myId }) {
 
     <EventPopup
       event={activeEventPopup}
-      onDismiss={() => setActiveEventPopup(null)}
+      onDismiss={dismissEventPopup}
     />
 
     <div className={`${styles.board}${screenShake?` ${styles.boardShake}`:''}`}>
@@ -1031,17 +1041,26 @@ export default function Game({ data, myId }) {
                       {isMyCat&&<span style={{fontSize:'0.55rem',color:cat.labelColor,fontWeight:800,border:`1px solid ${cat.labelColor}`,borderRadius:4,padding:'1px 4px'}}>SUA CARTA</span>}
                     </div>
                     {cat.actions.map(({action,icon,label,sub,tooltip})=>{
+                      const isEventBlocked = blockedActions.includes(action);
                       const isDisabled =
                         !isMyTurn ||
                         (action!=='golpe'&&mustGolpe) ||
                         (action==='golpe'&&myCoins<7) ||
                         (action==='assassinar'&&myCoins<3) ||
-                        (action==='veredito'&&myCoins<5);
+                        (action==='veredito'&&myCoins<5) ||
+                        isEventBlocked;
+                      const eventBlockTooltip = isEventBlocked
+                        ? (game?.activeEvent?.type === 'operacao_pf'
+                            ? '🚔 Bloqueado pela Operação da PF neste round'
+                            : '📰 Bloqueado pela Fake News neste round')
+                        : null;
                       return (
                         <Btn key={action}
-                          icon={icon} label={label} sub={sub} tooltip={tooltip}
+                          icon={icon} label={label}
+                          sub={isEventBlocked ? (eventBlockTooltip) : sub}
+                          tooltip={eventBlockTooltip || tooltip}
                           disabled={isDisabled}
-                          onClick={isMyTurn?()=>stageAction(action, ACTION_TO_CHAR[action]??null):undefined}
+                          onClick={isMyTurn&&!isEventBlocked?()=>stageAction(action, ACTION_TO_CHAR[action]??null):undefined}
                         />
                       );
                     })}

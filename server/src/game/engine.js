@@ -44,12 +44,13 @@ function getPlayer(game, id) { return game.players.find(p => p.id === id); }
 // ── Random Events ─────────────────────────────────────────────────────────────
 
 const EVENT_DEFS = [
-  { type: 'operacao_pf',     name: 'Operação da PF',  emoji: '🚔', description: 'Ninguém pode roubar neste round.' },
-  { type: 'fake_news',       name: 'Fake News',        emoji: '📰', description: 'Ninguém pode investigar neste round.' },
-  { type: 'jogo_do_bicho',   name: 'Jogo do Bicho',   emoji: '🎲', description: 'Todos participam! Resultado aleatório pra cada um.' },
-  { type: 'mensalao',        name: 'Mensalão',         emoji: '💵', description: 'Todos ganham 1 moeda do governo.' },
-  { type: 'arrastaoo',       name: 'Arrastão',         emoji: '💸', description: 'Jogador com mais moedas perde 2.' },
-  { type: 'crise_economica', name: 'Crise Econômica',  emoji: '📉', description: 'Ações que geram moedas dão 1 a menos neste round.' },
+  { type: 'no_event',        name: 'Sem Evento',       emoji: '😴', description: 'Nenhum evento nesta rodada.',                        weight: 5 },
+  { type: 'operacao_pf',     name: 'Operação da PF',   emoji: '🚔', description: 'Ninguém pode roubar neste round.',                   weight: 1 },
+  { type: 'fake_news',       name: 'Fake News',         emoji: '📰', description: 'Ninguém pode investigar neste round.',               weight: 1 },
+  { type: 'jogo_do_bicho',   name: 'Jogo do Bicho',    emoji: '🎲', description: 'Todos participam! Resultado aleatório pra cada um.', weight: 1 },
+  { type: 'mensalao',        name: 'Mensalão',          emoji: '💵', description: 'Todos ganham 1 moeda do governo.',                   weight: 1 },
+  { type: 'arrastaoo',       name: 'Arrastão',          emoji: '💸', description: 'Jogador com mais moedas perde 2.',                   weight: 1 },
+  { type: 'crise_economica', name: 'Crise Econômica',   emoji: '📉', description: 'Ações que geram moedas dão 1 a menos neste round.',  weight: 1 },
 ];
 
 const BICHO_OUTCOMES = [
@@ -63,8 +64,14 @@ const BICHO_OUTCOMES = [
 
 let _eventCounter = 0;
 function rollRandomEvent() {
-  const def = EVENT_DEFS[Math.floor(Math.random() * EVENT_DEFS.length)];
-  return { ...def, eventId: ++_eventCounter };
+  const totalWeight = EVENT_DEFS.reduce((s, e) => s + (e.weight || 1), 0);
+  let r = Math.random() * totalWeight;
+  for (const def of EVENT_DEFS) {
+    r -= (def.weight || 1);
+    if (r <= 0) return { ...def, eventId: ++_eventCounter };
+  }
+  // fallback (shouldn't reach here)
+  return { ...EVENT_DEFS[EVENT_DEFS.length - 1], eventId: ++_eventCounter };
 }
 
 function applyEventEffect(game, event) {
@@ -109,6 +116,10 @@ function applyEventEffect(game, event) {
     case 'crise_economica':
       log(game, `📉 CRISE ECONÔMICA! Ações rendem 1 moeda a menos neste round.`);
       break;
+
+    case 'no_event':
+      log(game, `😴 Nenhum evento nesta rodada. Descansa... por enquanto.`);
+      break;
   }
 }
 
@@ -146,12 +157,10 @@ function advanceTurn(game) {
   game.pendingAction = null;
   log(game, FUNNY.turn_start(next.name));
 
-  // Roll random event — 35% chance per turn
-  if (Math.random() < 0.35) {
-    const event = rollRandomEvent();
-    game.activeEvent = event;
-    applyEventEffect(game, event);
-  }
+  // Rola evento toda rodada — no_event (peso 5) garante ~45% de rodadas sem efeito
+  const event = rollRandomEvent();
+  game.activeEvent = event;
+  applyEventEffect(game, event);
 }
 
 function checkResponseWindowComplete(game) {
@@ -168,8 +177,8 @@ function resolveActionEffect(game) {
 
   switch (type) {
     case 'renda':
-      actor.coins += crise ? 0 : 1;
-      log(game, FUNNY.renda(actor.name) + (crise ? ' (crise: nada! 📉)' : ''));
+      actor.coins += 1; // Trampo Suado sempre dá 1 (crise não afeta renda)
+      log(game, FUNNY.renda(actor.name));
       break;
 
     case 'ajuda_externa':
