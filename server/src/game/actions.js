@@ -52,7 +52,7 @@ const ACTION_NAMES = {
   veredito:     'Veredito',
   meter_x9:     'Meter o X9',
   disfarce:     'Disfarce',
-  trocar_carta: 'Troca de Cartas',
+  trocar_carta: 'Infiltrar',
 };
 
 const CHARACTER_NAMES = {

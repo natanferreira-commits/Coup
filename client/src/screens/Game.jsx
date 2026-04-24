@@ -33,7 +33,7 @@ const ACTION_NAMES = {
   renda:'Trampo Suado', ajuda_externa:'Imposto é Roubo', golpe:'Golpe de Estado',
   taxar:'Faz o L', roubar:'Pegar o Arrego', assassinar:'Mandar pro Vasco',
   veredito:'Veredito',
-  meter_x9:'Meter o X9', disfarce:'Disfarce', trocar_carta:'Troca de Cartas',
+  meter_x9:'Meter o X9', disfarce:'Disfarce', trocar_carta:'Infiltrar',
 };
 
 const ACTION_ICONS = {
@@ -95,7 +95,7 @@ const ACTION_CATEGORIES = [
     actions: [
       { action:'meter_x9',     icon:'🕵️', label:'Meter o X9',      sub:'Espia carta',   tooltip:'Afirma ser o X9. Vê uma carta secreta do alvo. Juiz pode bloquear.' },
       { action:'disfarce',     icon:'🎭', label:'Disfarce',          sub:'Troca sua carta', tooltip:'Afirma ser o X9. Troca uma de suas cartas pelo baralho em segredo. Juiz pode bloquear.' },
-      { action:'trocar_carta', icon:'🔄', label:'Troca de Cartas',   sub:'Força troca',   tooltip:'Afirma ser o X9. Força o alvo a trocar uma carta. Juiz pode bloquear.' },
+      { action:'trocar_carta', icon:'🕵️', label:'Infiltrar',          sub:'Força troca',   tooltip:'Afirma ser o X9. Infiltra o alvo e força uma troca de carta. Juiz pode bloquear.' },
     ],
   },
 ];
@@ -519,7 +519,7 @@ export default function Game({ data, myId }) {
   const blockedActions = (() => {
     const evType = game?.activeEvent?.type;
     if (evType === 'operacao_pf') return ['roubar'];
-    if (evType === 'fake_news')   return ['meter_x9', 'disfarce', 'trocar_carta'];
+    if (evType === 'fake_news')   return ['meter_x9', 'trocar_carta'];
     return [];
   })();
 
@@ -670,7 +670,7 @@ export default function Game({ data, myId }) {
       )}
       {mustSwapCard && (
         <CardSelectorModal context="swap"
-          title={pa?.swapContext==='disfarce'?'Hora do Disfarce 🎭':'Troca Forçada 🔄'}
+          title={pa?.swapContext==='disfarce'?'Hora do Disfarce 🎭':'Infiltração 🕵️'}
           description={pa?.swapContext==='disfarce'
             ?'Escolha uma carta para trocar pelo baralho.'
             :`${actorName} forçou uma troca. Escolha qual carta trocar.`}
@@ -836,7 +836,7 @@ export default function Game({ data, myId }) {
                 initial={{opacity:0,y:-6}} animate={{opacity:1,y:0}} exit={{opacity:0}}>
                 <span className={styles.mesaStatusIcon}>🔄</span>
                 <span className={styles.mesaStatusMain} style={{color:'#82b1ff'}}>
-                  {pa?.swapContext==='disfarce'?'Disfarce':'Troca de Cartas'}
+                  {pa?.swapContext==='disfarce'?'Disfarce':'Infiltrar'}
                 </span>
                 <span className={styles.mesaStatusSub}>
                   {players.find(p=>p.id===pa?.swapPlayerId)?.name} escolhe uma carta
@@ -1082,7 +1082,7 @@ export default function Game({ data, myId }) {
                       const eventBlockTooltip = isEventBlocked
                         ? (game?.activeEvent?.type === 'operacao_pf'
                             ? '🚔 Bloqueado pela Operação da PF neste round'
-                            : '📰 Bloqueado pela Fake News neste round')
+                            : '📰 Fake News: X9 e Infiltrar bloqueados neste round')
                         : null;
                       return (
                         <Btn key={action}

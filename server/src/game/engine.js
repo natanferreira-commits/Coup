@@ -13,7 +13,7 @@ const FUNNY = {
   veredito_fail:(a, t, ch) => `${a} errou o Veredito! ${t} não tinha ${ch}. Inocente! ⚖️`,
   meter_x9:     (a, t) => `${a} meteu o X9 em ${t}! Cê tá sendo investigado 👀`,
   disfarce:     (a)    => `${a} botou o disfarce! Mas será que alguém acredita? 🎭`,
-  trocar_carta: (a, t) => `${a} forçou ${t} a trocar uma carta! Não é justo, mas é o Golpe 🔄`,
+  trocar_carta: (a, t) => `${a} infiltrou em ${t}! Troca de carta na marra 🕵️`,
   challenge_success: (c, a) => `${c} DUVIDOU e acertou! ${a} tava blefando igual político em campanha 🤥`,
   challenge_fail:    (c, a) => `${c} DUVIDOU e se deu mal! ${a} tinha a carta mesmo. Passou vergonha 😳`,
   block:             (b, act) => `${b} bloqueou a jogada! Ninguém passa fácil aqui 🛡️`,
@@ -25,7 +25,7 @@ const FUNNY = {
   coin_flip_coroa:   (b, a, s) => `COROA! 🪙 Bloqueio cancelado! ${a} fica com a moeda e ainda rouba ${s} moedas!`,
   lose_influence: (p, ch)  => `${p} perdeu ${ch}. F no chat ⚰️`,
   eliminated:     (p)      => `${p} tá eliminado! Foi pro Vasco definitivamente 👋`,
-  turn_start:     (p)      => `--- Vez de ${p}. Bora ver o que essa pessoa vai aprontar... 🤔`,
+  turn_start:     (p)      => `🔥 Vez de ${p}. Bora ver o que essa pessoa vai aprontar...`,
   game_start:     ()       => `🇧🇷 PARTIDA INICIADA! Que vença o mais safado. Boa sorte pra ninguém.`,
   x9_show:        (t)      => `${t} selecionou uma carta para mostrar. O X9 vai ver... 🕵️`,
   x9_swap_done:   (p)      => `${p} trocou uma carta. Será que melhorou? 🎴`,
@@ -46,7 +46,7 @@ function getPlayer(game, id) { return game.players.find(p => p.id === id); }
 const EVENT_DEFS = [
   { type: 'no_event',        name: 'Sem Evento',       emoji: '😴', description: 'Nenhum evento nesta rodada.',                        weight: 5 },
   { type: 'operacao_pf',     name: 'Operação da PF',   emoji: '🚔', description: 'Ninguém pode roubar neste round.',                   weight: 1 },
-  { type: 'fake_news',       name: 'Fake News',         emoji: '📰', description: 'Ninguém pode investigar neste round.',               weight: 1 },
+  { type: 'fake_news',       name: 'Fake News',         emoji: '📰', description: 'X9 e Infiltrar bloqueados neste round. Disfarce permitido.', weight: 1 },
   { type: 'jogo_do_bicho',   name: 'Jogo do Bicho',    emoji: '🎲', description: 'Todos participam! Resultado aleatório pra cada um.', weight: 1 },
   { type: 'mensalao',        name: 'Mensalão',          emoji: '💵', description: 'Todos ganham 1 moeda do governo.',                   weight: 1 },
   { type: 'arrastaoo',       name: 'Arrastão',          emoji: '💸', description: 'Jogador com mais moedas perde 2.',                   weight: 1 },
@@ -310,8 +310,8 @@ function handleAction(room, actorId, actionType, targetId, extraData = {}) {
   const evType = game.activeEvent?.type;
   if (evType === 'operacao_pf' && actionType === 'roubar')
     return { success: false, error: '🚔 Operação da PF: ninguém pode roubar neste round!' };
-  if (evType === 'fake_news' && ['meter_x9', 'disfarce', 'trocar_carta'].includes(actionType))
-    return { success: false, error: '📰 Fake News: investigações suspensas neste round!' };
+  if (evType === 'fake_news' && ['meter_x9', 'trocar_carta'].includes(actionType))
+    return { success: false, error: '📰 Fake News: X9 e Infiltrar bloqueados neste round!' };
 
   const actor = getPlayer(game, actorId);
   if (def.cost && actor.coins < def.cost) return { success: false, error: 'Moedas insuficientes' };

@@ -96,6 +96,13 @@ export default function EventPopup({ event, onDismiss }) {
     return () => clearTimeout(t);
   }, [event?.eventId, dismiss]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── Jogo do Bicho: auto-roll após 8s se ninguém clicou (safety) ──────────
+  useEffect(() => {
+    if (event?.type !== 'jogo_do_bicho' || rollPhase !== 'idle') return;
+    const t = setTimeout(() => setRollPhase('rolling'), 8000);
+    return () => clearTimeout(t);
+  }, [event?.type, rollPhase]);
+
   // ── Jogo do Bicho: rolling → revealed após 2s ─────────────────────────────
   useEffect(() => {
     if (event?.type !== 'jogo_do_bicho' || rollPhase !== 'rolling') return;
