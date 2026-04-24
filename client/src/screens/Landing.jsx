@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import styles from './Landing.module.css';
 
@@ -56,12 +56,49 @@ const CHARS = [
 
 /* ═══════════════════════════════════════════════════════════════════ */
 
+// ── Detecção de plataforma ─────────────────────────────────────────────────────
+function detectPlatform() {
+  const ua = navigator.userAgent || '';
+  const isIos = /iphone|ipad|ipod/i.test(ua);
+  const isAndroid = /android/i.test(ua);
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+    || ('standalone' in navigator && navigator.standalone);
+  return { isIos, isAndroid, isStandalone };
+}
+
 export default function Landing({ onEnter }) {
   const [email,         setEmail]        = useState('');
   const [submitted,     setSubmitted]    = useState(false);
   const [emailError,    setEmailError]   = useState('');
   const [openFaq,       setOpenFaq]      = useState(null);
   const emailRef = useRef(null);
+
+  // ── PWA install ────────────────────────────────────────────────────────────
+  const [installPrompt,  setInstallPrompt]  = useState(null);
+  const [installDone,    setInstallDone]    = useState(false);
+  const [showIosHint,    setShowIosHint]    = useState(false);
+  const { isIos, isStandalone } = detectPlatform();
+
+  useEffect(() => {
+    // Esconde botão se já está instalado como app
+    if (isStandalone) { setInstallDone(true); return; }
+
+    const handler = e => { e.preventDefault(); setInstallPrompt(e); };
+    window.addEventListener('beforeinstallprompt', handler);
+    window.addEventListener('appinstalled', () => { setInstallPrompt(null); setInstallDone(true); });
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, [isStandalone]);
+
+  async function handleInstall() {
+    if (isIos) { setShowIosHint(v => !v); return; }
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    const { outcome } = await installPrompt.userChoice;
+    if (outcome === 'accepted') { setInstallPrompt(null); setInstallDone(true); }
+  }
+
+  // Mostra botão de instalar se: Android com prompt disponível, iOS ainda não instalado, ou desktop
+  const showInstallBtn = !installDone && (installPrompt || isIos);
 
   function handleEmailSubmit(e) {
     e.preventDefault();
@@ -90,9 +127,31 @@ export default function Landing({ onEnter }) {
       >
         <span className={styles.navLogo}>GOLPE</span>
         <div className={styles.navLinks}>
+          {showInstallBtn && (
+            <button className={styles.navInstall} onClick={handleInstall}>
+              {isIos ? '📲 Instalar' : '⬇️ Instalar App'}
+            </button>
+          )}
+          {installDone && isStandalone && (
+            <span className={styles.navInstallDone}>✓ App instalado</span>
+          )}
           <button className={styles.navPlay} onClick={onEnter}>Jogar agora</button>
         </div>
       </motion.nav>
+
+      {/* ── Tooltip iOS: instrução de instalação ──────────────────────────── */}
+      <AnimatePresence>
+        {showIosHint && (
+          <motion.div className={styles.iosHint}
+            initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+            <span>No Safari, toque em</span>
+            <strong> ⬆️ Compartilhar</strong>
+            <span> → </span>
+            <strong>Adicionar à Tela de Início</strong>
+            <button className={styles.iosHintClose} onClick={() => setShowIosHint(false)}>✕</button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── HERO ──────────────────────────────────────────────────────── */}
       <section className={styles.hero}>
@@ -136,14 +195,25 @@ export default function Landing({ onEnter }) {
               >→</motion.span>
             </motion.button>
 
-            <motion.button
-              className={styles.ctaSecondary}
-              onClick={scrollToEmail}
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-            >
-              Entrar na lista
-            </motion.button>
+            {showInstallBtn ? (
+              <motion.button
+                className={styles.ctaInstall}
+                onClick={handleInstall}
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+              >
+                {isIos ? '📲 Adicionar à Tela de Início' : '⬇️ Instalar como App'}
+              </motion.button>
+            ) : (
+              <motion.button
+                className={styles.ctaSecondary}
+                onClick={scrollToEmail}
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+              >
+                Entrar na lista
+              </motion.button>
+            )}
           </motion.div>
         </motion.div>
 

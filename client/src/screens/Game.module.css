@@ -734,82 +734,171 @@
   animation: screenShake 0.65s ease-out;
 }
 
-/* ── Mobile responsive ── */
+/* ════════════════════════════════════════════════════════════════════
+   MOBILE  ≤ 768px — Layout off-canvas + bottom sheet
+   ════════════════════════════════════════════════════════════════════ */
 @media (max-width: 768px) {
+
+  /* ── Board: coluna única, usa dvh para safe-area do iOS ── */
   .board {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr auto;
-    height: auto;
-    min-height: 100vh;
-    overflow-y: auto;
-  }
-
-  .leftPanel {
-    border-right: none;
-    border-bottom: 1px solid var(--border);
-    padding: 10px;
-    gap: 6px;
-    max-height: 200px;
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;         /* dynamic viewport height — respeita barra do browser */
     overflow: hidden;
+    grid-template-columns: unset;
   }
 
-  .quickChatSection { display: none; } /* hide on mobile to save space */
+  /* ── Mobile header bar (só visível em mobile) ── */
+  .mobileHeader {
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 12px;
+    height: 44px;
+    flex-shrink: 0;
+    background: rgba(13,13,18,0.98);
+    border-bottom: 1px solid var(--border);
+    z-index: 50;
+  }
+  .mobileLogo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.4rem;
+    letter-spacing: 0.08em;
+    color: var(--yellow);
+  }
+  .mobileIconBtn {
+    background: none;
+    border: none;
+    font-size: 1.25rem;
+    cursor: pointer;
+    padding: 6px;
+    line-height: 1;
+    border-radius: 8px;
+    transition: background 0.15s;
+  }
+  .mobileIconBtn:active { background: rgba(255,255,255,0.1); }
+  .mobileHeaderGroup { display: flex; gap: 2px; }
 
+  /* ── Left panel → off-canvas drawer ── */
+  .leftPanel {
+    position: fixed !important;
+    top: 0; left: 0; bottom: 0;
+    width: min(82vw, 290px);
+    z-index: 600;
+    padding: 52px 12px 16px;
+    gap: 10px;
+    transform: translateX(-100%);
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    background: #0d0d12;
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .leftPanelOpen {
+    transform: translateX(0) !important;
+    box-shadow: 8px 0 40px rgba(0,0,0,0.7);
+  }
+
+  /* Backdrop escuro quando drawer abre */
+  .mobileBackdrop {
+    display: block !important;
+    position: fixed;
+    inset: 0;
+    z-index: 590;
+    background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(2px);
+  }
+
+  /* ── Center: ocupa todo o espaço disponível ── */
+  .center {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 8px 10px 0;
+    gap: 6px;
+    /* Espaço para o bottom panel fixo */
+    padding-bottom: 260px;
+  }
+
+  /* ── Right panel → bottom sheet fixo ── */
   .rightPanel {
+    position: fixed !important;
+    bottom: 0; left: 0; right: 0;
+    z-index: 400;
     border-left: none;
     border-top: 1px solid var(--border);
+    border-radius: 16px 16px 0 0;
+    background: rgba(13,13,18,0.98);
+    max-height: 55vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    /* Respeita o home indicator do iPhone */
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    box-shadow: 0 -6px 30px rgba(0,0,0,0.6);
   }
 
-  .center {
-    padding: 8px 10px 12px;
-    gap: 6px;
+  /* Handle visual no topo do bottom sheet */
+  .rightPanel::before {
+    content: '';
+    display: block;
+    width: 36px; height: 4px;
+    background: rgba(255,255,255,0.18);
+    border-radius: 2px;
+    margin: 8px auto 2px;
+    flex-shrink: 0;
   }
 
+  /* ── Timer lateral → reposiciona para top-right ── */
+  .timerLateral {
+    right: 10px;
+    top: 52px; /* abaixo do mobile header */
+    transform: none;
+    font-size: 3.5rem;
+  }
+
+  /* ── Adversários — scroll horizontal ── */
   .opponents {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
     gap: 6px;
+    padding-bottom: 2px;
+    scrollbar-width: none;
   }
+  .opponents::-webkit-scrollbar { display: none; }
 
   .opponent {
-    min-width: 120px;
-    padding: 6px 8px;
+    min-width: 130px;
+    flex-shrink: 0;
+    padding: 6px 10px;
   }
 
-  .mesaImg {
-    width: min(240px, 80%);
-  }
+  /* ── Mesa menor ── */
+  .mesaImg { width: min(220px, 75%); }
 
-  .myArea {
-    gap: 10px;
-  }
+  /* ── Minha área compacta ── */
+  .myArea { gap: 10px; }
 
-  .helpBtn {
-    top: auto;
-    bottom: 60px;
-    right: 12px;
-  }
+  /* ── Botões fixos reposicionados ── */
+  .helpBtn    { bottom: calc(55vh + 10px); right: 10px; top: auto; }
+  .muteBtn    { bottom: calc(55vh + 10px); right: 52px; top: auto; }
+  .restartBtn { bottom: calc(55vh + 46px); left: 10px; }
+  .leaveBtn   { bottom: calc(55vh + 10px); left: 10px; }
 
-  .muteBtn {
-    top: auto;
-    bottom: 60px;
-    right: 90px;
-  }
-
-  .restartBtn {
-    bottom: 48px;
-    left: 10px;
-  }
-
-  .leaveBtn {
-    bottom: 10px;
-    left: 10px;
-  }
-
-  .actionNotifCard {
-    padding: 16px 22px;
-    min-width: 200px;
-  }
+  /* ── Action notif card compacto ── */
+  .actionNotifCard { padding: 16px 22px; min-width: 200px; }
   .actionNotifLabel { font-size: 1.6rem; }
   .actionNotifIcon  { font-size: 2.2rem; }
 
+  /* ── Char grid 3 colunas ── */
   .charGrid { grid-template-columns: repeat(3, 1fr); gap: 4px; }
+
+  /* ── Quick chat oculto em mobile (economiza espaço) ── */
+  .quickChatSection { display: none; }
 }
+
+/* ── Classes de estado mobile (aplicadas via JS) ── */
+/* Existem em qualquer largura mas só tomam efeito em mobile */
+.mobileHeader   { display: none; } /* oculto em desktop */
+.mobileBackdrop { display: none; } /* oculto por padrão */
+.leftPanelOpen  {}                  /* placeholder — lógica via CSS mobile acima */

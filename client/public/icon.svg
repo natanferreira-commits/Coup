@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background -->
+  <rect width="512" height="512" rx="100" fill="#0d0d12"/>
+  <!-- Outer ring decoration -->
+  <circle cx="256" cy="256" r="205" fill="none" stroke="#ffd600" stroke-width="3" opacity="0.18"/>
+  <!-- Shadow/glow diamond -->
+  <polygon points="256,72 396,256 256,440 116,256" fill="#a67b00" opacity="0.35"/>
+  <!-- Main gold diamond -->
+  <polygon points="256,84 384,256 256,428 128,256" fill="#ffd600"/>
+  <!-- Inner cutout for depth -->
+  <polygon points="256,148 340,256 256,364 172,256" fill="#0d0d12" opacity="0.42"/>
+  <!-- Bright center -->
+  <polygon points="256,208 294,256 256,304 218,256" fill="#fff8dc" opacity="0.7"/>
+  <!-- Corner pips -->
+  <circle cx="82"  cy="82"  r="9" fill="#ffd600" opacity="0.4"/>
+  <circle cx="430" cy="82"  r="9" fill="#ffd600" opacity="0.4"/>
+  <circle cx="82"  cy="430" r="9" fill="#ffd600" opacity="0.4"/>
+  <circle cx="430" cy="430" r="9" fill="#ffd600" opacity="0.4"/>
+</svg>

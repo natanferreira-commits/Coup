@@ -133,6 +133,7 @@ export default function Game({ data, myId }) {
   const [screenShake,      setScreenShake]      = useState(false);
   const [showSettings,     setShowSettings]     = useState(false);
   const [activeEventPopup, setActiveEventPopup] = useState(null); // evento visível no popup
+  const [mobileLeftOpen,   setMobileLeftOpen]   = useState(false); // drawer esquerdo em mobile
 
   // ── Animation state ───────────────────────────────────────────────────────
   const [coinAnims,      setCoinAnims]      = useState([]); // [{ id, from, to, amount }]
@@ -596,6 +597,24 @@ export default function Game({ data, myId }) {
 
     <div className={`${styles.board}${screenShake?` ${styles.boardShake}`:''}`}>
 
+      {/* ── Mobile header (só visível em mobile via CSS) ── */}
+      <div className={styles.mobileHeader}>
+        <div className={styles.mobileHeaderGroup}>
+          <button className={styles.mobileIconBtn} onClick={() => setMobileLeftOpen(v => !v)}
+            title="Chat / Log">💬</button>
+        </div>
+        <span className={styles.mobileLogo}>GOLPE</span>
+        <div className={styles.mobileHeaderGroup}>
+          <button className={styles.mobileIconBtn} onClick={() => setShowSettings(true)}
+            title="Configurações">⚙️</button>
+        </div>
+      </div>
+
+      {/* Backdrop quando drawer mobile está aberto */}
+      {mobileLeftOpen && (
+        <div className={styles.mobileBackdrop} onClick={() => setMobileLeftOpen(false)} />
+      )}
+
       {/* ── Modals ── */}
       {mustLoseInfluence && (
         <CardSelectorModal context="lose" title="Perdeu, mané 💀"
@@ -628,7 +647,7 @@ export default function Game({ data, myId }) {
       )}
 
       {/* ── LEFT ── */}
-      <div className={styles.leftPanel}>
+      <div className={`${styles.leftPanel}${mobileLeftOpen ? ` ${styles.leftPanelOpen}` : ''}`}>
         <TurnCard player={players.find(p=>p.id===currentPlayerId)} isMe={isMyTurn} />
         <p className={styles.panelLabel}>Chat da Rodada</p>
         <GameLog log={log} />
