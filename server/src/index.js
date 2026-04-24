@@ -142,6 +142,7 @@ function sanitizeGame(game, playerId) {
     log: game.log.slice(-25),
     winner: game.winner,
     activeEvent: game.activeEvent ?? null,
+    roundNumber: game.roundNumber || 1,
   };
 }
 

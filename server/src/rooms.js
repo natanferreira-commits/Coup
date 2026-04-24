@@ -1,5 +1,14 @@
 const { v4: uuidv4 } = require('uuid');
 const { createDeck } = require('./game/deck');
+// rollAndApplyRoundEvent é importado com require lazy para evitar dep circular
+// (engine.js não importa rooms.js, então é seguro importar aqui)
+let _rollAndApplyRoundEvent = null;
+function getRollFn() {
+  if (!_rollAndApplyRoundEvent) {
+    _rollAndApplyRoundEvent = require('./game/engine').rollAndApplyRoundEvent;
+  }
+  return _rollAndApplyRoundEvent;
+}
 
 const rooms = {};
 
@@ -57,9 +66,18 @@ function startGame(room) {
     currentPlayerId: players[0].id,
     phase: 'ACTION_SELECT',
     pendingAction: null,
-    log: [`--- Partida iniciada! Vez de ${players[0].name} ---`],
+    log: [],
     winner: null,
+    // Sistema de rounds
+    roundNumber: 1,
+    roundActedPlayers: [],
+    activeEvent: null,
   };
+
+  // Log de início e evento do round 1
+  room.game.log.push(`🇧🇷 PARTIDA INICIADA! Que vença o mais safado. Boa sorte pra ninguém.`);
+  room.game.log.push(`━━━ 🔔 ROUND 1 ━━━`);
+  getRollFn()(room.game);
 
   return room.game;
 }

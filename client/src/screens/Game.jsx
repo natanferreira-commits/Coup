@@ -20,8 +20,9 @@ import CoinFlipModal       from '../components/CoinFlipModal';
 import DisfarceModal       from '../components/DisfarceModal';
 import ChallengeWonModal   from '../components/ChallengeWonModal';
 import SettingsPanel       from '../components/SettingsPanel';
-import EventPopup          from '../components/EventPopup';
-import ChatBubblesLayer    from '../components/ChatBubblesLayer';
+import EventPopup             from '../components/EventPopup';
+import RoundEventAnnounce    from '../components/RoundEventAnnounce';
+import ChatBubblesLayer      from '../components/ChatBubblesLayer';
 import moedaImg from '../assets/moeda.svg';
 import mesaImg  from '../assets/mesa.svg';
 import styles from './Game.module.css';
@@ -133,6 +134,7 @@ export default function Game({ data, myId }) {
   const [screenShake,      setScreenShake]      = useState(false);
   const [showSettings,     setShowSettings]     = useState(false);
   const [activeEventPopup, setActiveEventPopup] = useState(null); // evento visível no popup
+  const [eventAnnouncing,  setEventAnnouncing]  = useState(false); // overlay "EVENTO CHEGANDO"
   const [mobileLeftOpen,   setMobileLeftOpen]   = useState(false); // drawer esquerdo em mobile
 
   // ── Animation state ───────────────────────────────────────────────────────
@@ -174,19 +176,42 @@ export default function Game({ data, myId }) {
     return () => clearInterval(id);
   }, [phase, data?.timerStartedAt]); // reinicia em qualquer mudança de turno
 
-  // ── Random event popup: detecta novo evento e exibe popup por 5s ────────────
-  const prevEventIdRef = useRef(null);
+  // ── Detecção de round: exibe "EVENTO CHEGANDO" 2s, depois EventPopup ────────
+  // Ref com sentinela -1 = ainda não inicializado (primeiro render)
+  const prevRoundRef = useRef(-1);
   useEffect(() => {
+    const roundNum = game?.roundNumber;
+    if (!roundNum) return;
+
+    const prev = prevRoundRef.current;
+    prevRoundRef.current = roundNum;
+
     const ev = game?.activeEvent;
-    if (ev?.eventId && ev.eventId !== prevEventIdRef.current) {
-      prevEventIdRef.current = ev.eventId;
-      setActiveEventPopup(ev);
-      sfx.challenge(); // som de atenção
+
+    if (prev === -1) {
+      // Carga inicial / reconexão: mostra popup diretamente se tiver evento ativo
+      if (ev && ev.type !== 'no_event') {
+        setActiveEventPopup(ev);
+      }
+      return;
     }
-    if (!ev) {
-      // Não limpa aqui — o popup gerencia seu próprio dismiss de 5s
+
+    if (prev === roundNum) return; // mesmo round, nada a fazer
+
+    // ── Novo round detectado ──────────────────────────────────────────────
+    if (ev && ev.type !== 'no_event') {
+      // Tem evento real: anuncia por 2s, depois abre popup
+      sfx.challenge();
+      setActiveEventPopup(null);
+      setEventAnnouncing(true);
+      const t = setTimeout(() => {
+        setEventAnnouncing(false);
+        setActiveEventPopup(ev);
+      }, 2000);
+      return () => clearTimeout(t);
     }
-  }, [game?.activeEvent]);
+    // Sem evento (no_event): a piada já foi pro chat pelo servidor, sem popup
+  }, [game?.roundNumber]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Coin flip: 5s girando + 5s resultado, depois ator confirma ──────────────
   const prevCoinFlipResult = useRef(null);
@@ -598,6 +623,11 @@ export default function Game({ data, myId }) {
         if (window.confirm('Sair da partida? Você será eliminado.'))
           socket.emit('leave_room', {}, () => { window.location.reload(); });
       }}
+    />
+
+    <RoundEventAnnounce
+      active={eventAnnouncing}
+      roundNumber={game?.roundNumber || 1}
     />
 
     <EventPopup

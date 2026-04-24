@@ -62,6 +62,17 @@ const BICHO_OUTCOMES = [
   { key: 'skip',   label: 'Pula a vez', coinDelta:  0 },
 ];
 
+const NO_EVENT_JOKES = [
+  '😴 Governo em greve! Nenhum evento nessa rodada. Aproveita.',
+  '🍺 Sistema saiu pra tomar uma cerveja. Sem eventos!',
+  '📺 Intervalo comercial! Nenhum evento nessa rodada.',
+  '🤷 Jogou os dados, não deu nada. Vai de boa.',
+  '🎭 O destino cochilou. Essa rodada vai ser Normal™.',
+  '🛌 Mensalão atrasou e a PF tá de folga... Sem eventos.',
+  '☕ Até o jogo do bicho tirou férias. Calma nessa rodada.',
+  '🏖️ Brasília em recesso. Politicagem suspensa por essa rodada.',
+];
+
 let _eventCounter = 0;
 function rollRandomEvent() {
   const totalWeight = EVENT_DEFS.reduce((s, e) => s + (e.weight || 1), 0);
@@ -70,8 +81,25 @@ function rollRandomEvent() {
     r -= (def.weight || 1);
     if (r <= 0) return { ...def, eventId: ++_eventCounter };
   }
-  // fallback (shouldn't reach here)
   return { ...EVENT_DEFS[EVENT_DEFS.length - 1], eventId: ++_eventCounter };
+}
+
+/**
+ * Rola o evento do novo round, aplica efeitos imediatos (mensalão, arrastão, bicho)
+ * e define game.activeEvent (null para no_event).
+ * Chamado no início de cada round e ao iniciar a partida.
+ */
+function rollAndApplyRoundEvent(game) {
+  game.activeEvent = null;
+  const event = rollRandomEvent();
+  if (event.type === 'no_event') {
+    const joke = NO_EVENT_JOKES[Math.floor(Math.random() * NO_EVENT_JOKES.length)];
+    log(game, joke);
+    // activeEvent permanece null — o cliente não exibe popup, só vê a mensagem no chat
+  } else {
+    game.activeEvent = event;
+    applyEventEffect(game, event);
+  }
 }
 
 function applyEventEffect(game, event) {
@@ -137,11 +165,17 @@ function checkGameOver(game) {
 function advanceTurn(game) {
   if (checkGameOver(game)) return;
 
-  // Clear previous event before rolling a new one
-  game.activeEvent = null;
+  // Garante que os campos de round existem (retrocompatibilidade)
+  if (!game.roundActedPlayers) game.roundActedPlayers = [];
+  if (!game.roundNumber)       game.roundNumber       = 1;
+
+  // Registra que o jogador atual completou sua vez neste round
+  if (!game.roundActedPlayers.includes(game.currentPlayerId)) {
+    game.roundActedPlayers.push(game.currentPlayerId);
+  }
 
   const alive = getAlivePlayers(game);
-  const idx = alive.findIndex(p => p.id === game.currentPlayerId);
+  const idx   = alive.findIndex(p => p.id === game.currentPlayerId);
   const nextIdx = (Math.max(idx, 0) + 1) % alive.length;
   let next = alive[nextIdx];
 
@@ -152,15 +186,19 @@ function advanceTurn(game) {
     next = alive[(nextIdx + 1) % alive.length];
   }
 
-  game.currentPlayerId = next.id;
-  game.phase = 'ACTION_SELECT';
-  game.pendingAction = null;
-  log(game, FUNNY.turn_start(next.name));
+  // Detecta novo round: todos os jogadores vivos já agiram neste round
+  const allActed = alive.every(p => game.roundActedPlayers.includes(p.id));
+  if (allActed) {
+    game.roundNumber++;
+    game.roundActedPlayers = [];
+    log(game, `━━━ 🔔 ROUND ${game.roundNumber} ━━━`);
+    rollAndApplyRoundEvent(game);
+  }
 
-  // Rola evento toda rodada — no_event (peso 5) garante ~45% de rodadas sem efeito
-  const event = rollRandomEvent();
-  game.activeEvent = event;
-  applyEventEffect(game, event);
+  game.currentPlayerId = next.id;
+  game.phase           = 'ACTION_SELECT';
+  game.pendingAction   = null;
+  log(game, FUNNY.turn_start(next.name));
 }
 
 function checkResponseWindowComplete(game) {
@@ -631,4 +669,6 @@ module.exports = {
   handleSelectCardShow, handleAcknowledgePeek, handleSelectCardSwap, handleSelectDisfarce,
   // Exposed for timer auto-actions
   getAlivePlayers, getPlayer, resolveActionEffect,
+  // Exposed for rooms.js (inicializa o evento do round 1)
+  rollAndApplyRoundEvent,
 };

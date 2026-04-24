@@ -230,27 +230,3 @@
   opacity: 0.4;
 }
 
-/* ── Overlay no_event: menor destaque ── */
-.overlayNoEvent .bg {
-  background: radial-gradient(
-    ellipse 50% 40% at 50% 50%,
-    rgba(15, 15, 15, 0.92),
-    rgba(4, 4, 10, 0.98) 70%
-  );
-}
-
-/* ── Card no_event: menor e mais discreto ── */
-.cardNoEvent {
-  width: min(340px, 88vw);
-  padding: 24px 28px 14px;
-  gap: 6px;
-}
-
-.cardNoEvent .emoji {
-  font-size: 3rem;
-}
-
-.titleNoEvent {
-  font-size: clamp(1.6rem, 5vw, 2.2rem) !important;
-  opacity: 0.75;
-}
