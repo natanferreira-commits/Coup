@@ -141,6 +141,7 @@ function sanitizeGame(game, playerId) {
     pendingAction: sanitizePA(game.pendingAction, playerId),
     log: game.log.slice(-25),
     winner: game.winner,
+    activeEvent: game.activeEvent ?? null,
   };
 }
 
@@ -161,6 +162,7 @@ function sanitizeGameForSpectator(game) {
     } : null,
     log: game.log.slice(-25),
     winner: game.winner,
+    activeEvent: game.activeEvent ?? null,
   };
 }
 

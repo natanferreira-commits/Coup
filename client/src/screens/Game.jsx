@@ -20,6 +20,7 @@ import CoinFlipModal       from '../components/CoinFlipModal';
 import DisfarceModal       from '../components/DisfarceModal';
 import ChallengeWonModal   from '../components/ChallengeWonModal';
 import SettingsPanel       from '../components/SettingsPanel';
+import EventPopup          from '../components/EventPopup';
 import ChatBubblesLayer    from '../components/ChatBubblesLayer';
 import moedaImg from '../assets/moeda.svg';
 import mesaImg  from '../assets/mesa.svg';
@@ -131,6 +132,7 @@ export default function Game({ data, myId }) {
   const [chatBubbles,      setChatBubbles]      = useState({}); // { [playerId]: { message, key } }
   const [screenShake,      setScreenShake]      = useState(false);
   const [showSettings,     setShowSettings]     = useState(false);
+  const [activeEventPopup, setActiveEventPopup] = useState(null); // evento visível no popup
 
   // ── Animation state ───────────────────────────────────────────────────────
   const [coinAnims,      setCoinAnims]      = useState([]); // [{ id, from, to, amount }]
@@ -169,6 +171,20 @@ export default function Game({ data, myId }) {
     const id = setInterval(tick, 300); // 300ms = snappy, no freeze
     return () => clearInterval(id);
   }, [phase]); // interval restarts only on phase change
+
+  // ── Random event popup: detecta novo evento e exibe popup por 5s ────────────
+  const prevEventIdRef = useRef(null);
+  useEffect(() => {
+    const ev = game?.activeEvent;
+    if (ev?.eventId && ev.eventId !== prevEventIdRef.current) {
+      prevEventIdRef.current = ev.eventId;
+      setActiveEventPopup(ev);
+      sfx.challenge(); // som de atenção
+    }
+    if (!ev) {
+      // Não limpa aqui — o popup gerencia seu próprio dismiss de 5s
+    }
+  }, [game?.activeEvent]);
 
   // ── Coin flip: 5s girando + 5s resultado, depois ator confirma ──────────────
   const prevCoinFlipResult = useRef(null);
@@ -571,6 +587,11 @@ export default function Game({ data, myId }) {
         if (window.confirm('Sair da partida? Você será eliminado.'))
           socket.emit('leave_room', {}, () => { window.location.reload(); });
       }}
+    />
+
+    <EventPopup
+      event={activeEventPopup}
+      onDismiss={() => setActiveEventPopup(null)}
     />
 
     <div className={`${styles.board}${screenShake?` ${styles.boardShake}`:''}`}>

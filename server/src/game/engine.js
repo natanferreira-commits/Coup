@@ -41,6 +41,77 @@ function getAlivePlayers(game) {
 }
 function getPlayer(game, id) { return game.players.find(p => p.id === id); }
 
+// ── Random Events ─────────────────────────────────────────────────────────────
+
+const EVENT_DEFS = [
+  { type: 'operacao_pf',     name: 'Operação da PF',  emoji: '🚔', description: 'Ninguém pode roubar neste round.' },
+  { type: 'fake_news',       name: 'Fake News',        emoji: '📰', description: 'Ninguém pode investigar neste round.' },
+  { type: 'jogo_do_bicho',   name: 'Jogo do Bicho',   emoji: '🎲', description: 'Todos participam! Resultado aleatório pra cada um.' },
+  { type: 'mensalao',        name: 'Mensalão',         emoji: '💵', description: 'Todos ganham 1 moeda do governo.' },
+  { type: 'arrastaoo',       name: 'Arrastão',         emoji: '💸', description: 'Jogador com mais moedas perde 2.' },
+  { type: 'crise_economica', name: 'Crise Econômica',  emoji: '📉', description: 'Ações que geram moedas dão 1 a menos neste round.' },
+];
+
+const BICHO_OUTCOMES = [
+  { key: 'ganha1', label: '+1 moeda',   coinDelta: +1 },
+  { key: 'ganha2', label: '+2 moedas',  coinDelta: +2 },
+  { key: 'perde1', label: '-1 moeda',   coinDelta: -1 },
+  { key: 'perde2', label: '-2 moedas',  coinDelta: -2 },
+  { key: 'nada',   label: 'Sem efeito', coinDelta:  0 },
+  { key: 'skip',   label: 'Pula a vez', coinDelta:  0 },
+];
+
+let _eventCounter = 0;
+function rollRandomEvent() {
+  const def = EVENT_DEFS[Math.floor(Math.random() * EVENT_DEFS.length)];
+  return { ...def, eventId: ++_eventCounter };
+}
+
+function applyEventEffect(game, event) {
+  const alive = getAlivePlayers(game);
+  switch (event.type) {
+    case 'mensalao':
+      alive.forEach(p => { p.coins += 1; });
+      log(game, `💵 MENSALÃO! Governo distribuiu 1 moeda pra todo mundo.`);
+      break;
+
+    case 'arrastaoo': {
+      const maxCoins = Math.max(...alive.map(p => p.coins));
+      const richest = alive.filter(p => p.coins === maxCoins);
+      richest.forEach(p => { p.coins = Math.max(0, p.coins - 2); });
+      log(game, `💸 ARRASTÃO! ${richest.map(p => p.name).join(' e ')} perdeu${richest.length > 1 ? 'm' : ''} 2 moedas!`);
+      break;
+    }
+
+    case 'jogo_do_bicho': {
+      const results = alive.map(p => {
+        const outcome = BICHO_OUTCOMES[Math.floor(Math.random() * BICHO_OUTCOMES.length)];
+        if (outcome.coinDelta !== 0) p.coins = Math.max(0, p.coins + outcome.coinDelta);
+        if (outcome.key === 'skip') {
+          if (!game.skipNextTurn) game.skipNextTurn = [];
+          game.skipNextTurn.push(p.id);
+        }
+        return { playerId: p.id, playerName: p.name, key: outcome.key, label: outcome.label, coinDelta: outcome.coinDelta };
+      });
+      event.results = results;
+      log(game, `🎲 JOGO DO BICHO! Todo mundo apostou no bicho.`);
+      break;
+    }
+
+    case 'operacao_pf':
+      log(game, `🚔 OPERAÇÃO DA PF! Roubo bloqueado neste round.`);
+      break;
+
+    case 'fake_news':
+      log(game, `📰 FAKE NEWS! Investigações suspensas neste round.`);
+      break;
+
+    case 'crise_economica':
+      log(game, `📉 CRISE ECONÔMICA! Ações rendem 1 moeda a menos neste round.`);
+      break;
+  }
+}
+
 function checkGameOver(game) {
   const alive = getAlivePlayers(game);
   if (alive.length === 1) {
@@ -54,13 +125,33 @@ function checkGameOver(game) {
 
 function advanceTurn(game) {
   if (checkGameOver(game)) return;
+
+  // Clear previous event before rolling a new one
+  game.activeEvent = null;
+
   const alive = getAlivePlayers(game);
   const idx = alive.findIndex(p => p.id === game.currentPlayerId);
-  const next = alive[(Math.max(idx, 0) + 1) % alive.length];
+  const nextIdx = (Math.max(idx, 0) + 1) % alive.length;
+  let next = alive[nextIdx];
+
+  // Handle Jogo do Bicho "pula a vez"
+  if (game.skipNextTurn?.includes(next.id) && alive.length > 1) {
+    game.skipNextTurn = game.skipNextTurn.filter(id => id !== next.id);
+    log(game, `🎲 ${next.name} pulou a vez! (Jogo do Bicho)`);
+    next = alive[(nextIdx + 1) % alive.length];
+  }
+
   game.currentPlayerId = next.id;
   game.phase = 'ACTION_SELECT';
   game.pendingAction = null;
   log(game, FUNNY.turn_start(next.name));
+
+  // Roll random event — 35% chance per turn
+  if (Math.random() < 0.35) {
+    const event = rollRandomEvent();
+    game.activeEvent = event;
+    applyEventEffect(game, event);
+  }
 }
 
 function checkResponseWindowComplete(game) {
@@ -73,21 +164,22 @@ function resolveActionEffect(game) {
   const pa = game.pendingAction;
   const { type, actorId, targetId } = pa;
   const actor = getPlayer(game, actorId);
+  const crise = game.activeEvent?.type === 'crise_economica';
 
   switch (type) {
     case 'renda':
-      actor.coins += 1;
-      log(game, FUNNY.renda(actor.name));
+      actor.coins += crise ? 0 : 1;
+      log(game, FUNNY.renda(actor.name) + (crise ? ' (crise: nada! 📉)' : ''));
       break;
 
     case 'ajuda_externa':
-      actor.coins += 2;
-      log(game, FUNNY.ajuda_externa(actor.name));
+      actor.coins += crise ? 1 : 2;
+      log(game, FUNNY.ajuda_externa(actor.name) + (crise ? ' (crise: -1 📉)' : ''));
       break;
 
     case 'taxar':
-      actor.coins += 3;
-      log(game, FUNNY.taxar(actor.name));
+      actor.coins += crise ? 2 : 3;
+      log(game, FUNNY.taxar(actor.name) + (crise ? ' (crise: -1 📉)' : ''));
       break;
 
     case 'roubar': {
@@ -166,6 +258,13 @@ function handleAction(room, actorId, actionType, targetId, extraData = {}) {
 
   const def = ACTION_DEFS[actionType];
   if (!def) return { success: false, error: 'Ação inválida' };
+
+  // ── Event-based action blocking ──────────────────────────────────────────
+  const evType = game.activeEvent?.type;
+  if (evType === 'operacao_pf' && actionType === 'roubar')
+    return { success: false, error: '🚔 Operação da PF: ninguém pode roubar neste round!' };
+  if (evType === 'fake_news' && ['meter_x9', 'disfarce', 'trocar_carta'].includes(actionType))
+    return { success: false, error: '📰 Fake News: investigações suspensas neste round!' };
 
   const actor = getPlayer(game, actorId);
   if (def.cost && actor.coins < def.cost) return { success: false, error: 'Moedas insuficientes' };

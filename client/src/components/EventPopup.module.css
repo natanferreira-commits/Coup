@@ -1,0 +1,193 @@
+/* ── Overlay ── */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+/* Dark blurred bg with event glow */
+.bg {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 70% 60% at 50% 50%,
+    color-mix(in srgb, var(--ev-bg) 85%, var(--ev-glow) 15%),
+    rgba(4, 4, 10, 0.97) 65%
+  );
+  backdrop-filter: blur(6px);
+}
+
+/* Scanlines */
+.scanlines {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 3px,
+    rgba(0, 0, 0, 0.14) 3px,
+    rgba(0, 0, 0, 0.14) 4px
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ── Card central ── */
+.card {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: min(480px, 90vw);
+  padding: 36px 40px 20px;
+  background: color-mix(in srgb, var(--ev-bg) 92%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--ev-color) 60%, transparent);
+  border-radius: 20px;
+  box-shadow:
+    0 0 60px color-mix(in srgb, var(--ev-glow) 30%, transparent),
+    0 0 120px color-mix(in srgb, var(--ev-glow) 12%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+  cursor: default;
+}
+
+/* Glow line on top */
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 10%; right: 10%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--ev-color), transparent);
+  border-radius: 2px;
+}
+
+/* ── Emoji ── */
+.emoji {
+  font-size: 4.5rem;
+  line-height: 1;
+  margin-bottom: 2px;
+  filter: drop-shadow(0 0 16px var(--ev-glow));
+}
+
+/* ── Texto ── */
+.label {
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--ev-color);
+  opacity: 0.8;
+}
+
+.title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(2.6rem, 7vw, 3.8rem);
+  letter-spacing: 0.06em;
+  line-height: 1;
+  color: #fff;
+  text-shadow:
+    0 0 30px var(--ev-glow),
+    2px 2px 0 rgba(0, 0, 0, 0.7);
+  text-align: center;
+  margin: 0;
+}
+
+.description {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.65);
+  text-align: center;
+  line-height: 1.5;
+  margin: 0 0 8px;
+}
+
+/* ── Jogo do Bicho — grade de dados ── */
+.diceGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 10px;
+  width: 100%;
+  margin: 6px 0 4px;
+}
+
+.diceCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 10px 8px;
+}
+
+.dicePlayerName {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.55);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 90px;
+}
+
+.diceIcon {
+  font-size: 2rem;
+  line-height: 1;
+  min-height: 2.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.diceSpinning {
+  display: inline-block;
+  animation: diceSpin 0.12s steps(1) infinite;
+}
+
+@keyframes diceSpin {
+  from { opacity: 0.7; }
+  50%  { opacity: 1; }
+  to   { opacity: 0.7; }
+}
+
+.diceResult {
+  font-size: 0.75rem;
+  font-weight: 700;
+  min-height: 1.1em;
+  text-align: center;
+}
+
+/* ── Timer bar ── */
+.timerBar {
+  width: 100%;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+  margin-top: 8px;
+  overflow: hidden;
+}
+
+.timerFill {
+  height: 100%;
+  background: var(--ev-color);
+  transform-origin: left;
+  border-radius: 2px;
+  opacity: 0.7;
+}
+
+/* ── Skip hint ── */
+.skipHint {
+  font-size: 0.55rem;
+  letter-spacing: 0.16em;
+  color: rgba(255, 255, 255, 0.18);
+  text-transform: uppercase;
+  margin-top: 2px;
+}
