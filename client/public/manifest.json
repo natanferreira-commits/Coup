@@ -4,7 +4,7 @@
   "description": "Jogo de cartas multiplayer brasileiro. Blefe, poder e traição.",
   "start_url": "/",
   "display": "standalone",
-  "orientation": "portrait-primary",
+  "orientation": "landscape-primary",
   "background_color": "#0d0d12",
   "theme_color": "#0d0d12",
   "lang": "pt-BR",

@@ -58,3 +58,15 @@
   font-size: 0.85rem;
   margin-top: 4px;
 }
+
+.backBtn {
+  margin-top: 20px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 6px 0;
+  transition: color 0.2s;
+}
+.backBtn:hover { color: var(--text); }

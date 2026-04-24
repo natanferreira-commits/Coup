@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import socket from './socket';
 import Landing  from './screens/Landing';
@@ -157,12 +157,42 @@ export default function App() {
     navigate(`/sala/${room.code}`);
   }
 
-  function handleLeave() {
+  const handleLeave = useCallback(() => {
     socket.emit('leave_room', {}, () => {
       clearAll();
       navigate('/');
     });
-  }
+  }, [navigate]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Forçar orientação landscape em mobile ─────────────────────────────────
+  useEffect(() => {
+    screen.orientation?.lock?.('landscape-primary').catch(() => {});
+  }, []);
+
+  // ── Kick por inatividade (5 min sem nenhum clique/toque/tecla) ────────────
+  useEffect(() => {
+    let lastActivity = Date.now();
+    const resetTimer = () => { lastActivity = Date.now(); };
+
+    document.addEventListener('click',      resetTimer);
+    document.addEventListener('touchstart', resetTimer, { passive: true });
+    document.addEventListener('keydown',    resetTimer);
+
+    const interval = setInterval(() => {
+      // Só age se o jogador estiver dentro de uma sala ou partida
+      if (!roomDataRef.current && !gameDataRef.current) return;
+      if (Date.now() - lastActivity > 5 * 60 * 1000) {
+        handleLeave();
+      }
+    }, 30_000);
+
+    return () => {
+      document.removeEventListener('click',      resetTimer);
+      document.removeEventListener('touchstart', resetTimer);
+      document.removeEventListener('keydown',    resetTimer);
+      clearInterval(interval);
+    };
+  }, [handleLeave]);
 
   // ── Reconnecting overlay ──────────────────────────────────────────────────
   const reconnOverlay = isReconnecting && (

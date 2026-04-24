@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useLocation } from 'react-router-dom';
+import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import socket from '../socket';
 import Room from './Room';
@@ -15,6 +15,7 @@ import styles from './SalaPage.module.css';
 export default function SalaPage({ roomData, gameData, myPlayerId, pendingRequests, isSpectator, spectatorData, onApprove, onDeny, onLeave }) {
   const { code }   = useParams();
   const location   = useLocation();
+  const navigate   = useNavigate();
 
   // Pre-fill name from navigation state (Lobby passes it) or localStorage
   const [name, setName]           = useState(() =>
@@ -101,8 +102,8 @@ export default function SalaPage({ roomData, gameData, myPlayerId, pendingReques
             <div className={styles.spinner} />
             <p className={styles.message}>Aguardando aprovação do host…</p>
             <p className={styles.sub}>O dono da sala precisa te aceitar</p>
-            <button className="btn" onClick={() => { setPhase('idle'); socket.off('join_denied'); }}>
-              Cancelar
+            <button className="btn" onClick={() => { socket.off('join_denied'); navigate('/'); }}>
+              ← Sair da Sala
             </button>
           </motion.div>
         )}
@@ -139,6 +140,9 @@ export default function SalaPage({ roomData, gameData, myPlayerId, pendingReques
               />
               <button className="btn btn-primary" onClick={handleRequest}>
                 Solicitar Entrada
+              </button>
+              <button className="btn" onClick={() => navigate('/')}>
+                ← Voltar ao início
               </button>
               {error && <p className={styles.error}>{error}</p>}
             </div>

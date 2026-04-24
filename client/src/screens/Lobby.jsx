@@ -102,6 +102,13 @@ export default function Lobby({ onCreated }) {
 
           {error && <p className={styles.error}>{error}</p>}
         </div>
+
+        <button
+          className={styles.backBtn}
+          onClick={() => navigate('/')}
+        >
+          ← Voltar ao início
+        </button>
       </div>
     </div>
   );
