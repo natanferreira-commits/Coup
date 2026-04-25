@@ -23,6 +23,7 @@ import SettingsPanel       from '../components/SettingsPanel';
 import EventPopup             from '../components/EventPopup';
 import RoundEventAnnounce    from '../components/RoundEventAnnounce';
 import ChatBubblesLayer      from '../components/ChatBubblesLayer';
+import HowToPlayModal        from '../components/HowToPlayModal';
 import moedaImg from '../assets/moeda.svg';
 import mesaImg  from '../assets/mesa.svg';
 import styles from './Game.module.css';
@@ -1256,29 +1257,7 @@ export default function Game({ data, myId }) {
         ? Regras
       </motion.button>
 
-      <AnimatePresence>
-        {showHelp&&(
-          <motion.div className={styles.helpOverlay}
-            initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}
-            onClick={()=>setShowHelp(false)}>
-            <motion.div className={styles.helpModal}
-              initial={{scale:0.85,y:30}} animate={{scale:1,y:0}}
-              exit={{scale:0.85,opacity:0}}
-              onClick={e=>e.stopPropagation()}>
-              <h2>Personagens</h2>
-              {Object.entries(CHAR_CONFIG).map(([key,cfg])=>(
-                <div key={key} className={styles.helpRow}>
-                  <span>{cfg.icon}</span><strong>{cfg.label}</strong><span>{cfg.desc}</span>
-                </div>
-              ))}
-              <motion.button className="btn btn-primary" style={{marginTop:16,width:'100%'}}
-                whileTap={{scale:0.97}} onClick={()=>setShowHelp(false)}>
-                Fechar
-              </motion.button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {showHelp && <HowToPlayModal onClose={() => setShowHelp(false)} />}
     </div>
 
     {/* ── Overlays de animação ── */}

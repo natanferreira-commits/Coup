@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import socket from '../socket';
 import styles from './Lobby.module.css';
+import HowToPlayModal from '../components/HowToPlayModal';
 
 export default function Lobby({ onCreated }) {
   const navigate  = useNavigate();
@@ -13,6 +14,7 @@ export default function Lobby({ onCreated }) {
   const [showRooms,    setShowRooms]    = useState(false);
   const [roomsList,    setRoomsList]    = useState([]);
   const [loadingRooms, setLoadingRooms] = useState(false);
+  const [showHowTo,    setShowHowTo]    = useState(false);
 
   function connect(cb) {
     if (!name.trim()) return setError('Digite seu nome');
@@ -151,10 +153,16 @@ export default function Lobby({ onCreated }) {
           {error && <p className={styles.error}>{error}</p>}
         </div>
 
+        <button className={styles.howToBtn} onClick={() => setShowHowTo(true)}>
+          📖 Como Jogar
+        </button>
+
         <button className={styles.backBtn} onClick={() => navigate('/')}>
           ← Voltar ao início
         </button>
       </div>
+
+      {showHowTo && <HowToPlayModal onClose={() => setShowHowTo(false)} />}
 
       {/* ── Modal de salas abertas ── */}
       {showRooms && (
@@ -185,6 +193,10 @@ export default function Lobby({ onCreated }) {
                       <span className={styles.roomsHost}>{r.hostName}</span>
                       <span className={styles.roomsMeta}>
                         👥 {r.playerCount}/6
+                        {r.status === 'playing'
+                          ? <span className={styles.roomsPlaying}>🟡 Em andamento</span>
+                          : <span className={styles.roomsWaiting}>🟢 Aguardando</span>
+                        }
                         {r.eventsEnabled && <span className={styles.roomsTiktok}>🎉 TikTok</span>}
                       </span>
                     </div>

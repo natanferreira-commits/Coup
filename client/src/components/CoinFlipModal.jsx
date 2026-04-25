@@ -2,6 +2,8 @@ import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import { useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import styles from './CoinFlipModal.module.css';
+import moedaCara  from '../assets/moeda-cara.png';
+import moedaCoroa from '../assets/moeda-coroa.png';
 
 /**
  * CoinFlipModal — janela centralizada da moeda de 1 Real
@@ -104,15 +106,12 @@ export default function CoinFlipModal({
 
               {/* CARA (front face) */}
               <div className={`${styles.coinFace} ${styles.coinFront}`}>
-                <span className={styles.coinR}>R$</span>
-                <span className={styles.coinText}>1<br />REAL</span>
-                <span className={styles.coinText} style={{ fontSize: '0.48rem', opacity: 0.6 }}>BRASIL</span>
+                <img src={moedaCara} alt="Cara" className={styles.coinImg} />
               </div>
 
               {/* COROA (back face) */}
               <div className={`${styles.coinFace} ${styles.coinBack}`}>
-                <span className={styles.coinR} style={{ fontSize: '2.4rem' }}>👑</span>
-                <span className={styles.coinText}>COROA</span>
+                <img src={moedaCoroa} alt="Coroa" className={styles.coinImg} />
               </div>
             </motion.div>
 

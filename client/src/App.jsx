@@ -12,16 +12,20 @@ export default function App() {
   const [gameData,        setGameData]        = useState(null);
   const [myPlayerId,      setMyPlayerId]      = useState(null);
   const [pendingRequests, setPendingRequests] = useState([]);
-  const [isReconnecting,  setIsReconnecting]  = useState(false);
+  const [isReconnecting,       setIsReconnecting]       = useState(false);
+  const [showInactiveWarning,  setShowInactiveWarning]  = useState(false);
+  const [inactiveCountdown,    setInactiveCountdown]    = useState(30);
 
   // Spectator state
   const [isSpectator,   setIsSpectator]   = useState(false);
   const [spectatorData, setSpectatorData] = useState(null); // { code, game, queuePosition }
 
-  const gameDataRef    = useRef(gameData);
-  const roomDataRef    = useRef(roomData);
-  const spectDataRef   = useRef(spectatorData);
-  const reconnTimerRef = useRef(null);
+  const gameDataRef        = useRef(gameData);
+  const roomDataRef        = useRef(roomData);
+  const spectDataRef       = useRef(spectatorData);
+  const reconnTimerRef     = useRef(null);
+  const inactiveWarningRef = useRef(false);  // true while the warning modal is visible
+  const inactiveTimerRef   = useRef(null);   // holds the 30-s countdown interval
 
   useEffect(() => { gameDataRef.current  = gameData;     }, [gameData]);
   useEffect(() => { roomDataRef.current  = roomData;     }, [roomData]);
@@ -169,28 +173,61 @@ export default function App() {
     screen.orientation?.lock?.('landscape-primary').catch(() => {});
   }, []);
 
-  // ── Kick por inatividade (5 min sem nenhum clique/toque/tecla) ────────────
+  // ── Inatividade: aviso 30 s antes de chutar (5 min sem interação) ─────────
   useEffect(() => {
     let lastActivity = Date.now();
-    const resetTimer = () => { lastActivity = Date.now(); };
 
-    document.addEventListener('click',      resetTimer);
-    document.addEventListener('touchstart', resetTimer, { passive: true });
-    document.addEventListener('keydown',    resetTimer);
-
-    const interval = setInterval(() => {
-      // Só age se o jogador estiver dentro de uma sala ou partida
-      if (!roomDataRef.current && !gameDataRef.current) return;
-      if (Date.now() - lastActivity > 5 * 60 * 1000) {
-        handleLeave();
+    // Qualquer interação do usuário reseta o timer e dispensa o aviso
+    const resetActivity = () => {
+      lastActivity = Date.now();
+      if (inactiveWarningRef.current) {
+        inactiveWarningRef.current = false;
+        setShowInactiveWarning(false);
+        setInactiveCountdown(30);
+        if (inactiveTimerRef.current) {
+          clearInterval(inactiveTimerRef.current);
+          inactiveTimerRef.current = null;
+        }
       }
-    }, 30_000);
+    };
+
+    document.addEventListener('click',      resetActivity);
+    document.addEventListener('touchstart', resetActivity, { passive: true });
+    document.addEventListener('keydown',    resetActivity);
+    document.addEventListener('mousemove',  resetActivity);
+
+    // Verifica a cada 10 s se 5 min de inatividade foram atingidos
+    const checkInterval = setInterval(() => {
+      if (!roomDataRef.current && !gameDataRef.current) return;
+      if (inactiveWarningRef.current) return; // countdown já em andamento
+      if (Date.now() - lastActivity >= 5 * 60 * 1000) {
+        // Mostra aviso e inicia contagem regressiva de 30 s
+        inactiveWarningRef.current = true;
+        setShowInactiveWarning(true);
+        setInactiveCountdown(30);
+
+        let count = 30;
+        inactiveTimerRef.current = setInterval(() => {
+          count -= 1;
+          setInactiveCountdown(count);
+          if (count <= 0) {
+            clearInterval(inactiveTimerRef.current);
+            inactiveTimerRef.current = null;
+            inactiveWarningRef.current = false;
+            setShowInactiveWarning(false);
+            handleLeave();
+          }
+        }, 1_000);
+      }
+    }, 10_000);
 
     return () => {
-      document.removeEventListener('click',      resetTimer);
-      document.removeEventListener('touchstart', resetTimer);
-      document.removeEventListener('keydown',    resetTimer);
-      clearInterval(interval);
+      document.removeEventListener('click',      resetActivity);
+      document.removeEventListener('touchstart', resetActivity);
+      document.removeEventListener('keydown',    resetActivity);
+      document.removeEventListener('mousemove',  resetActivity);
+      clearInterval(checkInterval);
+      if (inactiveTimerRef.current) clearInterval(inactiveTimerRef.current);
     };
   }, [handleLeave]);
 
@@ -216,9 +253,89 @@ export default function App() {
     </div>
   );
 
+  // ── Overlay de inatividade ────────────────────────────────────────────────
+  const inactiveOverlay = showInactiveWarning && (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 9998,
+      background: 'rgba(0,0,0,0.72)',
+      display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center',
+      gap: 20, backdropFilter: 'blur(6px)',
+    }}>
+      <div style={{
+        background: 'var(--surface)',
+        border: '1px solid var(--border)',
+        borderRadius: 16,
+        padding: '36px 32px',
+        maxWidth: 340,
+        width: '90%',
+        textAlign: 'center',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 16,
+      }}>
+        {/* Countdown ring */}
+        <div style={{ position: 'relative', width: 72, height: 72 }}>
+          <svg width="72" height="72" style={{ transform: 'rotate(-90deg)' }}>
+            <circle cx="36" cy="36" r="30" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="5" />
+            <circle
+              cx="36" cy="36" r="30" fill="none"
+              stroke={inactiveCountdown <= 10 ? '#ef5350' : '#ffd600'}
+              strokeWidth="5"
+              strokeDasharray={`${2 * Math.PI * 30}`}
+              strokeDashoffset={`${2 * Math.PI * 30 * (1 - inactiveCountdown / 30)}`}
+              strokeLinecap="round"
+              style={{ transition: 'stroke-dashoffset 0.9s linear, stroke 0.3s' }}
+            />
+          </svg>
+          <span style={{
+            position: 'absolute', inset: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: '1.4rem', fontWeight: 700,
+            color: inactiveCountdown <= 10 ? '#ef5350' : '#fff',
+          }}>{inactiveCountdown}</span>
+        </div>
+
+        <p style={{ fontSize: '1.35rem', fontWeight: 700, color: '#fff', margin: 0 }}>
+          Você ainda está aí? 👋
+        </p>
+        <p style={{ fontSize: '0.88rem', color: 'rgba(255,255,255,0.55)', margin: 0 }}>
+          Você ficou inativo por 5 minutos.<br />
+          Confirme presença ou será removido da sala.
+        </p>
+
+        <button
+          onClick={() => {
+            // resetActivity will fire via the click event listener on document;
+            // but we also call it directly to be immediate
+            inactiveWarningRef.current = false;
+            setShowInactiveWarning(false);
+            setInactiveCountdown(30);
+            if (inactiveTimerRef.current) {
+              clearInterval(inactiveTimerRef.current);
+              inactiveTimerRef.current = null;
+            }
+          }}
+          style={{
+            background: '#ffd600', color: '#000',
+            border: 'none', borderRadius: 50,
+            padding: '12px 32px',
+            fontSize: '0.95rem', fontWeight: 700,
+            cursor: 'pointer',
+            width: '100%',
+          }}
+        >
+          ✋ Sim, estou aqui!
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <>
       {reconnOverlay}
+      {inactiveOverlay}
       <Routes>
         <Route path="/"      element={<Landing onEnter={() => navigate('/lobby')} />} />
         <Route path="/lobby" element={<Lobby onCreated={handleRoomCreated} />} />

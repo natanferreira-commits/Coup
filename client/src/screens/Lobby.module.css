@@ -71,8 +71,27 @@
   font-size: 0.88rem;
 }
 
+.howToBtn {
+  margin-top: 16px;
+  width: 100%;
+  background: rgba(255,214,0,0.07);
+  border: 1px solid rgba(255,214,0,0.25);
+  color: var(--yellow);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 9px 0;
+  border-radius: 8px;
+  transition: background 0.2s, border-color 0.2s;
+  font-family: inherit;
+}
+.howToBtn:hover {
+  background: rgba(255,214,0,0.13);
+  border-color: rgba(255,214,0,0.5);
+}
+
 .backBtn {
-  margin-top: 20px;
+  margin-top: 10px;
   background: none;
   border: none;
   color: var(--muted);
@@ -213,6 +232,26 @@
   background: rgba(255,214,0,0.12);
   border: 1px solid rgba(255,214,0,0.35);
   color: var(--yellow);
+  border-radius: 10px;
+  padding: 1px 7px;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.roomsPlaying {
+  background: rgba(255, 193, 7, 0.12);
+  border: 1px solid rgba(255, 193, 7, 0.35);
+  color: #ffc107;
+  border-radius: 10px;
+  padding: 1px 7px;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.roomsWaiting {
+  background: rgba(76, 175, 80, 0.12);
+  border: 1px solid rgba(76, 175, 80, 0.35);
+  color: #66bb6a;
   border-radius: 10px;
   padding: 1px 7px;
   font-size: 0.68rem;

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import styles from './Landing.module.css';
+import HowToPlayModal from '../components/HowToPlayModal';
 
 /* ─── Animation helpers ───────────────────────────────────────────── */
 const fadeUp = {
@@ -71,6 +72,7 @@ export default function Landing({ onEnter }) {
   const [submitted,     setSubmitted]    = useState(false);
   const [emailError,    setEmailError]   = useState('');
   const [openFaq,       setOpenFaq]      = useState(null);
+  const [showHowTo,     setShowHowTo]    = useState(false);
   const emailRef = useRef(null);
 
   // ── PWA install ────────────────────────────────────────────────────────────
@@ -135,6 +137,7 @@ export default function Landing({ onEnter }) {
           {installDone && isStandalone && (
             <span className={styles.navInstallDone}>✓ App instalado</span>
           )}
+          <button className={styles.navHowTo} onClick={() => setShowHowTo(true)}>📖 Como Jogar</button>
           <button className={styles.navPlay} onClick={onEnter}>Jogar agora</button>
         </div>
       </motion.nav>
@@ -510,6 +513,8 @@ export default function Landing({ onEnter }) {
         <button className={styles.footerPlay} onClick={onEnter}>Jogar agora →</button>
         <p className={styles.footerCopy}>© 2025 GOLPE. Todos os direitos reservados.</p>
       </footer>
+
+      {showHowTo && <HowToPlayModal onClose={() => setShowHowTo(false)} />}
 
     </div>
   );

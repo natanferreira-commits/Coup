@@ -608,15 +608,16 @@ function attachGameHandlers(socket) {
     cb?.({ success: true });
   });
 
-  // Lista salas abertas (aguardando jogadores, sem partida em andamento)
+  // Lista todas as salas com pelo menos 1 jogador (aguardando ou em andamento)
   socket.on('list_rooms', (_, cb) => {
     const open = Object.values(rooms)
-      .filter(r => !r.game && r.players.length >= 1)
+      .filter(r => r.players.length >= 1)
       .map(r => ({
         code: r.code,
         playerCount: r.players.length,
         hostName: r.players.find(p => p.id === r.hostId)?.name || '?',
         eventsEnabled: r.eventsEnabled ?? false,
+        status: r.game ? 'playing' : 'waiting',
       }));
     cb?.({ success: true, rooms: open });
   });
