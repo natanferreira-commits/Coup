@@ -735,9 +735,11 @@
 }
 
 /* ════════════════════════════════════════════════════════════════════
-   MOBILE  ≤ 768px — Layout off-canvas + bottom sheet
+   MOBILE  ≤ 768px em LANDSCAPE — Layout off-canvas + bottom sheet
+   Em portrait o CSS rotation trick (index.css) já força paisagem,
+   então o layout desktop 3-colunas é usado diretamente.
    ════════════════════════════════════════════════════════════════════ */
-@media (max-width: 768px) {
+@media (max-width: 768px) and (orientation: landscape) {
 
   /* ── Board: coluna única, usa dvh para safe-area do iOS ── */
   .board {

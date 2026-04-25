@@ -28,6 +28,25 @@ body {
   min-height: 100vh;
 }
 
+/* ── Forçar modo paisagem em celular ─────────────────────────────────────────
+   Rotaciona o body 90° quando o celular está em portrait para que o layout
+   desktop (3 colunas) apareça corretamente em paisagem no browser comum.
+   screen.orientation.lock() (em App.jsx) faz o mesmo para PWA instalado.
+────────────────────────────────────────────────────────────────────────────── */
+@media screen and (orientation: portrait) and (max-width: 1024px) {
+  html, body { overflow: hidden; }
+  body {
+    width: 100vh;          /* ocupa a altura da tela como largura */
+    height: 100vw;         /* ocupa a largura da tela como altura */
+    transform-origin: left top;
+    transform: rotate(90deg);
+    position: absolute;
+    top: 100%;             /* sobe para compensar a rotação */
+    left: 0;
+    overflow: hidden;
+  }
+}
+
 h1, h2, h3 {
   font-family: 'Bebas Neue', sans-serif;
   letter-spacing: 0.05em;
