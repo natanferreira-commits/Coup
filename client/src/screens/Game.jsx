@@ -24,7 +24,6 @@ import EventPopup             from '../components/EventPopup';
 import RoundEventAnnounce    from '../components/RoundEventAnnounce';
 import ChatBubblesLayer      from '../components/ChatBubblesLayer';
 import moedaImg from '../assets/moeda.svg';
-import mesaImg  from '../assets/mesa.svg';
 import styles from './Game.module.css';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -878,17 +877,6 @@ export default function Game({ data, myId }) {
             </div>
           )}
 
-          <motion.img src={mesaImg} className={styles.mesaImg} alt="mesa"
-            animate={
-              phase==='RESPONSE_WINDOW'       ?{filter:'brightness(1.15) drop-shadow(0 0 18px #ffd60088)'}:
-              phase==='BLOCK_CHALLENGE_WINDOW' ?{filter:'brightness(1.1) drop-shadow(0 0 18px #f4433688)'}:
-              phase==='LOSE_INFLUENCE'         ?{filter:'brightness(1.05) drop-shadow(0 0 16px #f4433666)'}:
-              phase==='COIN_FLIP'              ?{filter:'brightness(1.15) drop-shadow(0 0 20px #ffd60099)'}:
-              phase==='X9_PEEK_SELECT'         ?{filter:'brightness(1.1) drop-shadow(0 0 18px #9c27b088)'}:
-              phase==='X9_PEEK_VIEW'           ?{filter:'brightness(1.1) drop-shadow(0 0 18px #9c27b088)'}:
-              {filter:'brightness(1) drop-shadow(0 0 0px transparent)'}
-            }
-            transition={{duration:0.4}} />
         </div>
 
         {/* My cards + coins */}
@@ -1196,34 +1184,32 @@ export default function Game({ data, myId }) {
           </AnimatePresence>
         </div>
 
-        {/* ── FINGIR PERSONAGEM (bottom) ── */}
-        <div className={styles.charSection}>
-          <p className={styles.panelLabel}>Fingir um personagem</p>
-          <div className={styles.charGrid}>
-            {Object.entries(CHAR_CONFIG).map(([charKey,cfg])=>{
-              const isMine   = me?.cards.some(c=>!c.dead&&c.character===charKey);
-              const isDimmed = canAct&&activeChar!==null&&charKey!==activeChar;
-              const isActive = canAct&&charKey===activeChar;
-              return (
-                <motion.div key={charKey}
-                  className={`${styles.charCard}
-                    ${isMine?styles.charCardMine:''}
-                    ${isActive?styles.charCardSelected:''}
-                    ${isDimmed?styles.charCardDimmed:''}
-                  `}
-                  style={{'--char-color':cfg.color}}
-                  animate={isDimmed?{filter:'grayscale(0.8)',opacity:0.3}:{filter:'grayscale(0)',opacity:1}}
-                  transition={{duration:0.25}}>
-                  {cfg.img
-                    ?<img src={cfg.img} alt={cfg.label} className={styles.charCardImg}/>
-                    :<div className={styles.charCardFallback}><span>{cfg.icon}</span></div>
-                  }
-                  {isMine&&<div className={styles.mineBadge}>✓</div>}
-                  {isActive&&<div className={styles.selectedBadge}>✓ USANDO</div>}
-                </motion.div>
-              );
-            })}
-          </div>
+        {/* ── FILTRO DE PERSONAGENS (chips compactos) ── */}
+        <div className={styles.charFilter}>
+          {ACTION_CATEGORIES.filter(cat => cat.charKey).map(cat => {
+            const cfg     = CHAR_CONFIG[cat.charKey];
+            const isMine  = me?.cards.some(c => !c.dead && c.character === cat.charKey);
+            const isActive = canAct && activeChar === cat.charKey;
+            const isDimmed = canAct && activeChar !== null && cat.charKey !== activeChar;
+            return (
+              <motion.div
+                key={cat.charKey}
+                className={[
+                  styles.charChip,
+                  isMine   ? styles.charChipMine   : '',
+                  isActive ? styles.charChipActive : '',
+                  isDimmed ? styles.charChipDimmed : '',
+                ].join(' ')}
+                style={{ '--char-color': cfg?.color }}
+                animate={{ opacity: isDimmed ? 0.35 : 1 }}
+                transition={{ duration: 0.2 }}
+              >
+                <span className={styles.charChipIcon}>{cfg?.icon}</span>
+                <span>{cfg?.label}</span>
+                {isMine && <span className={styles.charChipBadge}>✓</span>}
+              </motion.div>
+            );
+          })}
         </div>
       </div>
 

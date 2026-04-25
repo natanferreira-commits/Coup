@@ -897,6 +897,56 @@
   .quickChatSection { display: none; }
 }
 
+/* ── Filtro de personagens (chips) — substitui charSection com imagens ── */
+.charFilter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 7px 10px 10px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.charChip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px 4px 7px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  font-size: 0.67rem;
+  font-weight: 600;
+  color: var(--muted);
+  white-space: nowrap;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+.charChipIcon { font-size: 0.8rem; line-height: 1; }
+
+/* Tem a carta */
+.charChipMine {
+  border-color: var(--yellow);
+  background: rgba(255,214,0,0.07);
+  color: var(--yellow);
+}
+/* Usando agora */
+.charChipActive {
+  border-color: #fff;
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+  box-shadow: 0 0 8px rgba(255,255,255,0.15);
+}
+/* Outro personagem ativo — esmaecido */
+.charChipDimmed { opacity: 0.3; }
+
+/* Badge de check */
+.charChipBadge {
+  font-size: 0.52rem;
+  font-weight: 900;
+  color: var(--yellow);
+  margin-left: 1px;
+}
+
 /* ── Classes de estado mobile (aplicadas via JS) ── */
 /* Existem em qualquer largura mas só tomam efeito em mobile */
 .mobileHeader   { display: none; } /* oculto em desktop */
@@ -918,15 +968,14 @@
   /* Painéis: menos padding e gap */
   .leftPanel   { padding: 6px 8px; gap: 5px; }
   .actionsTop  { padding: 5px 7px 4px; gap: 3px; }
-  .charSection { padding: 4px 7px 6px; gap: 3px; }
 
-  /* Char cards com altura fixa para não estourar o painel */
-  .charGrid { gap: 3px; grid-template-columns: repeat(3, 1fr); }
-  .charCard { aspect-ratio: unset; height: 54px; }
+  /* Chips compactos no landscape */
+  .charFilter { padding: 5px 7px 7px; gap: 4px; }
+  .charChip   { padding: 3px 8px 3px 6px; font-size: 0.62rem; }
+  .charChipIcon { font-size: 0.72rem; }
 
-  /* Mesa menor para sobrar espaço vertical no centro */
-  .mesaImg    { width: min(170px, 75%); }
-  .mesaWrapper { min-height: 100px; gap: 4px; }
+  /* Mesa: sem imagem, só status text */
+  .mesaWrapper { min-height: 60px; gap: 4px; justify-content: center; }
 
   /* Timer ajustado para colunas menores */
   .timerLateral { font-size: 3.6rem; right: 215px; top: 50%; transform: translateY(-50%); }
