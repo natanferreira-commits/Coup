@@ -372,7 +372,7 @@
 
 /* ── Help ── */
 .helpBtn {
-  position: fixed; top: 14px; right: 16px;
+  position: fixed; bottom: 90px; left: 66px; top: auto; right: auto;
   background: transparent; border: 1px solid var(--border);
   color: var(--muted); padding: 5px 12px; border-radius: 8px;
   font-size: 0.76rem; cursor: pointer; z-index: 10;
@@ -721,9 +721,9 @@
   color: var(--yellow);
 }
 
-/* ── Mute button ── */
+/* ── Mute button (settings) ── */
 .muteBtn {
-  position: fixed; top: 14px; right: 90px;
+  position: fixed; bottom: 90px; left: 14px; top: auto; right: auto;
   background: transparent; border: 1px solid var(--border);
   color: var(--muted); padding: 5px 10px; border-radius: 8px;
   font-size: 0.85rem; cursor: pointer; z-index: 10;
@@ -891,10 +891,10 @@
   .myArea { gap: 10px; }
 
   /* ── Botões fixos reposicionados ── */
-  .helpBtn    { bottom: calc(55vh + 10px); right: 10px; top: auto; }
-  .muteBtn    { bottom: calc(55vh + 10px); right: 52px; top: auto; }
-  .restartBtn { bottom: calc(55vh + 46px); left: 10px; }
-  .leaveBtn   { bottom: calc(55vh + 10px); left: 10px; }
+  .leaveBtn   { bottom: calc(55vh + 10px);  left: 10px; }
+  .restartBtn { bottom: calc(55vh + 46px);  left: 10px; }
+  .muteBtn    { bottom: calc(55vh + 82px);  left: 10px;  top: auto; right: auto; }
+  .helpBtn    { bottom: calc(55vh + 82px);  left: 56px;  top: auto; right: auto; }
 
   /* ── Action notif card compacto ── */
   .actionNotifCard { padding: 16px 22px; min-width: 200px; }
@@ -1000,10 +1000,10 @@
   .timerLateral { font-size: 3.6rem; right: 215px; top: 50%; transform: translateY(-50%); }
 
   /* Botões fixos: menor e mais próximos das bordas */
-  .leaveBtn   { padding: 4px 10px; font-size: 0.67rem; bottom: 6px; left: 6px; }
+  .leaveBtn   { padding: 4px 10px; font-size: 0.67rem; bottom: 6px;  left: 6px; }
   .restartBtn { padding: 3px 10px; font-size: 0.67rem; bottom: 34px; left: 6px; }
-  .helpBtn    { padding: 3px 9px;  font-size: 0.68rem; top: 6px; right: 8px; }
-  .muteBtn    { top: 6px; right: 54px; font-size: 0.8rem; }
+  .muteBtn    { bottom: 62px; left: 6px;  top: auto; right: auto; font-size: 0.8rem; padding: 3px 8px; }
+  .helpBtn    { bottom: 62px; left: 50px; top: auto; right: auto; font-size: 0.68rem; padding: 3px 9px; }
 
   /* Adversários: mais compactos, scroll horizontal */
   .opponents  { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }

@@ -59,6 +59,18 @@
   margin-top: 4px;
 }
 
+/* ── Row: "Entrar na Sala" + "Salas" side by side ── */
+.joinRow {
+  display: flex;
+  gap: 8px;
+}
+
+.salasBtn {
+  flex-shrink: 0;
+  white-space: nowrap;
+  font-size: 0.88rem;
+}
+
 .backBtn {
   margin-top: 20px;
   background: none;
@@ -71,57 +83,144 @@
 }
 .backBtn:hover { color: var(--text); }
 
-/* ── Toggle Modo TikTok ── */
-.toggleRow {
+/* ════════════════════════════════════
+   Modal de salas abertas
+   ════════════════════════════════════ */
+.roomsOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 20px;
+}
+
+.roomsModal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 440px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.roomsHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.roomsTitle {
+  font-size: 1.3rem;
+  color: var(--yellow);
+  margin: 0;
+}
+
+.roomsHeaderBtns {
+  display: flex;
+  gap: 6px;
+}
+
+.roomsRefresh, .roomsClose {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  border-radius: 8px;
+  padding: 5px 10px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.roomsRefresh:hover { color: var(--text); border-color: var(--yellow); }
+.roomsClose:hover   { color: var(--red);  border-color: var(--red); }
+
+.roomsEmpty {
+  padding: 32px 20px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.roomsList {
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  padding: 10px 14px 14px;
+  gap: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,214,0,0.25) transparent;
+}
+.roomsList::-webkit-scrollbar       { width: 4px; }
+.roomsList::-webkit-scrollbar-track { background: transparent; }
+.roomsList::-webkit-scrollbar-thumb { background: rgba(255,214,0,0.25); border-radius: 4px; }
+
+.roomsItem {
+  display: flex;
+  align-items: center;
   gap: 12px;
-  padding: 10px 14px;
   background: var(--surface2);
   border: 1px solid var(--border);
   border-radius: 10px;
-  cursor: pointer;
-  transition: border-color 0.2s, background 0.2s;
-  text-align: left;
-  width: 100%;
-  font-family: inherit;
-  color: var(--text);
+  padding: 12px 14px;
+  transition: border-color 0.15s;
 }
-.toggleRow:hover { border-color: rgba(255,214,0,0.4); }
-.toggleRowOn {
-  border-color: var(--yellow) !important;
-  background: rgba(255,214,0,0.07) !important;
+.roomsItem:hover { border-color: rgba(255,214,0,0.35); }
+
+.roomsCode {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.6rem;
+  color: var(--yellow);
+  letter-spacing: 0.15em;
+  line-height: 1;
+  flex-shrink: 0;
 }
 
-.toggleLabel {
+.roomsInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+
+.roomsHost {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.roomsMeta {
   display: flex;
   align-items: center;
-  gap: 10px;
-  flex: 1;
+  gap: 8px;
+  font-size: 0.75rem;
+  color: var(--muted);
 }
-.toggleEmoji { font-size: 1.2rem; flex-shrink: 0; }
-.toggleLabel strong { display: block; font-size: 0.9rem; color: var(--text); font-weight: 700; }
-.toggleLabel small  { display: block; font-size: 0.72rem; color: var(--muted); font-weight: 400; margin-top: 1px; }
-.toggleRowOn .toggleLabel strong { color: var(--yellow); }
 
-/* Pill switch */
-.togglePill {
-  width: 38px; height: 22px;
-  background: var(--border);
-  border-radius: 11px;
-  position: relative;
+.roomsTiktok {
+  background: rgba(255,214,0,0.12);
+  border: 1px solid rgba(255,214,0,0.35);
+  color: var(--yellow);
+  border-radius: 10px;
+  padding: 1px 7px;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.roomsJoinBtn {
   flex-shrink: 0;
-  transition: background 0.2s;
+  padding: 7px 16px !important;
+  font-size: 0.82rem !important;
 }
-.togglePillOn { background: var(--yellow); }
-.toggleKnob {
-  position: absolute;
-  top: 3px; left: 3px;
-  width: 16px; height: 16px;
-  background: #fff;
-  border-radius: 50%;
-  transition: transform 0.2s;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
-}
-.togglePillOn .toggleKnob { transform: translateX(16px); }

@@ -79,13 +79,35 @@ export default function Room({ room, myPlayerId, pendingRequests = [], onApprove
           )}
         </AnimatePresence>
 
+        {/* ── Modo TikTok toggle ── */}
+        {isHost ? (
+          <button
+            type="button"
+            className={`${styles.tiktokToggle} ${room.eventsEnabled ? styles.tiktokOn : ''}`}
+            onClick={() => socket.emit('set_events', { enabled: !room.eventsEnabled })}
+          >
+            <span className={styles.tiktokLabel}>
+              <span className={styles.tiktokEmoji}>🎉</span>
+              <span>
+                <strong>Modo TikTok</strong>
+                <small>Eventos aleatórios durante a partida</small>
+              </span>
+            </span>
+            <span className={`${styles.tiktokPill} ${room.eventsEnabled ? styles.tiktokPillOn : ''}`}>
+              <span className={styles.tiktokKnob} />
+            </span>
+          </button>
+        ) : room.eventsEnabled ? (
+          <div className={styles.tiktokBadge}>🎉 Modo TikTok ativo</div>
+        ) : null}
+
         {/* Start / waiting */}
         {isHost ? (
           <button
             className="btn btn-primary"
             onClick={handleStart}
             disabled={room.players?.length < 2}
-            style={{ width: '100%', marginTop: 8 }}
+            style={{ width: '100%', marginTop: 4 }}
           >
             {room.players?.length < 2 ? 'Aguardando mais jogadores...' : 'Iniciar Partida'}
           </button>

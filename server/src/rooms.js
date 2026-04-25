@@ -119,6 +119,7 @@ function generateRoomForClient(room) {
     hostId: room.hostId,
     status: 'waiting',
     players: room.players.map(p => ({ id: p.id, name: p.name })),
+    eventsEnabled: room.eventsEnabled ?? false,
   };
 }
 

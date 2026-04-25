@@ -191,3 +191,71 @@
   transition: color 0.15s;
 }
 .leaveBtn:hover { color: rgba(255,255,255,0.7); }
+
+/* ── Toggle Modo TikTok (sala de espera) ── */
+.tiktokToggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 11px 14px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--text);
+  text-align: left;
+  transition: border-color 0.2s, background 0.2s;
+  margin-top: 8px;
+}
+.tiktokToggle:hover { border-color: rgba(255,214,0,0.4); }
+.tiktokOn {
+  border-color: var(--yellow) !important;
+  background: rgba(255,214,0,0.07) !important;
+}
+
+.tiktokLabel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+.tiktokEmoji { font-size: 1.2rem; flex-shrink: 0; }
+.tiktokLabel strong { display: block; font-size: 0.88rem; font-weight: 700; }
+.tiktokLabel small  { display: block; font-size: 0.72rem; color: var(--muted); font-weight: 400; margin-top: 1px; }
+.tiktokOn .tiktokLabel strong { color: var(--yellow); }
+
+.tiktokPill {
+  width: 38px; height: 22px;
+  background: var(--border);
+  border-radius: 11px;
+  position: relative;
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+.tiktokPillOn { background: var(--yellow); }
+.tiktokKnob {
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 16px; height: 16px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+}
+.tiktokPillOn .tiktokKnob { transform: translateX(16px); }
+
+/* Badge para não-host quando TikTok está ativo */
+.tiktokBadge {
+  margin-top: 8px;
+  padding: 8px 14px;
+  background: rgba(255,214,0,0.08);
+  border: 1px solid rgba(255,214,0,0.3);
+  border-radius: 8px;
+  color: var(--yellow);
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-align: center;
+}

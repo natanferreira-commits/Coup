@@ -232,6 +232,7 @@ function broadcastLobby(room) {
   io.to(room.code).emit('room_updated', {
     code: room.code, hostId: room.hostId, status: 'waiting',
     players: room.players.map(p => ({ id: p.id, name: p.name })),
+    eventsEnabled: room.eventsEnabled ?? false,
   });
 }
 
@@ -316,8 +317,8 @@ io.on('connection', socket => {
 
   // ── Normal events ─────────────────────────────────────────────────────────
 
-  socket.on('create_room', ({ playerName, eventsEnabled }, cb) => {
-    const room = createRoom(socket.id, playerName, pid, !!eventsEnabled);
+  socket.on('create_room', ({ playerName }, cb) => {
+    const room = createRoom(socket.id, playerName, pid);
     socket.join(room.code);
     if (pid) pidSessions.set(pid, { roomCode: room.code, playerId: socket.id });
     cb?.({ success: true, room: generateRoomForClient(room) });
@@ -593,6 +594,31 @@ function attachGameHandlers(socket) {
     startGameInRoom(room);
     broadcast(room);
     cb?.({ success: true });
+  });
+
+  // Host alterna Modo TikTok (eventos) antes de iniciar
+  socket.on('set_events', ({ enabled }, cb) => {
+    const room = getRoomByPlayer(socket.id);
+    if (!room) return cb?.({ success: false, error: 'Sala não encontrada' });
+    if (room.game) return cb?.({ success: false, error: 'Partida já em andamento' });
+    const caller = room.players.find(p => p.id === socket.id || p.currentSocketId === socket.id);
+    if (!caller || caller.id !== room.hostId) return cb?.({ success: false, error: 'Só o host pode alterar' });
+    room.eventsEnabled = !!enabled;
+    broadcastLobby(room);
+    cb?.({ success: true });
+  });
+
+  // Lista salas abertas (aguardando jogadores, sem partida em andamento)
+  socket.on('list_rooms', (_, cb) => {
+    const open = Object.values(rooms)
+      .filter(r => !r.game && r.players.length >= 1)
+      .map(r => ({
+        code: r.code,
+        playerCount: r.players.length,
+        hostName: r.players.find(p => p.id === r.hostId)?.name || '?',
+        eventsEnabled: r.eventsEnabled ?? false,
+      }));
+    cb?.({ success: true, rooms: open });
   });
 
   socket.on('disconnect', () => {
