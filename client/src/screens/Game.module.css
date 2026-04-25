@@ -904,3 +904,55 @@
 .mobileHeader   { display: none; } /* oculto em desktop */
 .mobileBackdrop { display: none; } /* oculto por padrão */
 .leftPanelOpen  {}                  /* placeholder — lógica via CSS mobile acima */
+
+/* ════════════════════════════════════════════════════════════════════
+   CELULAR LANDSCAPE  — tela curta (≤ 520px de altura)
+   Aplica quando o celular está em paisagem (rotation trick ativo ou físico).
+   Reduz colunas e elementos para caber em ~390px de altura.
+   ════════════════════════════════════════════════════════════════════ */
+@media (max-height: 520px) {
+  /* Colunas mais estreitas para sobrar mais espaço central */
+  .board {
+    grid-template-columns: 190px 1fr 210px;
+  }
+
+  /* Painel esquerdo: fontes menores, menos gap */
+  .leftPanel  { padding: 8px 10px; gap: 6px; }
+  .rightPanel { }
+  .actionsTop { padding: 6px 8px 4px; gap: 4px; }
+  .charSection { padding: 5px 8px 8px; gap: 4px; }
+
+  /* Mesa menor para não ocupar tanto espaço vertical */
+  .mesaImg { width: min(190px, 80%); }
+  .mesaWrapper { min-height: 120px; gap: 6px; }
+
+  /* Timer menor */
+  .timerLateral { font-size: 3.8rem; right: 220px; }
+
+  /* Botões fixos mais compactos */
+  .leaveBtn   { padding: 4px 10px; font-size: 0.68rem; bottom: 8px; left: 8px; }
+  .restartBtn { padding: 3px 10px; font-size: 0.68rem; bottom: 38px; left: 8px; }
+  .helpBtn    { padding: 4px 10px; font-size: 0.7rem; top: 8px; right: 10px; }
+  .muteBtn    { top: 8px; right: 56px; }
+
+  /* Adversários menores */
+  .opponent   { padding: 5px 8px; min-width: 110px; }
+  .opponentName { font-size: 0.74rem; }
+  .playerCard { width: 34px; height: 48px; }
+
+  /* Minha área compacta */
+  .coinNum  { font-size: 1.8rem; }
+  .coinIcon { width: 28px; height: 28px; }
+  .myArea   { gap: 10px; padding-top: 2px; }
+
+  /* Ações menores */
+  .actionBtn { padding: 6px 8px; }
+  .actionBtn strong { font-size: 0.72rem; }
+  .actionBtn small  { font-size: 0.58rem; }
+
+  /* Chars menores */
+  .charGrid { gap: 3px; }
+
+  /* Quick chat oculto */
+  .quickChatSection { display: none; }
+}

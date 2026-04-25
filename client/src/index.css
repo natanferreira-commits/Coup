@@ -36,12 +36,13 @@ body {
 @media screen and (orientation: portrait) and (max-width: 1024px) {
   html, body { overflow: hidden; }
   body {
-    width: 100vh;          /* ocupa a altura da tela como largura */
-    height: 100vw;         /* ocupa a largura da tela como altura */
+    min-height: unset;     /* remove min-height:100vh que conflitava */
+    width: 100vh;          /* usa a ALTURA da tela como largura (paisagem) */
+    height: 100vw;         /* usa a LARGURA da tela como altura */
     transform-origin: left top;
-    transform: rotate(90deg);
+    transform: rotate(-90deg);   /* -90deg = anti-horário: preenche a tela corretamente */
     position: absolute;
-    top: 100%;             /* sobe para compensar a rotação */
+    top: 100%;             /* compensa o deslocamento causado pela rotação */
     left: 0;
     overflow: hidden;
   }
