@@ -22,10 +22,11 @@ const io = new Server(server, { cors: { origin: '*', methods: ['GET', 'POST'] } 
 
 app.get('/health', (_, res) => res.json({ ok: true }));
 
-// ── Turn timer (30 s) ─────────────────────────────────────────────────────────
+// ── Turn timer (60 s) ─────────────────────────────────────────────────────────
 
 const turnTimers = new Map(); // roomCode → setTimeout handle
-const TURN_TIMEOUT_MS = 30_000;
+const TURN_TIMEOUT_MS = 60_000;
+const NO_TIMER_PHASES = ['X9_PEEK_SELECT', 'X9_PEEK_VIEW', 'CARD_SWAP_SELECT', 'DISFARCE_SELECT'];
 
 function clearTurnTimer(roomCode) {
   if (turnTimers.has(roomCode)) {
@@ -40,8 +41,10 @@ function setTurnTimer(room) {
   if (!game || game.phase === 'GAME_OVER') return;
 
   // Phases that don't need a timeout (player interaction expected but no rush)
-  const noTimerPhases = ['X9_PEEK_SELECT', 'X9_PEEK_VIEW', 'CARD_SWAP_SELECT', 'DISFARCE_SELECT'];
-  if (noTimerPhases.includes(game.phase)) return;
+  if (NO_TIMER_PHASES.includes(game.phase)) {
+    room._timerStartedAt = null; // garante que clientes não mostram timer nessas fases
+    return;
+  }
 
   room._timerStartedAt = Date.now();
 
@@ -143,6 +146,7 @@ function sanitizeGame(game, playerId) {
     winner: game.winner,
     activeEvent: game.activeEvent ?? null,
     roundNumber: game.roundNumber || 1,
+    eventsEnabled: game.eventsEnabled ?? false,
   };
 }
 
@@ -201,12 +205,20 @@ function broadcast(room, extraForPlayer = null) {
     setTurnTimer(room);
   }
 
+  // Calcula tempo restante server-side para evitar dessincronização por clock skew entre cliente/servidor
+  const _now = Date.now();
+  const _hasTimer = room._timerStartedAt && !NO_TIMER_PHASES.includes(room.game.phase) && room.game.phase !== 'GAME_OVER';
+  const _timeRemaining = _hasTimer
+    ? Math.max(0, Math.ceil((room._timerStartedAt + TURN_TIMEOUT_MS - _now) / 1000))
+    : null;
+
   room.players.forEach(p => {
     const sid = p.currentSocketId || p.id;
     const payload = {
       code: room.code, hostId: room.hostId, status: 'playing',
       game: sanitizeGame(room.game, p.id),
       timerStartedAt: room._timerStartedAt || null,
+      timeRemaining: _timeRemaining,
     };
     if (extraForPlayer && extraForPlayer.playerId === p.id) {
       Object.assign(payload, extraForPlayer);
@@ -260,9 +272,16 @@ io.on('connection', socket => {
         player.currentSocketId = socket.id;
         socket.join(roomCode);
         if (room.game) {
+          const _rNow = Date.now();
+          const _rHasTimer = room._timerStartedAt && !NO_TIMER_PHASES.includes(room.game.phase) && room.game.phase !== 'GAME_OVER';
+          const _rRemaining = _rHasTimer
+            ? Math.max(0, Math.ceil((room._timerStartedAt + TURN_TIMEOUT_MS - _rNow) / 1000))
+            : null;
           socket.emit('game_state', {
             code: room.code, hostId: room.hostId, status: 'playing',
             game: sanitizeGame(room.game, playerId), reconnected: true, playerId,
+            timerStartedAt: room._timerStartedAt || null,
+            timeRemaining: _rRemaining,
           });
         } else {
           socket.emit('room_updated', {
@@ -297,8 +316,8 @@ io.on('connection', socket => {
 
   // ── Normal events ─────────────────────────────────────────────────────────
 
-  socket.on('create_room', ({ playerName }, cb) => {
-    const room = createRoom(socket.id, playerName, pid);
+  socket.on('create_room', ({ playerName, eventsEnabled }, cb) => {
+    const room = createRoom(socket.id, playerName, pid, !!eventsEnabled);
     socket.join(room.code);
     if (pid) pidSessions.set(pid, { roomCode: room.code, playerId: socket.id });
     cb?.({ success: true, room: generateRoomForClient(room) });

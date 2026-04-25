@@ -91,6 +91,7 @@ function rollRandomEvent() {
  */
 function rollAndApplyRoundEvent(game) {
   game.activeEvent = null;
+  if (!game.eventsEnabled) return; // Modo TikTok desabilitado — sem eventos
   const event = rollRandomEvent();
   if (event.type === 'no_event') {
     const joke = NO_EVENT_JOKES[Math.floor(Math.random() * NO_EVENT_JOKES.length)];

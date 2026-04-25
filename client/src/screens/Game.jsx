@@ -165,16 +165,18 @@ export default function Game({ data, myId }) {
   }); // runs every render — keeps ref always fresh
 
   useEffect(() => {
-    if (phase === 'GAME_OVER') { setTimeLeft(30); return; }
-    const startedAt = data?.timerStartedAt;
-    if (!startedAt) { setTimeLeft(30); return; }
-    const tick = () => {
-      setTimeLeft(Math.max(0, Math.round(30 - (Date.now() - startedAt) / 1000)));
-    };
-    tick();
-    const id = setInterval(tick, 300); // 300ms = snappy, no freeze
+    if (phase === 'GAME_OVER') { setTimeLeft(60); return; }
+    // Usa timeRemaining calculado pelo servidor para evitar dessincronização
+    // por diferença de relógio entre cliente e servidor (clock skew).
+    const remaining = data?.timeRemaining;
+    if (remaining == null) { setTimeLeft(60); return; }
+    setTimeLeft(remaining);
+    const startLocal = Date.now();
+    const id = setInterval(() => {
+      setTimeLeft(Math.max(0, Math.round(remaining - (Date.now() - startLocal) / 1000)));
+    }, 300);
     return () => clearInterval(id);
-  }, [phase, data?.timerStartedAt]); // reinicia em qualquer mudança de turno
+  }, [phase, data?.timerStartedAt]); // timerStartedAt como dep → reinicia a cada novo turno
 
   // ── Detecção de round: exibe "EVENTO CHEGANDO" 2s, depois EventPopup ────────
   // Ref com sentinela -1 = ainda não inicializado (primeiro render)
@@ -873,7 +875,7 @@ export default function Game({ data, myId }) {
           {/* Timer — lateral, só número */}
           {phase&&phase!=='GAME_OVER'&&timerStartRef.current&&(
             <div className={styles.timerLateral}
-              style={{color: timeLeft<=10?'var(--red)':timeLeft<=20?'#ffd600':'rgba(255,255,255,0.22)'}}>
+              style={{color: timeLeft<=10?'var(--red)':timeLeft<=20?'#ffd600':timeLeft<=30?'rgba(255,255,255,0.5)':'rgba(255,255,255,0.22)'}}>
               {timeLeft}
             </div>
           )}

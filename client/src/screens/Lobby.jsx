@@ -5,11 +5,12 @@ import styles from './Lobby.module.css';
 
 export default function Lobby({ onCreated }) {
   const navigate  = useNavigate();
-  const [name,    setName]    = useState(() => localStorage.getItem('golpe_name') || '');
-  const [code,    setCode]    = useState('');
-  const [error,   setError]   = useState('');
-  const [loading, setLoading] = useState(false);
-  const [loadingMsg, setLoadingMsg] = useState('Conectando...');
+  const [name,          setName]          = useState(() => localStorage.getItem('golpe_name') || '');
+  const [code,          setCode]          = useState('');
+  const [error,         setError]         = useState('');
+  const [loading,       setLoading]       = useState(false);
+  const [loadingMsg,    setLoadingMsg]    = useState('Conectando...');
+  const [eventsEnabled, setEventsEnabled] = useState(false);
 
   function connect(cb) {
     if (!name.trim()) return setError('Digite seu nome');
@@ -48,7 +49,7 @@ export default function Lobby({ onCreated }) {
   function handleCreate() {
     connect(() => {
       localStorage.setItem('golpe_name', name.trim());
-      socket.emit('create_room', { playerName: name.trim() }, res => {
+      socket.emit('create_room', { playerName: name.trim(), eventsEnabled }, res => {
         setLoading(false);
         if (res.success) {
           onCreated(res.room, name.trim());
@@ -81,6 +82,23 @@ export default function Lobby({ onCreated }) {
             maxLength={20}
             onKeyDown={e => e.key === 'Enter' && handleCreate()}
           />
+
+          <button
+            type="button"
+            className={`${styles.toggleRow} ${eventsEnabled ? styles.toggleRowOn : ''}`}
+            onClick={() => setEventsEnabled(v => !v)}
+          >
+            <span className={styles.toggleLabel}>
+              <span className={styles.toggleEmoji}>🎉</span>
+              <span>
+                <strong>Modo TikTok</strong>
+                <small>Eventos aleatórios durante a partida</small>
+              </span>
+            </span>
+            <span className={`${styles.togglePill} ${eventsEnabled ? styles.togglePillOn : ''}`}>
+              <span className={styles.toggleKnob} />
+            </span>
+          </button>
 
           <button className="btn btn-primary" onClick={handleCreate} disabled={loading}>
             {loading ? loadingMsg : 'Criar Sala'}

@@ -19,7 +19,7 @@ function generateCode() {
   return code;
 }
 
-function createRoom(hostId, hostName, hostPid) {
+function createRoom(hostId, hostName, hostPid, eventsEnabled = false) {
   let code;
   do { code = generateCode(); } while (rooms[code]);
 
@@ -31,6 +31,7 @@ function createRoom(hostId, hostName, hostPid) {
     spectators: [],      // [{ id, name, currentSocketId }] — watching, enter next round
     pendingRequests: [], // [{ requestId, socketId, playerName }]
     game: null,
+    eventsEnabled: !!eventsEnabled,
   };
 
   rooms[code] = room;
@@ -72,12 +73,13 @@ function startGame(room) {
     roundNumber: 1,
     roundActedPlayers: [],
     activeEvent: null,
+    eventsEnabled: !!room.eventsEnabled,
   };
 
   // Log de início e evento do round 1
   room.game.log.push(`🇧🇷 PARTIDA INICIADA! Que vença o mais safado. Boa sorte pra ninguém.`);
   room.game.log.push(`━━━ 🔔 ROUND 1 ━━━`);
-  getRollFn()(room.game);
+  if (room.eventsEnabled) getRollFn()(room.game);
 
   return room.game;
 }
