@@ -735,11 +735,9 @@
 }
 
 /* ════════════════════════════════════════════════════════════════════
-   MOBILE  ≤ 768px em LANDSCAPE — Layout off-canvas + bottom sheet
-   Em portrait o CSS rotation trick (index.css) já força paisagem,
-   então o layout desktop 3-colunas é usado diretamente.
+   MOBILE  ≤ 768px — Layout off-canvas + bottom sheet (browser portrait)
    ════════════════════════════════════════════════════════════════════ */
-@media (max-width: 768px) and (orientation: landscape) {
+@media (max-width: 768px) {
 
   /* ── Board: coluna única, usa dvh para safe-area do iOS ── */
   .board {
@@ -906,53 +904,57 @@
 .leftPanelOpen  {}                  /* placeholder — lógica via CSS mobile acima */
 
 /* ════════════════════════════════════════════════════════════════════
-   CELULAR LANDSCAPE  — tela curta (≤ 520px de altura)
-   Aplica quando o celular está em paisagem (rotation trick ativo ou físico).
-   Reduz colunas e elementos para caber em ~390px de altura.
+   PWA LANDSCAPE / CELULAR DEITADO — tela curta (≤ 520px de altura)
+   Aplica no PWA instalado em landscape (~390px de altura).
+   Garante que todos os elementos caibam sem cortar nada.
    ════════════════════════════════════════════════════════════════════ */
 @media (max-height: 520px) {
-  /* Colunas mais estreitas para sobrar mais espaço central */
+  /* Board: usa dvh para respeitar safe-areas + colunas mais estreitas */
   .board {
-    grid-template-columns: 190px 1fr 210px;
+    height: 100dvh;
+    grid-template-columns: 185px 1fr 205px;
   }
 
-  /* Painel esquerdo: fontes menores, menos gap */
-  .leftPanel  { padding: 8px 10px; gap: 6px; }
-  .rightPanel { }
-  .actionsTop { padding: 6px 8px 4px; gap: 4px; }
-  .charSection { padding: 5px 8px 8px; gap: 4px; }
+  /* Painéis: menos padding e gap */
+  .leftPanel   { padding: 6px 8px; gap: 5px; }
+  .actionsTop  { padding: 5px 7px 4px; gap: 3px; }
+  .charSection { padding: 4px 7px 6px; gap: 3px; }
 
-  /* Mesa menor para não ocupar tanto espaço vertical */
-  .mesaImg { width: min(190px, 80%); }
-  .mesaWrapper { min-height: 120px; gap: 6px; }
+  /* Char cards com altura fixa para não estourar o painel */
+  .charGrid { gap: 3px; grid-template-columns: repeat(3, 1fr); }
+  .charCard { aspect-ratio: unset; height: 54px; }
 
-  /* Timer menor */
-  .timerLateral { font-size: 3.8rem; right: 220px; }
+  /* Mesa menor para sobrar espaço vertical no centro */
+  .mesaImg    { width: min(170px, 75%); }
+  .mesaWrapper { min-height: 100px; gap: 4px; }
 
-  /* Botões fixos mais compactos */
-  .leaveBtn   { padding: 4px 10px; font-size: 0.68rem; bottom: 8px; left: 8px; }
-  .restartBtn { padding: 3px 10px; font-size: 0.68rem; bottom: 38px; left: 8px; }
-  .helpBtn    { padding: 4px 10px; font-size: 0.7rem; top: 8px; right: 10px; }
-  .muteBtn    { top: 8px; right: 56px; }
+  /* Timer ajustado para colunas menores */
+  .timerLateral { font-size: 3.6rem; right: 215px; top: 50%; transform: translateY(-50%); }
 
-  /* Adversários menores */
-  .opponent   { padding: 5px 8px; min-width: 110px; }
-  .opponentName { font-size: 0.74rem; }
-  .playerCard { width: 34px; height: 48px; }
+  /* Botões fixos: menor e mais próximos das bordas */
+  .leaveBtn   { padding: 4px 10px; font-size: 0.67rem; bottom: 6px; left: 6px; }
+  .restartBtn { padding: 3px 10px; font-size: 0.67rem; bottom: 34px; left: 6px; }
+  .helpBtn    { padding: 3px 9px;  font-size: 0.68rem; top: 6px; right: 8px; }
+  .muteBtn    { top: 6px; right: 54px; font-size: 0.8rem; }
 
-  /* Minha área compacta */
-  .coinNum  { font-size: 1.8rem; }
-  .coinIcon { width: 28px; height: 28px; }
-  .myArea   { gap: 10px; padding-top: 2px; }
+  /* Adversários: mais compactos, scroll horizontal */
+  .opponents  { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .opponents::-webkit-scrollbar { display: none; }
+  .opponent   { padding: 4px 8px; min-width: 100px; }
+  .opponentName { font-size: 0.72rem; }
+  .playerCard { width: 30px; height: 42px; }
 
-  /* Ações menores */
-  .actionBtn { padding: 6px 8px; }
-  .actionBtn strong { font-size: 0.72rem; }
-  .actionBtn small  { font-size: 0.58rem; }
+  /* Minha área */
+  .coinNum  { font-size: 1.7rem; }
+  .coinIcon { width: 26px; height: 26px; }
+  .myArea   { gap: 8px; padding-top: 0; }
 
-  /* Chars menores */
-  .charGrid { gap: 3px; }
+  /* Botões de ação menores */
+  .actionBtn         { padding: 5px 7px; }
+  .actionBtn strong  { font-size: 0.70rem; }
+  .actionBtn small   { font-size: 0.56rem; }
+  .actionIcon        { font-size: 0.9rem; width: 18px; }
 
-  /* Quick chat oculto */
+  /* Ocultos para economizar espaço */
   .quickChatSection { display: none; }
 }
