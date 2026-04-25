@@ -1058,6 +1058,7 @@ export default function Game({ data, myId }) {
                       <span className={styles.catLabel} style={{color:cat.labelColor}}>{cat.label}</span>
                       {isMyCat&&<span style={{fontSize:'0.55rem',color:cat.labelColor,fontWeight:800,border:`1px solid ${cat.labelColor}`,borderRadius:4,padding:'1px 4px'}}>SUA CARTA</span>}
                     </div>
+                    <div className={cat.actions.length > 1 ? styles.actionBtnGrid : ''}>
                     {cat.actions.map(({action,icon,label,sub,tooltip})=>{
                       const isEventBlocked = blockedActions.includes(action);
                       const isDisabled =
@@ -1082,6 +1083,7 @@ export default function Game({ data, myId }) {
                         />
                       );
                     })}
+                    </div>
                   </div>
                 );
               })}
@@ -1184,16 +1186,15 @@ export default function Game({ data, myId }) {
           </AnimatePresence>
         </div>
 
-        {/* ── FILTRO DE PERSONAGENS (chips compactos) ── */}
+        {/* ── FILTRO DE PERSONAGENS — grid 2×3 com todos os 6 personagens ── */}
         <div className={styles.charFilter}>
-          {ACTION_CATEGORIES.filter(cat => cat.charKey).map(cat => {
-            const cfg     = CHAR_CONFIG[cat.charKey];
-            const isMine  = me?.cards.some(c => !c.dead && c.character === cat.charKey);
-            const isActive = canAct && activeChar === cat.charKey;
-            const isDimmed = canAct && activeChar !== null && cat.charKey !== activeChar;
+          {Object.entries(CHAR_CONFIG).map(([charKey, cfg]) => {
+            const isMine   = me?.cards.some(c => !c.dead && c.character === charKey);
+            const isActive = canAct && activeChar === charKey;
+            const isDimmed = canAct && activeChar !== null && charKey !== activeChar;
             return (
               <motion.div
-                key={cat.charKey}
+                key={charKey}
                 className={[
                   styles.charChip,
                   isMine   ? styles.charChipMine   : '',
