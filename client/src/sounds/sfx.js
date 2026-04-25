@@ -182,6 +182,227 @@ function noise({ start = 0, duration = 0.08, gain = 0.15 }) {
   src.start(ac.currentTime + start);
 }
 
+// ── Music Track List (exportado para a JukeboxModal) ──────────────────────────
+export const MUSIC_TRACKS = [
+  { id: 'none',      emoji: '🔇', label: 'Sem Música' },
+  { id: 'ambient',   emoji: '🌌', label: 'Ambiente' },
+  { id: 'samba',     emoji: '🥁', label: 'Samba' },
+  { id: 'bossanova', emoji: '🎸', label: 'Bossa Nova' },
+  { id: 'baiao',     emoji: '🪗', label: 'Baião' },
+  { id: 'funk',      emoji: '⚡', label: 'Funk Carioca' },
+  { id: 'pagode',    emoji: '🎵', label: 'Pagode' },
+];
+
+// ── Music Sequencer Engine ────────────────────────────────────────────────────
+let _activeTrackId = null;
+let _sequencerStop = null;
+
+function stopAllMusic() {
+  if (_sequencerStop) { _sequencerStop(); _sequencerStop = null; }
+  _ambientRunning = false;
+  _ambientNodes.forEach(n => { try { n.stop(); } catch {} });
+  _ambientNodes = [];
+  _activeTrackId = null;
+}
+
+// Generic 16th-note step sequencer factory
+function makeSeq(bpm, steps, onStep) {
+  const stepSec = 60 / (bpm * 4);
+  const AHEAD = 0.12;
+  let nextTime = ctx().currentTime + 0.05;
+  let step = 0;
+  function tick() {
+    const ac = ctx();
+    while (nextTime < ac.currentTime + AHEAD) {
+      onStep(step % steps, nextTime);
+      step++;
+      nextTime += stepSec;
+    }
+  }
+  tick();
+  const id = setInterval(tick, 50);
+  return () => clearInterval(id);
+}
+
+// ── Instrument helpers (music bus) ────────────────────────────────────────────
+function mKick(t, freq = 65, dur = 0.38, vol = 0.65) {
+  const ac = ctx(); const mg = getMusicGain();
+  const osc = ac.createOscillator(); const env = ac.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(freq * 2.8, t);
+  osc.frequency.exponentialRampToValueAtTime(freq * 0.45, t + dur * 0.45);
+  env.gain.setValueAtTime(vol, t);
+  env.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  osc.connect(env); env.connect(mg);
+  osc.start(t); osc.stop(t + dur + 0.02);
+}
+
+function mSnare(t, vol = 0.22) {
+  const ac = ctx(); const mg = getMusicGain();
+  const dur = 0.16;
+  const buf = ac.createBuffer(1, Math.floor(ac.sampleRate * dur), ac.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 1.8);
+  const src = ac.createBufferSource(); src.buffer = buf;
+  const hp = ac.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 1400;
+  const env = ac.createGain();
+  env.gain.setValueAtTime(vol, t); env.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  src.connect(hp); hp.connect(env); env.connect(mg); src.start(t);
+  const osc = ac.createOscillator(); const te = ac.createGain();
+  osc.type = 'triangle'; osc.frequency.value = 190;
+  te.gain.setValueAtTime(vol * 0.55, t); te.gain.exponentialRampToValueAtTime(0.001, t + 0.09);
+  osc.connect(te); te.connect(mg); osc.start(t); osc.stop(t + 0.11);
+}
+
+function mHat(t, vol = 0.08, dur = 0.035) {
+  const ac = ctx(); const mg = getMusicGain();
+  const buf = ac.createBuffer(1, Math.floor(ac.sampleRate * dur), ac.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  const src = ac.createBufferSource(); src.buffer = buf;
+  const hp = ac.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 9000;
+  const env = ac.createGain();
+  env.gain.setValueAtTime(vol, t); env.gain.exponentialRampToValueAtTime(0.001, t + dur * 1.5);
+  src.connect(hp); hp.connect(env); env.connect(mg); src.start(t);
+}
+
+function mBass(t, freq, dur = 0.22, vol = 0.28) {
+  const ac = ctx(); const mg = getMusicGain();
+  const osc = ac.createOscillator(); const env = ac.createGain();
+  osc.type = 'triangle'; osc.frequency.value = freq;
+  env.gain.setValueAtTime(vol, t);
+  env.gain.setValueAtTime(vol * 0.75, t + dur * 0.75);
+  env.gain.exponentialRampToValueAtTime(0.001, t + dur + 0.04);
+  osc.connect(env); env.connect(mg);
+  osc.start(t); osc.stop(t + dur + 0.06);
+}
+
+function mNote(t, freq, dur = 0.22, vol = 0.055, type = 'sine') {
+  const ac = ctx(); const mg = getMusicGain();
+  const osc = ac.createOscillator(); const env = ac.createGain();
+  osc.type = type; osc.frequency.value = freq;
+  env.gain.setValueAtTime(vol, t); env.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  osc.connect(env); env.connect(mg);
+  osc.start(t); osc.stop(t + dur + 0.02);
+}
+
+function mVibNote(t, freq, dur = 0.28, vol = 0.065) {
+  const ac = ctx(); const mg = getMusicGain();
+  const osc = ac.createOscillator(); const lfo = ac.createOscillator();
+  const lfoG = ac.createGain(); const env = ac.createGain();
+  osc.type = 'sawtooth'; osc.frequency.value = freq;
+  lfo.type = 'sine'; lfo.frequency.value = 5.5;
+  lfoG.gain.value = freq * 0.018;
+  lfo.connect(lfoG); lfoG.connect(osc.frequency);
+  env.gain.setValueAtTime(0.001, t); env.gain.linearRampToValueAtTime(vol, t + 0.04);
+  env.gain.setValueAtTime(vol, t + dur - 0.04); env.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  osc.connect(env); env.connect(mg);
+  osc.start(t); osc.stop(t + dur + 0.02);
+  lfo.start(t); lfo.stop(t + dur + 0.02);
+}
+
+// ── Tracks ────────────────────────────────────────────────────────────────────
+
+function playSamba() {
+  // 110 BPM — surdo, caixa, tamborim, melodia C maior pentatônica
+  const mel  = [130.81,164.81,196.00,220.00,261.63,196.00,164.81,130.81];
+  const bass = [65.41, 65.41, 73.42, 65.41, 55.00, 65.41, 73.42, 82.41];
+  let bar = 0;
+  return makeSeq(110, 16, (s, t) => {
+    if (s === 0 || s === 8)          mKick(t, 65, 0.42, 0.68);         // surdo
+    if (s === 4 || s === 12)         mSnare(t, 0.24);                   // caixa
+    if (s === 6 || s === 14)         mSnare(t, 0.10);                   // ghost
+    if ([0,2,5,8,10,13].includes(s)) mHat(t, 0.18, 0.05);              // tamborim
+    if (s % 4 === 2)                 mHat(t, 0.07, 0.12);              // open hat
+    if (s === 0)  mBass(t, bass[bar % 8], 0.3, 0.30);
+    if (s === 4)  mBass(t, bass[(bar+1)%8] * 1.5, 0.2, 0.20);
+    if (s === 8)  mBass(t, bass[bar % 8], 0.3, 0.28);
+    if (s === 12) mBass(t, 55.00, 0.25, 0.22);
+    if (s === 0)  mNote(t, mel[bar % 8], 0.18, 0.045);
+    if (s === 5)  mNote(t, mel[(bar+2)%8], 0.14, 0.035);
+    if (s === 10) mNote(t, mel[(bar+4)%8], 0.14, 0.035);
+    if (s === 15) bar++;
+  });
+}
+
+function playBossaNova() {
+  // 82 BPM — padrão João Gilberto, acordes Am7→Dm7→G7→Cmaj7
+  const chords = [
+    [110.00,130.81,164.81,196.00], // Am7
+    [146.83,174.61,220.00,261.63], // Dm7
+    [196.00,233.08,293.66,369.99], // G7
+    [261.63,329.63,392.00,493.88], // Cmaj7
+  ];
+  const bassNotes = [55.00, 73.42, 98.00, 130.81];
+  const chordSteps = [0,3,6,7,9,11,13,14];
+  let bar = 0;
+  return makeSeq(82, 16, (s, t) => {
+    const ch = chords[bar % 4];
+    if (chordSteps.includes(s)) ch.forEach(f => mNote(t, f, 0.14, 0.038));
+    if (s === 0)  mBass(t, bassNotes[bar % 4], 0.28, 0.28);
+    if (s === 8)  mBass(t, bassNotes[bar % 4] * 1.5, 0.20, 0.20);
+    if (s % 2 === 0) mHat(t, 0.055, 0.04);
+    if (s === 4 || s === 12) mSnare(t, 0.12);
+    if (s === 15) bar++;
+  });
+}
+
+function playBaiao() {
+  // 118 BPM — zabumba, triângulo, sanfona (vibrato)
+  const mel = [164.81,196.00,220.00,246.94,293.66,246.94,220.00,196.00];
+  let bar = 0;
+  return makeSeq(118, 8, (s, t) => {
+    if (s === 0 || s === 3 || s === 5) mKick(t, 72, 0.32, 0.62);      // zabumba
+    mHat(t, 0.16, 0.06);                                                // triângulo
+    if (s === 2 || s === 6) mSnare(t, 0.14);
+    if (s === 0) mVibNote(t, mel[bar % 8], 0.24, 0.07);
+    if (s === 2) mVibNote(t, mel[(bar+2)%8], 0.18, 0.055);
+    if (s === 4) mVibNote(t, mel[(bar+4)%8], 0.22, 0.065);
+    if (s === 6) mVibNote(t, mel[(bar+6)%8], 0.18, 0.050);
+    if (s === 0) mBass(t, 82.41, 0.18, 0.30);
+    if (s === 4) mBass(t, 98.00, 0.14, 0.22);
+    if (s === 7) bar++;
+  });
+}
+
+function playFunk() {
+  // 96 BPM — bumbo pesado, caixa seca, baixo sintetizado
+  const bassLine = [41.20,0,41.20,0, 0,55.00,0,0, 41.20,0,49.00,0, 0,0,41.20,0];
+  let bar = 0;
+  return makeSeq(96, 16, (s, t) => {
+    if ([0,4,6,8,12].includes(s)) mKick(t, 58, 0.40, 0.75);
+    if (s === 4 || s === 12)      mSnare(t, 0.32);
+    mHat(t, 0.10, 0.03);
+    if (s === 2 || s === 10) mHat(t, 0.14, 0.10);
+    if (bassLine[s]) mBass(t, bassLine[s], 0.18, 0.38);
+    if (s === 0)  mNote(t, 164.81, 0.08, 0.060, 'sawtooth');
+    if (s === 8)  mNote(t, 196.00, 0.08, 0.050, 'sawtooth');
+    if (s === 14) mNote(t, 146.83, 0.12, 0.055, 'sawtooth');
+    if (s === 15) bar++;
+  });
+}
+
+function playPagode() {
+  // 88 BPM — tantã, repique, melodia gostosa
+  const mel = [146.83,164.81,196.00,220.00,246.94,220.00,196.00,164.83];
+  let bar = 0;
+  return makeSeq(88, 16, (s, t) => {
+    if ([0,3,6,8,11,14].includes(s)) mKick(t, 80, 0.30, 0.52);        // tantã
+    if ([2,5,10,13].includes(s))     mSnare(t, 0.16);                  // repique
+    if (s % 2 === 0) mHat(t, 0.07, 0.05);
+    if (s === 0)  mBass(t, 73.42, 0.30, 0.28);
+    if (s === 4)  mBass(t, 98.00, 0.20, 0.20);
+    if (s === 8)  mBass(t, 82.41, 0.25, 0.24);
+    if (s === 12) mBass(t, 73.42, 0.25, 0.22);
+    if (s === 0)  mNote(t, mel[bar % 8], 0.30, 0.060);
+    if (s === 4)  mNote(t, mel[(bar+2)%8], 0.25, 0.050);
+    if (s === 8)  mNote(t, mel[(bar+4)%8], 0.28, 0.055);
+    if (s === 12) mNote(t, mel[(bar+6)%8], 0.22, 0.045);
+    if (s === 6 && bar % 2 === 1) mNote(t, mel[(bar+3)%8], 0.12, 0.035);
+    if (s === 15) bar++;
+  });
+}
+
 // ── Game sounds ───────────────────────────────────────────────────────────────
 
 export const sfx = {
@@ -214,14 +435,31 @@ export const sfx = {
   },
 
   startAmbient() {
-    playAmbientLoop();
+    if (!_activeTrackId) { _activeTrackId = 'ambient'; playAmbientLoop(); }
   },
 
-  stopAmbient() {
-    _ambientRunning = false;
-    _ambientNodes.forEach(n => { try { n.stop(); } catch {} });
-    _ambientNodes = [];
+  stopAmbient() { stopAllMusic(); },
+
+  /** Jukebox — seleciona trilha sonora */
+  playTrack(trackId) {
+    stopAllMusic();
+    if (!trackId || trackId === 'none') { _activeTrackId = 'none'; return; }
+    _activeTrackId = trackId;
+    const fns = {
+      ambient:   () => playAmbientLoop(),
+      samba:     playSamba,
+      bossanova: playBossaNova,
+      baiao:     playBaiao,
+      funk:      playFunk,
+      pagode:    playPagode,
+    };
+    if (trackId === 'ambient') { playAmbientLoop(); return; }
+    if (fns[trackId]) _sequencerStop = fns[trackId]();
   },
+
+  stopMusic() { stopAllMusic(); },
+
+  getCurrentTrack() { return _activeTrackId; },
 
   /** Click — clique rápido de UI */
   click() {

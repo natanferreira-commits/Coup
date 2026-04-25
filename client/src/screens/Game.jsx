@@ -24,9 +24,14 @@ import EventPopup             from '../components/EventPopup';
 import RoundEventAnnounce    from '../components/RoundEventAnnounce';
 import ChatBubblesLayer      from '../components/ChatBubblesLayer';
 import HowToPlayModal        from '../components/HowToPlayModal';
+import JukeboxModal          from '../components/JukeboxModal';
 import moedaImg from '../assets/moeda.svg';
 import mesaImg  from '../assets/mesa.svg';
 import styles from './Game.module.css';
+
+// Imagem da jukebox — carregada dinamicamente (build não quebra se não existir)
+const _jukeboxAssets = import.meta.glob('../assets/jukebox.*', { eager: true, import: 'default' });
+const jukeboxImg = Object.values(_jukeboxAssets)[0] ?? null;
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -125,6 +130,7 @@ export default function Game({ data, myId }) {
   const [vereditoChar,     setVereditoChar]     = useState(null);
   const [error,            setError]            = useState('');
   const [showHelp,         setShowHelp]         = useState(false);
+  const [showJukebox,      setShowJukebox]      = useState(false);
   const [timeLeft,         setTimeLeft]         = useState(30);
   const [coinAnimating,    setCoinAnimating]    = useState(false); // 3s animation after flip
   const [actionNotif,      setActionNotif]      = useState(null);
@@ -881,17 +887,33 @@ export default function Game({ data, myId }) {
             </div>
           )}
 
-          <motion.img src={mesaImg} className={styles.mesaImg} alt="mesa"
-            animate={
-              phase==='RESPONSE_WINDOW'       ?{filter:'brightness(1.15) drop-shadow(0 0 18px #ffd60088)'}:
-              phase==='BLOCK_CHALLENGE_WINDOW' ?{filter:'brightness(1.1) drop-shadow(0 0 18px #f4433688)'}:
-              phase==='LOSE_INFLUENCE'         ?{filter:'brightness(1.05) drop-shadow(0 0 16px #f4433666)'}:
-              phase==='COIN_FLIP'              ?{filter:'brightness(1.15) drop-shadow(0 0 20px #ffd60099)'}:
-              phase==='X9_PEEK_SELECT'         ?{filter:'brightness(1.1) drop-shadow(0 0 18px #9c27b088)'}:
-              phase==='X9_PEEK_VIEW'           ?{filter:'brightness(1.1) drop-shadow(0 0 18px #9c27b088)'}:
-              {filter:'brightness(1) drop-shadow(0 0 0px transparent)'}
-            }
-            transition={{duration:0.4}} />
+          <div className={styles.mesaRow}>
+            <motion.img src={mesaImg} className={styles.mesaImg} alt="mesa"
+              animate={
+                phase==='RESPONSE_WINDOW'       ?{filter:'brightness(1.15) drop-shadow(0 0 18px #ffd60088)'}:
+                phase==='BLOCK_CHALLENGE_WINDOW' ?{filter:'brightness(1.1) drop-shadow(0 0 18px #f4433688)'}:
+                phase==='LOSE_INFLUENCE'         ?{filter:'brightness(1.05) drop-shadow(0 0 16px #f4433666)'}:
+                phase==='COIN_FLIP'              ?{filter:'brightness(1.15) drop-shadow(0 0 20px #ffd60099)'}:
+                phase==='X9_PEEK_SELECT'         ?{filter:'brightness(1.1) drop-shadow(0 0 18px #9c27b088)'}:
+                phase==='X9_PEEK_VIEW'           ?{filter:'brightness(1.1) drop-shadow(0 0 18px #9c27b088)'}:
+                {filter:'brightness(1) drop-shadow(0 0 0px transparent)'}
+              }
+              transition={{duration:0.4}} />
+
+            {/* Jukebox — ao lado da mesa */}
+            <motion.button
+              className={styles.jukeboxBtn}
+              onClick={() => setShowJukebox(v => !v)}
+              whileHover={{ scale: 1.07, rotate: -2 }}
+              whileTap={{ scale: 0.93 }}
+              title="Música de fundo"
+            >
+              {jukeboxImg
+                ? <img src={jukeboxImg} alt="Jukebox" className={styles.jukeboxImg} />
+                : <span className={styles.jukeboxFallback}>🎰</span>
+              }
+            </motion.button>
+          </div>
         </div>
 
         {/* My cards + coins */}
@@ -1257,7 +1279,8 @@ export default function Game({ data, myId }) {
         ? Regras
       </motion.button>
 
-      {showHelp && <HowToPlayModal onClose={() => setShowHelp(false)} />}
+      {showHelp    && <HowToPlayModal onClose={() => setShowHelp(false)} />}
+      {showJukebox && <JukeboxModal  onClose={() => setShowJukebox(false)} />}
     </div>
 
     {/* ── Overlays de animação ── */}

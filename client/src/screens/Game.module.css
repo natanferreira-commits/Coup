@@ -112,12 +112,45 @@
 .mesaStatusSub  { font-size: 0.76rem; color: var(--text); font-weight: 600; }
 .mesaStatusBlock { font-size: 0.7rem; color: var(--green); }
 
+/* Mesa + Jukebox lado a lado */
+.mesaRow {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+}
+
 /* The diamond SVG itself */
 .mesaImg {
-  width: min(320px, 90%);
+  width: min(300px, 85%);
   height: auto;
   display: block;
   pointer-events: none;
+}
+
+/* Jukebox button */
+.jukeboxBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-end;
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.55));
+}
+
+.jukeboxImg {
+  width: 72px;
+  height: auto;
+  object-fit: contain;
+  display: block;
+}
+
+.jukeboxFallback {
+  font-size: 2.6rem;
+  line-height: 1;
 }
 
 /* ── My area — row: coins LEFT + cards RIGHT ── */
@@ -885,7 +918,8 @@
   }
 
   /* ── Mesa menor ── */
-  .mesaImg { width: min(220px, 75%); }
+  .mesaImg { width: min(200px, 72%); }
+  .jukeboxImg { width: 50px; }
 
   /* ── Minha área compacta ── */
   .myArea { gap: 10px; }

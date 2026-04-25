@@ -1,0 +1,113 @@
+/* Anchored to bottom-left, just above the control buttons */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9300;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+  padding: 0 0 130px 14px;
+  pointer-events: none;
+}
+
+.modal {
+  background: linear-gradient(160deg, #1c1c30 0%, #0f0f1c 100%);
+  border: 1px solid rgba(255, 214, 0, 0.4);
+  border-radius: 14px;
+  overflow: hidden;
+  min-width: 210px;
+  max-width: 250px;
+  box-shadow:
+    0 12px 48px rgba(0, 0, 0, 0.75),
+    0 0 0 1px rgba(255, 214, 0, 0.07),
+    0 0 30px rgba(255, 214, 0, 0.08);
+  pointer-events: all;
+}
+
+/* ── Header ── */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px 9px;
+  border-bottom: 1px solid rgba(255, 214, 0, 0.15);
+  background: rgba(255, 214, 0, 0.06);
+}
+
+.title {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--yellow);
+  letter-spacing: 0.04em;
+}
+
+.closeBtn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 0.78rem;
+  cursor: pointer;
+  padding: 2px 5px;
+  border-radius: 4px;
+  transition: color 0.15s;
+  font-family: inherit;
+}
+.closeBtn:hover { color: #ef5350; }
+
+/* ── Track list ── */
+.list {
+  display: flex;
+  flex-direction: column;
+  padding: 5px;
+  gap: 2px;
+}
+
+.trackBtn {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--text);
+  text-align: left;
+  width: 100%;
+  transition: background 0.15s, border-color 0.15s;
+}
+.trackBtn:hover {
+  background: rgba(255, 214, 0, 0.07);
+  border-color: rgba(255, 214, 0, 0.18);
+}
+
+.trackActive {
+  background: rgba(255, 214, 0, 0.11) !important;
+  border-color: rgba(255, 214, 0, 0.42) !important;
+}
+
+.trackEmoji { font-size: 1.05rem; flex-shrink: 0; line-height: 1; }
+
+.trackLabel {
+  font-size: 0.83rem;
+  font-weight: 600;
+  flex: 1;
+  line-height: 1.2;
+}
+
+.playingDot {
+  color: var(--yellow);
+  font-size: 0.6rem;
+  flex-shrink: 0;
+}
+
+/* ── Hint ── */
+.hint {
+  font-size: 0.65rem;
+  color: var(--muted);
+  text-align: center;
+  padding: 5px 10px 8px;
+  opacity: 0.55;
+  margin: 0;
+}
