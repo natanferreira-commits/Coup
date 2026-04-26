@@ -1,7 +1,7 @@
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(5,10,40,0.75);
+  background: rgba(10,20,50,0.5);
   backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
@@ -11,8 +11,8 @@
 }
 
 .modal {
-  background: #132278;
-  border: 1px solid rgba(255,223,0,0.25);
+  background: #ffffff;
+  border: 1px solid #dde3f0;
   border-radius: 18px;
   width: 100%;
   max-width: 560px;
@@ -20,29 +20,30 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: 0 8px 48px rgba(0,0,0,0.5);
+  box-shadow: 0 8px 48px rgba(19,81,180,0.16);
 }
 
+/* ── Header ──────────────────────────────────────────────── */
 .header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 18px 22px 14px;
-  border-bottom: 1px solid rgba(45,70,192,0.5);
+  border-bottom: 1px solid #dde3f0;
   flex-shrink: 0;
-  background: rgba(12,24,85,0.4);
+  background: #ffffff;
 }
 
 .title {
   font-size: 1.35rem;
-  color: var(--yellow);
+  color: #1351b4;
   margin: 0;
 }
 
 .closeBtn {
-  background: rgba(26,45,148,0.6);
-  border: 1px solid rgba(45,70,192,0.5);
-  color: #8099d0;
+  background: #f4f6fb;
+  border: 1px solid #dde3f0;
+  color: #7a8aaa;
   border-radius: 8px;
   width: 32px;
   height: 32px;
@@ -54,8 +55,9 @@
   transition: color 0.15s, border-color 0.15s;
   flex-shrink: 0;
 }
-.closeBtn:hover { color: #ff6b6b; border-color: #ff6b6b; }
+.closeBtn:hover { color: #d32f2f; border-color: #d32f2f; }
 
+/* ── Scroll body ─────────────────────────────────────────── */
 .body {
   overflow-y: auto;
   padding: 20px 22px 28px;
@@ -63,25 +65,27 @@
   flex-direction: column;
   gap: 26px;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255,223,0,0.3) transparent;
+  scrollbar-color: rgba(19,81,180,0.2) transparent;
+  background: #ffffff;
 }
 .body::-webkit-scrollbar       { width: 4px; }
 .body::-webkit-scrollbar-track { background: transparent; }
-.body::-webkit-scrollbar-thumb { background: rgba(255,223,0,0.3); border-radius: 4px; }
+.body::-webkit-scrollbar-thumb { background: rgba(19,81,180,0.2); border-radius: 4px; }
 
+/* ── Section ─────────────────────────────────────────────── */
 .section { display: flex; flex-direction: column; gap: 10px; }
 
 .sectionTitle {
   font-size: 1rem;
   font-weight: 700;
-  color: var(--yellow);
+  color: #1351b4;
   letter-spacing: 0.03em;
   margin: 0;
 }
 
 .text {
   font-size: 0.9rem;
-  color: #c8d8f8;
+  color: #2a3550;
   line-height: 1.6;
   margin: 0;
 }
@@ -95,21 +99,22 @@
 }
 .list li {
   font-size: 0.88rem;
-  color: #c8d8f8;
+  color: #2a3550;
   line-height: 1.55;
 }
 
 .tip {
-  background: rgba(0,156,59,0.1);
-  border: 1px solid rgba(0,156,59,0.35);
+  background: rgba(19,81,180,0.05);
+  border: 1px solid rgba(19,81,180,0.18);
   border-radius: 8px;
   padding: 10px 14px;
   font-size: 0.87rem;
-  color: #a8f0c0;
+  color: #1a2540;
   line-height: 1.5;
   margin: 0;
 }
 
+/* ── Action cards ────────────────────────────────────────── */
 .actionGrid {
   display: flex;
   flex-direction: column;
@@ -117,8 +122,8 @@
 }
 
 .actionCard {
-  background: rgba(12,24,85,0.55);
-  border: 1px solid rgba(45,70,192,0.45);
+  background: #f4f6fb;
+  border: 1px solid #dde3f0;
   border-radius: 10px;
   padding: 10px 14px;
   display: flex;
@@ -136,15 +141,15 @@
 .actionName {
   font-size: 0.88rem;
   font-weight: 700;
-  color: #eef2ff;
+  color: #1a2540;
 }
 
 .actionCost {
   font-size: 0.78rem;
   font-weight: 700;
-  color: var(--yellow);
-  background: rgba(255,223,0,0.1);
-  border: 1px solid rgba(255,223,0,0.3);
+  color: #b8860b;
+  background: rgba(255,223,0,0.15);
+  border: 1px solid rgba(255,223,0,0.35);
   border-radius: 6px;
   padding: 1px 7px;
 }
@@ -157,23 +162,24 @@
   margin-left: auto;
 }
 .tag_green {
-  background: rgba(0,156,59,0.15);
-  border: 1px solid rgba(0,156,59,0.4);
-  color: #4dda7e;
+  background: rgba(0,156,59,0.1);
+  border: 1px solid rgba(0,156,59,0.28);
+  color: #007a2f;
 }
 .tag_blue {
-  background: rgba(255,223,0,0.1);
-  border: 1px solid rgba(255,223,0,0.3);
-  color: var(--yellow);
+  background: rgba(19,81,180,0.09);
+  border: 1px solid rgba(19,81,180,0.25);
+  color: #1351b4;
 }
 
 .actionDesc {
   font-size: 0.83rem;
-  color: #8099d0;
+  color: #7a8aaa;
   line-height: 1.5;
   margin: 0;
 }
 
+/* ── Character cards ─────────────────────────────────────── */
 .charGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -209,7 +215,7 @@
 
 .charBody {
   padding: 8px 12px 10px;
-  background: rgba(12,24,85,0.5);
+  background: #f9fafc;
   display: flex;
   flex-direction: column;
   gap: 5px;
@@ -217,10 +223,10 @@
 
 .charAbility, .charBlock, .charBlocked {
   font-size: 0.8rem;
-  color: #c8d8f8;
+  color: #2a3550;
   line-height: 1.45;
   margin: 0;
 }
 
-.charBlock   { color: #4dda7e; }
-.charBlocked { color: #ffd54f; }
+.charBlock   { color: #007a2f; }
+.charBlocked { color: #c07000; }

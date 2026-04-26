@@ -1,20 +1,20 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  /* ── Fundo e superfícies (azul brasileiro) ── */
-  --bg:       #0c1855;
-  --surface:  #132278;
-  --surface2: #1a2d94;
-  --border:   #2d46c0;
+  /* ── Fundo e superfícies (tema claro branco/azul) ── */
+  --bg:       #f4f6fb;
+  --surface:  #ffffff;
+  --surface2: #f4f6fb;
+  --border:   #dde3f0;
 
   /* ── Cores da bandeira do Brasil ── */
   --green:  #009c3b;
   --yellow: #ffdf00;
   --blue:   #1351b4;
-  --red:    #e53935;
+  --red:    #d32f2f;
 
-  --text:  #eef2ff;
-  --muted: #8099d0;
+  --text:  #1a2540;
+  --muted: #7a8aaa;
 
   /* ── Atalhos de identidade ── */
   --br-green:  #009c3b;
@@ -36,7 +36,6 @@ body {
   font-family: 'Inter', sans-serif;
   min-height: 100vh;
 }
-
 
 h1, h2, h3 {
   font-family: 'Bebas Neue', sans-serif;
@@ -61,7 +60,7 @@ button:disabled {
 input {
   font-family: inherit;
   background: var(--surface2);
-  border: 1px solid var(--border);
+  border: 1.5px solid var(--border);
   color: var(--text);
   border-radius: 8px;
   padding: 10px 14px;
@@ -71,19 +70,19 @@ input {
   transition: border-color 0.2s;
 }
 
-input:focus { border-color: var(--yellow); }
+input:focus { border-color: var(--blue); }
 
 .btn {
   padding: 10px 20px;
   font-size: 0.95rem;
-  background: var(--surface2);
+  background: #eef1f8;
   color: var(--text);
-  border: 1px solid var(--border);
+  border: 1.5px solid var(--border);
 }
 .btn:hover:not(:disabled) { background: var(--border); }
 
 .btn-primary {
-  background: var(--green);
+  background: var(--blue);
   color: #fff;
   border: none;
   font-size: 1rem;
@@ -91,22 +90,22 @@ input:focus { border-color: var(--yellow); }
   letter-spacing: 0.04em;
   font-weight: 700;
 }
-.btn-primary:hover:not(:disabled) { background: #00b844; }
+.btn-primary:hover:not(:disabled) { background: #1761d0; }
 
 .btn-danger {
   background: var(--red);
   color: #fff;
   border: none;
 }
-.btn-danger:hover:not(:disabled) { background: #f44336; }
+.btn-danger:hover:not(:disabled) { background: #c62828; }
 
 .btn-success {
-  background: var(--yellow);
-  color: #0c1855;
+  background: var(--green);
+  color: #fff;
   border: none;
-  font-weight: 800;
+  font-weight: 700;
 }
-.btn-success:hover:not(:disabled) { background: #ffe833; }
+.btn-success:hover:not(:disabled) { background: #00b844; }
 
 .btn-sm {
   padding: 6px 14px;

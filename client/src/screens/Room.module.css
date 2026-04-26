@@ -5,20 +5,21 @@
   justify-content: center;
   padding: 20px;
   background:
-    radial-gradient(ellipse at 20% 10%, rgba(0,156,59,0.10) 0%, transparent 45%),
-    radial-gradient(ellipse at 80% 90%, rgba(255,223,0,0.08) 0%, transparent 45%),
+    radial-gradient(ellipse at 25% 30%, rgba(19,81,180,0.10) 0%, transparent 50%),
+    radial-gradient(ellipse at 75% 70%, rgba(0,156,59,0.07) 0%, transparent 50%),
     #f4f6fb;
 }
 
 .card {
-  background: rgba(26,45,148,0.85);
-  border: 1px solid rgba(255,223,0,0.22);
+  background: #ffffff;
+  border: 1px solid #dde3f0;
   border-radius: 20px;
   padding: 40px;
   width: 100%;
   max-width: 440px;
-  box-shadow: 0 24px 64px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.06);
-  backdrop-filter: blur(8px);
+  box-shadow:
+    0 4px 24px rgba(19,81,180,0.10),
+    0 1px 4px rgba(0,0,0,0.06);
 }
 
 .gameTitle {
@@ -26,12 +27,12 @@
   text-align: center;
   margin-bottom: 24px;
   letter-spacing: 0.06em;
-  filter: drop-shadow(0 1px 12px rgba(255,223,0,0.25));
+  filter: drop-shadow(0 1px 10px rgba(19,81,180,0.18));
 }
 
 .codeBox {
-  background: rgba(12,24,85,0.6);
-  border: 1.5px solid rgba(255,223,0,0.3);
+  background: #f4f6fb;
+  border: 1.5px solid #dde3f0;
   border-radius: 14px;
   padding: 16px;
   text-align: center;
@@ -40,14 +41,14 @@
   transition: border-color 0.2s, background 0.2s;
 }
 .codeBox:hover {
-  border-color: var(--yellow);
-  background: rgba(255,223,0,0.06);
+  border-color: #1351b4;
+  background: #eef2fb;
 }
 
 .codeLabel {
   display: block;
   font-size: 0.75rem;
-  color: #8099d0;
+  color: #7a8aaa;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   margin-bottom: 4px;
@@ -57,20 +58,20 @@
   display: block;
   font-family: 'Bebas Neue', sans-serif;
   font-size: 3rem;
-  color: var(--yellow);
+  color: #1351b4;
   letter-spacing: 0.25em;
 }
 
 .copyHint {
   display: block;
   font-size: 0.72rem;
-  color: #5066a8;
+  color: #a0aac0;
   margin-top: 2px;
 }
 
 .playersLabel {
   font-size: 0.8rem;
-  color: #8099d0;
+  color: #7a8aaa;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   margin-bottom: 12px;
@@ -88,20 +89,19 @@
   align-items: center;
   gap: 10px;
   padding: 10px 14px;
-  background: rgba(12,24,85,0.5);
-  border: 1px solid rgba(45,70,192,0.4);
+  background: #f4f6fb;
+  border: 1px solid #dde3f0;
   border-radius: 10px;
   font-size: 0.95rem;
-  color: #eef2ff;
+  color: #1a2540;
 }
 
 .dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--green);
+  background: #009c3b;
   flex-shrink: 0;
-  box-shadow: 0 0 6px rgba(0,156,59,0.6);
 }
 
 .hostBadge, .youBadge {
@@ -112,24 +112,24 @@
   font-weight: 800;
   letter-spacing: 0.05em;
 }
-.hostBadge { background: var(--yellow); color: #0c1855; }
-.youBadge  { background: var(--green);  color: #fff; }
+.hostBadge { background: #ffdf00; color: #1a2540; }
+.youBadge  { background: #1351b4; color: #fff; }
 
 .waiting {
   text-align: center;
-  color: #8099d0;
+  color: #7a8aaa;
   font-size: 0.9rem;
   padding: 12px;
 }
 
-/* ── Pending join requests ── */
+/* ── Pending join requests ─────────────────────────────────────────────── */
 .pendingSection {
   width: 100%;
   overflow: hidden;
-  border: 1.5px solid rgba(0,156,59,0.35);
+  border: 1.5px solid rgba(19,81,180,0.22);
   border-radius: 10px;
   padding: 14px;
-  background: rgba(0,156,59,0.07);
+  background: rgba(19,81,180,0.04);
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -137,7 +137,7 @@
 
 .pendingLabel {
   font-size: 0.75rem;
-  color: #4dda7e;
+  color: #1351b4;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   margin: 0 0 4px;
@@ -149,14 +149,14 @@
   justify-content: space-between;
   gap: 8px;
   padding: 8px 10px;
-  background: rgba(12,24,85,0.5);
-  border: 1px solid rgba(45,70,192,0.3);
+  background: #f4f6fb;
+  border: 1px solid #dde3f0;
   border-radius: 8px;
 }
 
 .pendingName {
   font-size: 0.92rem;
-  color: #eef2ff;
+  color: #1a2540;
   font-weight: 500;
   flex: 1;
   min-width: 0;
@@ -165,7 +165,11 @@
   white-space: nowrap;
 }
 
-.pendingBtns { display: flex; gap: 6px; flex-shrink: 0; }
+.pendingBtns {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
 
 .approveBtn, .denyBtn {
   font-size: 0.75rem;
@@ -177,23 +181,24 @@
   transition: opacity 0.15s;
 }
 .approveBtn:hover, .denyBtn:hover { opacity: 0.82; }
-.approveBtn { background: var(--green); color: #fff; }
-.denyBtn    { background: #c62828; color: #fff; }
+
+.approveBtn { background: #009c3b; color: #fff; }
+.denyBtn    { background: #d32f2f; color: #fff; }
 
 .leaveBtn {
   width: 100%;
   margin-top: 12px;
   background: transparent;
   border: none;
-  color: #5066a8;
+  color: #a0aac0;
   font-size: 0.8rem;
   cursor: pointer;
   padding: 6px;
   transition: color 0.15s;
 }
-.leaveBtn:hover { color: #ff6b6b; }
+.leaveBtn:hover { color: #d32f2f; }
 
-/* ── Toggle Modo TikTok ── */
+/* ── Toggle Modo TikTok (sala de espera) ── */
 .tiktokToggle {
   display: flex;
   align-items: center;
@@ -201,37 +206,42 @@
   gap: 12px;
   width: 100%;
   padding: 11px 14px;
-  background: rgba(12,24,85,0.5);
-  border: 1.5px solid rgba(45,70,192,0.4);
+  background: #f4f6fb;
+  border: 1.5px solid #dde3f0;
   border-radius: 10px;
   cursor: pointer;
   font-family: inherit;
-  color: #eef2ff;
+  color: #1a2540;
   text-align: left;
   transition: border-color 0.2s, background 0.2s;
   margin-top: 8px;
 }
-.tiktokToggle:hover { border-color: var(--yellow); }
+.tiktokToggle:hover { border-color: rgba(19,81,180,0.4); }
 .tiktokOn {
-  border-color: var(--green) !important;
-  background: rgba(0,156,59,0.1) !important;
+  border-color: #1351b4 !important;
+  background: rgba(19,81,180,0.06) !important;
 }
 
-.tiktokLabel { display: flex; align-items: center; gap: 10px; flex: 1; }
+.tiktokLabel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
 .tiktokEmoji { font-size: 1.2rem; flex-shrink: 0; }
-.tiktokLabel strong { display: block; font-size: 0.88rem; font-weight: 700; color: #eef2ff; }
-.tiktokLabel small  { display: block; font-size: 0.72rem; color: #8099d0; font-weight: 400; margin-top: 1px; }
-.tiktokOn .tiktokLabel strong { color: #4dda7e; }
+.tiktokLabel strong { display: block; font-size: 0.88rem; font-weight: 700; color: #1a2540; }
+.tiktokLabel small  { display: block; font-size: 0.72rem; color: #7a8aaa; font-weight: 400; margin-top: 1px; }
+.tiktokOn .tiktokLabel strong { color: #1351b4; }
 
 .tiktokPill {
   width: 38px; height: 22px;
-  background: rgba(45,70,192,0.5);
+  background: #c5cedf;
   border-radius: 11px;
   position: relative;
   flex-shrink: 0;
   transition: background 0.2s;
 }
-.tiktokPillOn { background: var(--green); }
+.tiktokPillOn { background: #1351b4; }
 .tiktokKnob {
   position: absolute;
   top: 3px; left: 3px;
@@ -239,17 +249,18 @@
   background: #fff;
   border-radius: 50%;
   transition: transform 0.2s;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
 }
 .tiktokPillOn .tiktokKnob { transform: translateX(16px); }
 
+/* Badge para não-host quando TikTok está ativo */
 .tiktokBadge {
   margin-top: 8px;
   padding: 8px 14px;
-  background: rgba(0,156,59,0.1);
-  border: 1px solid rgba(0,156,59,0.35);
+  background: rgba(19,81,180,0.07);
+  border: 1px solid rgba(19,81,180,0.25);
   border-radius: 8px;
-  color: #4dda7e;
+  color: #1351b4;
   font-size: 0.82rem;
   font-weight: 600;
   text-align: center;

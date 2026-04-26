@@ -85,7 +85,7 @@
   border: 1px solid rgba(19,81,180,0.3);
   display: flex; align-items: center; justify-content: center; font-size: 0.7rem; color: #fff;
 }
-.miniCardDead { background: rgba(12,24,85,0.6); border-color: rgba(45,70,192,0.3); opacity: 0.5; color: var(--red); font-size: 0.6rem; }
+.miniCardDead { background: #e0e5f0; border-color: #c5cedf; opacity: 0.5; color: var(--red); font-size: 0.6rem; }
 
 .turnBadge {
   position: absolute; top: -9px; left: 50%; transform: translateX(-50%);
@@ -340,16 +340,16 @@
 .actionBtn {
   display: flex; align-items: center; gap: 8px;
   padding: 8px 10px;
-  background: #0c1855; border: 1px solid #1a2d94;
-  border-radius: 8px; color: #eef2ff;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text);
   text-align: left; cursor: pointer;
   font-family: inherit; width: 100%;
   position: relative;
   transition: border-color 0.15s, background 0.15s;
 }
 .actionBtn:hover:not(:disabled) {
-  border-color: var(--yellow);
-  background: #0e2070;
+  border-color: var(--blue);
+  background: rgba(19,81,180,0.05);
 }
 
 /* Tooltip */
@@ -358,8 +358,8 @@
   position: absolute;
   bottom: calc(100% + 7px);
   left: 0; right: 0;
-  background: #132278;
-  border: 1px solid rgba(45,70,192,0.6);
+  background: #fff;
+  border: 1px solid var(--border);
   color: var(--text);
   padding: 7px 10px;
   border-radius: 8px;
@@ -375,14 +375,14 @@
 }
 .actionBtn:disabled { opacity: 0.35; cursor: not-allowed; }
 .actionBtn div    { display: flex; flex-direction: column; gap: 1px; }
-.actionBtn strong { font-size: 0.77rem; color: #eef2ff; }
-.actionBtn small  { font-size: 0.62rem; color: #8099d0; font-weight: 400; }
+.actionBtn strong { font-size: 0.77rem; color: var(--text); }
+.actionBtn small  { font-size: 0.62rem; color: var(--muted); font-weight: 400; }
 .actionIcon { font-size: 1.05rem; flex-shrink: 0; width: 20px; text-align: center; }
 
-.actionBtnDanger   { border-color: rgba(229,57,53,0.5); }
-.actionBtnDanger:not(:disabled):hover  { background: rgba(229,57,53,0.15); border-color: var(--red); }
-.actionBtnSuccess  { border-color: rgba(0,156,59,0.5); background: rgba(0,100,40,0.25); }
-.actionBtnSelected { border-color: var(--yellow) !important; background: #0e2070 !important; }
+.actionBtnDanger   { border-color: rgba(229,57,53,0.3); }
+.actionBtnDanger:not(:disabled):hover  { background: rgba(229,57,53,0.07); border-color: var(--red); }
+.actionBtnSuccess  { border-color: rgba(0,156,59,0.35); background: rgba(0,156,59,0.05); }
+.actionBtnSelected { border-color: var(--blue) !important; background: rgba(19,81,180,0.07) !important; }
 
 /* Error */
 .errorMsg {
@@ -427,14 +427,14 @@
   display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px;
 }
 .helpModal {
-  background: #132278; border: 1px solid rgba(255,223,0,0.25);
+  background: #fff; border: 1px solid var(--border);
   border-radius: 16px; padding: 24px; max-width: 360px; width: 100%;
-  box-shadow: 0 8px 40px rgba(0,0,0,0.45);
+  box-shadow: 0 8px 40px rgba(19,81,180,0.14);
 }
-.helpModal h2 { font-size: 1.6rem; color: var(--yellow); margin-bottom: 14px; }
+.helpModal h2 { font-size: 1.6rem; color: var(--blue); margin-bottom: 14px; }
 .helpRow {
   display: flex; align-items: center; gap: 10px;
-  padding: 7px 0; border-bottom: 1px solid rgba(45,70,192,0.4); font-size: 0.82rem; color: var(--text);
+  padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 0.82rem; color: var(--text);
 }
 .helpRow span:first-child { font-size: 1rem; width: 24px; }
 .helpRow strong { flex: 1; }
@@ -455,15 +455,14 @@
 }
 .gameOverCard {
   text-align: center; display: flex; flex-direction: column; align-items: center; gap: 14px;
-  background: rgba(26,45,148,0.9); border: 1px solid rgba(255,223,0,0.25);
+  background: #fff; border: 1px solid var(--border);
   border-radius: 20px; padding: 28px 32px; min-width: 260px; flex: 0 0 auto;
-  box-shadow: 0 4px 40px rgba(0,0,0,0.4);
-  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 24px rgba(19,81,180,0.10);
 }
 .crownIcon { font-size: 3.5rem; line-height: 1; }
 .winnerName {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 2.6rem; letter-spacing: 0.08em; color: var(--yellow); line-height: 1;
+  font-size: 2.6rem; letter-spacing: 0.08em; color: var(--blue); line-height: 1;
 }
 .winnerSub { font-size: 0.9rem; color: var(--muted); margin-top: -6px; }
 
@@ -486,16 +485,15 @@
 
 /* Game over log */
 .gameOverLog {
-  background: rgba(26,45,148,0.9); border: 1px solid rgba(45,70,192,0.45);
+  background: #fff; border: 1px solid var(--border);
   border-radius: 16px; padding: 18px 16px;
   display: flex; flex-direction: column; gap: 8px;
   flex: 1; min-width: 220px; max-width: 480px; max-height: 500px;
-  box-shadow: 0 4px 40px rgba(0,0,0,0.35);
-  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 24px rgba(19,81,180,0.08);
 }
 .gameOverLogTitle { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; color: var(--muted); }
 .gameOverLogScroll { overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 4px; }
-.gameOverLogMsg { font-size: 0.76rem; color: #c8d8f8; line-height: 1.55; padding: 2px 0; border-bottom: 1px solid rgba(45,70,192,0.25); }
+.gameOverLogMsg { font-size: 0.76rem; color: #4a5570; line-height: 1.55; padding: 2px 0; border-bottom: 1px solid #f0f2f8; }
 
 .loading { min-height: 100vh; display: flex; align-items: center; justify-content: center; color: var(--muted); }
 
@@ -537,19 +535,19 @@
 /* ── Restart button ── */
 .restartBtn {
   position: fixed; bottom: 52px; left: 14px; top: auto; transform: none;
-  background: rgba(12,24,85,0.85); border: 1px solid rgba(229,57,53,0.4);
+  background: #fff; border: 1px solid rgba(229,57,53,0.4);
   color: var(--red); border-radius: 20px; padding: 5px 14px;
   font-size: 0.75rem; font-weight: 600; cursor: pointer; z-index: 50;
-  white-space: nowrap; box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  white-space: nowrap; box-shadow: 0 1px 4px rgba(0,0,0,0.08);
 }
-.restartBtn:hover { background: rgba(229,57,53,0.12); }
+.restartBtn:hover { background: rgba(229,57,53,0.06); }
 
 /* ── Leave button ── */
 .leaveBtn {
   position: fixed;
   bottom: 14px;
   left: 14px;
-  background: rgba(12,24,85,0.85);
+  background: #fff;
   border: 1px solid rgba(229,57,53,0.3);
   color: var(--red);
   border-radius: 10px;
@@ -558,10 +556,10 @@
   font-weight: 700;
   cursor: pointer;
   z-index: 100;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
   letter-spacing: 0.05em;
 }
-.leaveBtn:hover { background: rgba(229,57,53,0.12); border-color: var(--red); }
+.leaveBtn:hover { background: rgba(229,57,53,0.06); border-color: var(--red); }
 
 /* ── Waiting box ── */
 .waitingBox {
@@ -586,19 +584,18 @@
   z-index: 800; pointer-events: none;
 }
 .actionNotifCard {
-  background: rgba(19,34,120,0.97);
-  border: 2px solid rgba(255,223,0,0.45);
+  background: #fff;
+  border: 2px solid var(--blue);
   border-radius: 22px; padding: 22px 36px;
   text-align: center; display: flex; flex-direction: column;
   align-items: center; gap: 6px;
-  box-shadow: 0 0 60px rgba(0,0,0,0.4), 0 8px 40px rgba(0,0,0,0.3);
+  box-shadow: 0 0 60px rgba(19,81,180,0.2), 0 8px 40px rgba(0,0,0,0.12);
   min-width: 240px;
-  backdrop-filter: blur(8px);
 }
 .actionNotifIcon { font-size: 3rem; line-height: 1; }
 .actionNotifLabel {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 2.2rem; letter-spacing: 0.1em; color: var(--yellow); line-height: 1;
+  font-size: 2.2rem; letter-spacing: 0.1em; color: var(--blue); line-height: 1;
 }
 .actionNotifPlayers { font-size: 0.9rem; font-weight: 600; color: var(--text); }
 .actionNotifChar {
@@ -640,7 +637,7 @@
 }
 .playerCardDeadBadge {
   position: absolute; bottom: 0; left: 0; right: 0;
-  background: rgba(12,24,85,0.88); text-align: center;
+  background: rgba(255,255,255,0.9); text-align: center;
   font-size: 0.45rem; color: var(--red); padding: 2px 1px;
   font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
@@ -687,15 +684,15 @@
   position: absolute;
   bottom: calc(100% + 6px);
   left: 50%; transform: translateX(-50%);
-  background: rgba(26,45,148,0.97);
-  color: #eef2ff;
+  background: rgba(255,255,255,0.98);
+  color: #1a2540;
   border-radius: 16px;
   padding: 5px 10px;
   font-size: 0.75rem;
   font-weight: 700;
   white-space: nowrap;
-  box-shadow: 0 3px 14px rgba(0,0,0,0.3);
-  border: 1px solid rgba(45,70,192,0.6);
+  box-shadow: 0 3px 14px rgba(19,81,180,0.15);
+  border: 1px solid var(--border);
   pointer-events: none;
   z-index: 50;
   max-width: 160px;
@@ -707,7 +704,7 @@
   position: absolute;
   top: 100%; left: 50%; transform: translateX(-50%);
   border: 5px solid transparent;
-  border-top-color: rgba(26,45,148,0.97);
+  border-top-color: rgba(255,255,255,0.98);
 }
 .chatBubbleMine {
   bottom: auto;
@@ -793,10 +790,10 @@
     padding: 0 12px;
     height: 44px;
     flex-shrink: 0;
-    background: rgba(12,24,85,0.95);
-    border-bottom: 1px solid rgba(45,70,192,0.5);
+    background: #fff;
+    border-bottom: 1px solid var(--border);
     z-index: 50;
-    box-shadow: 0 1px 8px rgba(0,0,0,0.3);
+    box-shadow: 0 1px 4px rgba(19,81,180,0.06);
   }
   .mobileLogo {
     font-family: 'Bebas Neue', sans-serif;
@@ -827,8 +824,8 @@
     gap: 10px;
     transform: translateX(-100%);
     transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
-    background: #0d1d6e;
-    border-right: 1px solid rgba(45,70,192,0.5);
+    background: #fff;
+    border-right: 1px solid var(--border);
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
@@ -863,21 +860,21 @@
     bottom: 0; left: 0; right: 0;
     z-index: 400;
     border-left: none;
-    border-top: 1px solid rgba(45,70,192,0.5);
+    border-top: 1px solid var(--border);
     border-radius: 16px 16px 0 0;
-    background: #0d1d6e;
+    background: #fff;
     max-height: 55vh;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     padding-bottom: env(safe-area-inset-bottom, 0px);
-    box-shadow: 0 -4px 28px rgba(0,0,0,0.35);
+    box-shadow: 0 -4px 24px rgba(19,81,180,0.10);
   }
 
   .rightPanel::before {
     content: '';
     display: block;
     width: 36px; height: 4px;
-    background: rgba(45,70,192,0.6);
+    background: var(--border);
     border-radius: 2px;
     margin: 8px auto 2px;
     flex-shrink: 0;
