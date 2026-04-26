@@ -2,71 +2,75 @@ import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import styles from './HowToPlayModal.module.css';
 
-/* ── Conteúdo das regras ─────────────────────────────────── */
+/* ── Personagens (baseado no código real do jogo) ────────────────────── */
 const CHARS = [
   {
     name: 'Político',
     color: '#1565c0',
     emoji: '🏛️',
-    ability: 'Imposto',
-    desc: 'Recebe 3 moedas do banco.',
-    block: 'Bloqueia Ajuda Externa de qualquer jogador.',
+    ability: 'Faz o L',
+    desc: 'Declara ser o Político e recebe 3 moedas do banco.',
+    block: 'Bloqueia a Ajuda Externa ("Imposto é Roubo") de qualquer jogador.',
+    blocked: null,
   },
   {
     name: 'Bicheiro',
-    color: '#b97916',
-    emoji: '🎰',
-    ability: 'Extorsão',
-    desc: 'Rouba 2 moedas de outro jogador. Se ele tiver só 1, pega só 1.',
+    color: '#e65100',
+    emoji: '💼',
+    ability: 'Pegar o Arrego',
+    desc: 'Rouba 2 moedas de outro jogador. Se o alvo tiver só 1, pega só 1.',
     block: null,
-    blocked: 'Pode ser bloqueado pelo Bandido.',
+    blocked: 'Pode ser bloqueado pelo Juiz ou pelo Miliciano (coin flip).',
   },
   {
     name: 'X9',
     color: '#6a1b9a',
     emoji: '🕵️',
-    ability: 'Espionagem',
-    desc: 'Espia as cartas de outro jogador e pode forçá-lo a trocar uma (ou nenhuma).',
+    ability: 'Meter o X9 / Disfarce / Infiltrar',
+    desc: '3 ações: (1) Espia as cartas de um alvo. (2) Troca suas próprias cartas com o baralho. (3) Infiltrar — força o alvo a trocar uma carta.',
     block: null,
+    blocked: 'Todas as 3 ações podem ser bloqueadas pelo Juiz.',
   },
   {
     name: 'Juiz',
     color: '#1b5e20',
     emoji: '⚖️',
-    ability: 'Assassinato',
-    desc: 'Paga 3 moedas para eliminar uma influência de outro jogador.',
-    block: 'Bloqueia o Assassinato (com custo: perde 1 influência).',
-    blocked: 'Pode ser bloqueado pelo próprio Juiz.',
-  },
-  {
-    name: 'Miliciano',
-    color: '#b71c1c',
-    emoji: '🔫',
-    ability: 'Infiltrar',
-    desc: 'Troca até 2 cartas suas com o baralho.',
-    block: 'Bloqueia o Golpe de Estado (mas não evita o custo de 7 moedas).',
+    ability: 'Veredito',
+    desc: 'Paga 5 moedas e acusa um jogador de ter um personagem específico. Se o alvo tiver aquela carta → perde a influência. Se não tiver → o Juiz errou e perde as moedas sem efeito.',
+    block: 'Bloqueia o Bicheiro (roubo) e todas as ações do X9.',
     blocked: null,
   },
   {
     name: 'Bandido',
+    color: '#b71c1c',
+    emoji: '🔫',
+    ability: 'Mandar pro Vasco',
+    desc: 'Paga 3 moedas e elimina 1 influência de outro jogador diretamente.',
+    block: null,
+    blocked: 'Pode ser bloqueado pelo Miliciano.',
+  },
+  {
+    name: 'Miliciano',
     color: '#4e342e',
-    emoji: '🥷',
+    emoji: '🛡️',
     ability: 'Defesa',
-    desc: 'Sem ação de ataque direta, mas é imune à Extorsão do Bicheiro.',
-    block: 'Bloqueia a Extorsão do Bicheiro.',
+    desc: 'Não possui ação de ataque. Especialista em bloqueio.',
+    block: 'Bloqueia o Bandido (assassinato). Bloqueia o Bicheiro (roubo) — com custo de 1 moeda e coin flip: cara devolve a moeda, coroa perde.',
+    blocked: null,
   },
 ];
 
+/* ── Ações ───────────────────────────────────────────────────────────── */
 const ACTIONS = [
   {
-    name: 'Renda',
+    name: 'Trampo Suado',
     cost: 0,
     desc: 'Pegue 1 moeda do banco. Não pode ser bloqueada nem desafiada.',
     tag: 'Sempre disponível',
     tagColor: 'green',
   },
   {
-    name: 'Ajuda Externa',
+    name: 'Imposto é Roubo',
     cost: 0,
     desc: 'Pegue 2 moedas do banco. Pode ser bloqueada pelo Político.',
     tag: 'Sempre disponível',
@@ -75,50 +79,63 @@ const ACTIONS = [
   {
     name: 'Golpe de Estado',
     cost: 7,
-    desc: 'Pague 7 moedas e elimine 1 influência de qualquer jogador. Não pode ser bloqueado. Com 10+ moedas é obrigatório.',
+    desc: 'Pague 7 moedas e elimine 1 influência de qualquer jogador. Não pode ser bloqueado nem desafiado. Com 10+ moedas, usar o Golpe é obrigatório.',
     tag: 'Sempre disponível',
     tagColor: 'green',
   },
   {
-    name: 'Imposto (Político)',
+    name: 'Faz o L (Político)',
     cost: 0,
-    desc: 'Declare ser o Político e pegue 3 moedas.',
+    desc: 'Declare ser o Político e pegue 3 moedas do banco.',
     tag: 'Blefe possível',
     tagColor: 'blue',
   },
   {
-    name: 'Extorsão (Bicheiro)',
+    name: 'Pegar o Arrego (Bicheiro)',
     cost: 0,
-    desc: 'Declare ser o Bicheiro e roube 2 moedas de outro jogador.',
+    desc: 'Declare ser o Bicheiro e roube 2 moedas de um alvo. Bloqueável pelo Juiz ou Miliciano.',
     tag: 'Blefe possível',
     tagColor: 'blue',
   },
   {
-    name: 'Assassinato (Juiz)',
+    name: 'Mandar pro Vasco (Bandido)',
     cost: 3,
-    desc: 'Pague 3 moedas e declare ser o Juiz para eliminar 1 influência. Pode ser bloqueado pelo próprio Juiz.',
+    desc: 'Pague 3 moedas e declare ser o Bandido para eliminar 1 influência do alvo. Pode ser bloqueado pelo Miliciano.',
     tag: 'Blefe possível',
     tagColor: 'blue',
   },
   {
-    name: 'Espionagem (X9)',
-    cost: 0,
-    desc: 'Declare ser o X9 para ver as cartas de outro jogador e possivelmente forçar uma troca.',
+    name: 'Veredito (Juiz)',
+    cost: 5,
+    desc: 'Pague 5 moedas e acuse um jogador de ter um personagem. Acertou → alvo perde a influência. Errou → Juiz perde as moedas sem efeito.',
     tag: 'Blefe possível',
     tagColor: 'blue',
   },
   {
-    name: 'Infiltrar (Miliciano)',
+    name: 'Meter o X9 (X9)',
     cost: 0,
-    desc: 'Declare ser o Miliciano para trocar até 2 das suas cartas com o baralho.',
+    desc: 'Declare ser o X9 e espia as cartas de outro jogador. Pode ser bloqueado pelo Juiz.',
+    tag: 'Blefe possível',
+    tagColor: 'blue',
+  },
+  {
+    name: 'Disfarce (X9)',
+    cost: 0,
+    desc: 'Declare ser o X9 e troque suas próprias cartas com o baralho. Pode ser bloqueado pelo Juiz.',
+    tag: 'Blefe possível',
+    tagColor: 'blue',
+  },
+  {
+    name: 'Infiltrar (X9)',
+    cost: 0,
+    desc: 'Declare ser o X9 e force um alvo a trocar uma de suas cartas com o baralho. Pode ser bloqueado pelo Juiz.',
     tag: 'Blefe possível',
     tagColor: 'blue',
   },
 ];
 
-/* ── Componente ──────────────────────────────────────────── */
+/* ── Componente ──────────────────────────────────────────────────────── */
 export default function HowToPlayModal({ onClose }) {
-  // Fechar com Esc
   useEffect(() => {
     const handler = e => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', handler);
@@ -148,7 +165,7 @@ export default function HowToPlayModal({ onClose }) {
             <button className={styles.closeBtn} onClick={onClose}>✕</button>
           </div>
 
-          {/* Scroll body */}
+          {/* Body */}
           <div className={styles.body}>
 
             {/* Objetivo */}
@@ -157,22 +174,22 @@ export default function HowToPlayModal({ onClose }) {
               <p className={styles.text}>
                 Seja o <strong>último jogador com influência</strong> no jogo.
                 Cada jogador começa com <strong>2 cartas de personagem</strong> (suas influências) e{' '}
-                <strong>2 moedas</strong>. Perca as 2 cartas e você está eliminado.
+                <strong>1 moeda</strong>. Perca as 2 cartas e você está eliminado.
               </p>
             </section>
 
-            {/* Início */}
+            {/* Como começa */}
             <section className={styles.section}>
               <h3 className={styles.sectionTitle}>🃏 Como começa</h3>
               <ul className={styles.list}>
-                <li>Cada jogador recebe <strong>2 cartas secretas</strong> de personagem e <strong>2 moedas</strong>.</li>
+                <li>Cada jogador recebe <strong>2 cartas secretas</strong> de personagem e <strong>1 moeda</strong>.</li>
                 <li>As cartas ficam <strong>viradas para baixo</strong> — só você vê as suas.</li>
                 <li>Os turnos passam em sequência. No seu turno, escolha <strong>1 ação</strong>.</li>
-                <li>Você pode <strong>mentir</strong> sobre qual personagem tem — isso é blefar!</li>
+                <li>Você pode <strong>blefar</strong> sobre qual personagem tem — mas cuidado com os Duvidus!</li>
               </ul>
             </section>
 
-            {/* Ações Básicas */}
+            {/* Ações */}
             <section className={styles.section}>
               <h3 className={styles.sectionTitle}>⚡ Ações</h3>
               <div className={styles.actionGrid}>
@@ -197,7 +214,7 @@ export default function HowToPlayModal({ onClose }) {
                   <div key={c.name} className={styles.charCard} style={{ borderColor: c.color + '55' }}>
                     <div className={styles.charHeader} style={{ background: c.color + '22' }}>
                       <span className={styles.charEmoji}>{c.emoji}</span>
-                      <span className={styles.charName} style={{ color: c.color === '#b97916' ? '#f0c040' : undefined }}>{c.name}</span>
+                      <span className={styles.charName}>{c.name}</span>
                     </div>
                     <div className={styles.charBody}>
                       <p className={styles.charAbility}>
@@ -224,35 +241,49 @@ export default function HowToPlayModal({ onClose }) {
               <h3 className={styles.sectionTitle}>🃏 Blefe e Dúvida</h3>
               <p className={styles.text}>
                 Qualquer ação ou bloqueio que usa um personagem pode ser <strong>desafiado</strong>.
-                Outro jogador pode dizer <em>"Duvido!"</em> antes de você agir.
+                Outro jogador pode dizer <em>"Duvido!"</em> antes da ação acontecer.
               </p>
               <ul className={styles.list}>
-                <li><strong>Você estava blefando?</strong> Perde 1 influência (vira uma carta).</li>
-                <li><strong>Você não estava blefando?</strong> Quem duvidou perde 1 influência. Você devolve a carta ao baralho e pega uma nova.</li>
+                <li><strong>Você estava blefando?</strong> Perde 1 influência (vira uma carta). A ação não acontece.</li>
+                <li><strong>Você não estava blefando?</strong> Quem duvidou perde 1 influência. Você devolve a carta revelada ao baralho e pega uma nova.</li>
               </ul>
               <p className={styles.tip}>
                 💡 <strong>Dica:</strong> Blefar bem é metade do jogo. Mas desafie na hora certa — um desafio errado pode te eliminar!
               </p>
             </section>
 
+            {/* Coin Flip */}
+            <section className={styles.section}>
+              <h3 className={styles.sectionTitle}>🪙 Coin Flip (Miliciano vs Bicheiro)</h3>
+              <p className={styles.text}>
+                Quando o <strong>Miliciano</strong> tenta bloquear o roubo do <strong>Bicheiro</strong>:
+              </p>
+              <ul className={styles.list}>
+                <li>O Miliciano paga <strong>1 moeda</strong> para tentar bloquear.</li>
+                <li>🦅 <strong>Cara</strong> → bloqueio vale, o Miliciano <strong>recupera a moeda</strong>.</li>
+                <li>🐉 <strong>Coroa</strong> → bloqueio falha, o Miliciano <strong>perde a moeda</strong> e o Bicheiro rouba normalmente.</li>
+              </ul>
+            </section>
+
             {/* Bloqueios */}
             <section className={styles.section}>
               <h3 className={styles.sectionTitle}>🛡️ Bloqueios</h3>
               <p className={styles.text}>
-                Alguns personagens podem <strong>bloquear</strong> ações antes que aconteçam.
-                O bloqueio também pode ser desafiado — se o bloqueador estiver blefando, perde 1 influência e a ação acontece.
+                Certos personagens podem <strong>bloquear</strong> ações antes que aconteçam.
+                O bloqueio também pode ser desafiado — se o bloqueador estiver blefando, perde 1 influência e a ação acontece normalmente.
               </p>
             </section>
 
-            {/* Dicas rápidas */}
+            {/* Dicas */}
             <section className={styles.section}>
               <h3 className={styles.sectionTitle}>💡 Dicas para Novatos</h3>
               <ul className={styles.list}>
-                <li>Com <strong>7+ moedas</strong> você pode executar um Golpe de Estado. Com 10 é obrigatório.</li>
+                <li>Com <strong>7+ moedas</strong> você pode executar um Golpe de Estado. Com <strong>10 é obrigatório</strong>.</li>
                 <li><strong>Guarde suas cartas em segredo</strong> — nunca revele de graça o que você tem.</li>
-                <li><strong>Observe os outros.</strong> Se alguém blefa muito no Político, bloqueie a Ajuda Externa deles.</li>
-                <li>Às vezes é melhor <strong>não blefar</strong> — jogar honesto desorienta os adversários.</li>
-                <li>Se você só tem 1 influência, seja mais cauteloso. Um único erro pode te eliminar.</li>
+                <li>O <strong>Juiz é poderoso</strong>: bloqueia Bicheiro e X9 E ainda pode condenar com Veredito.</li>
+                <li>O <strong>X9</strong> com 3 ações é o mais versátil — espia, se disfarça e força trocas.</li>
+                <li>Com 1 influência, seja cauteloso. Um único erro pode te eliminar.</li>
+                <li>Às vezes <strong>não blefar</strong> desorienta os adversários que esperam golpes.</li>
               </ul>
             </section>
 
