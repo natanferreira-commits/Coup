@@ -4,7 +4,7 @@
   display: grid;
   grid-template-columns: 240px 1fr 248px;
   overflow: hidden;
-  background: #0d0d12;
+  background: #060d08;
   position: relative;
 }
 

@@ -4,36 +4,46 @@
   align-items: center;
   justify-content: center;
   padding: 20px;
-  background: radial-gradient(ellipse at 50% 0%, #1a1a2e 0%, #0f0f13 70%);
+  background:
+    radial-gradient(ellipse at 30% 20%, rgba(0,156,59,0.12) 0%, transparent 55%),
+    radial-gradient(ellipse at 70% 80%, rgba(19,81,180,0.10) 0%, transparent 55%),
+    radial-gradient(ellipse at 50% 50%, #0d1a10 0%, #060d08 100%);
 }
 
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: 20px;
   padding: 40px;
   width: 100%;
   max-width: 440px;
+  box-shadow:
+    0 0 0 1px rgba(0,156,59,0.08),
+    0 24px 64px rgba(0,0,0,0.55);
 }
 
 .gameTitle {
-  font-size: 2.5rem;
-  color: var(--yellow);
+  font-size: 2.2rem;
   text-align: center;
   margin-bottom: 24px;
+  letter-spacing: 0.06em;
+  filter: drop-shadow(0 1px 10px rgba(0,156,59,0.2));
 }
 
 .codeBox {
   background: var(--surface2);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 14px;
   padding: 16px;
   text-align: center;
   cursor: pointer;
   margin-bottom: 24px;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, background 0.2s;
 }
-.codeBox:hover { border-color: var(--yellow); }
+.codeBox:hover {
+  border-color: var(--green);
+  background: rgba(0,156,59,0.06);
+}
 
 .codeLabel {
   display: block;
@@ -48,8 +58,8 @@
   display: block;
   font-family: 'Bebas Neue', sans-serif;
   font-size: 3rem;
-  color: var(--yellow);
-  letter-spacing: 0.2em;
+  color: var(--green);
+  letter-spacing: 0.25em;
 }
 
 .copyHint {
@@ -100,7 +110,7 @@
   font-weight: 700;
   letter-spacing: 0.05em;
 }
-.hostBadge { background: var(--yellow); color: #000; }
+.hostBadge { background: var(--yellow); color: #000; font-weight: 800; }
 .youBadge { background: var(--blue); color: #fff; }
 
 .waiting {
@@ -114,10 +124,10 @@
 .pendingSection {
   width: 100%;
   overflow: hidden;
-  border: 1px solid rgba(255, 214, 0, 0.25);
+  border: 1px solid rgba(0,156,59,0.25);
   border-radius: 10px;
   padding: 14px;
-  background: rgba(255, 214, 0, 0.04);
+  background: rgba(0,156,59,0.05);
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -125,7 +135,7 @@
 
 .pendingLabel {
   font-size: 0.75rem;
-  color: var(--yellow);
+  color: var(--green);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   margin: 0 0 4px;
@@ -210,10 +220,10 @@
   transition: border-color 0.2s, background 0.2s;
   margin-top: 8px;
 }
-.tiktokToggle:hover { border-color: rgba(255,214,0,0.4); }
+.tiktokToggle:hover { border-color: rgba(0,156,59,0.4); }
 .tiktokOn {
-  border-color: var(--yellow) !important;
-  background: rgba(255,214,0,0.07) !important;
+  border-color: var(--green) !important;
+  background: rgba(0,156,59,0.08) !important;
 }
 
 .tiktokLabel {
@@ -225,7 +235,7 @@
 .tiktokEmoji { font-size: 1.2rem; flex-shrink: 0; }
 .tiktokLabel strong { display: block; font-size: 0.88rem; font-weight: 700; }
 .tiktokLabel small  { display: block; font-size: 0.72rem; color: var(--muted); font-weight: 400; margin-top: 1px; }
-.tiktokOn .tiktokLabel strong { color: var(--yellow); }
+.tiktokOn .tiktokLabel strong { color: var(--green); }
 
 .tiktokPill {
   width: 38px; height: 22px;
@@ -235,7 +245,7 @@
   flex-shrink: 0;
   transition: background 0.2s;
 }
-.tiktokPillOn { background: var(--yellow); }
+.tiktokPillOn { background: var(--green); }
 .tiktokKnob {
   position: absolute;
   top: 3px; left: 3px;
@@ -251,10 +261,10 @@
 .tiktokBadge {
   margin-top: 8px;
   padding: 8px 14px;
-  background: rgba(255,214,0,0.08);
-  border: 1px solid rgba(255,214,0,0.3);
+  background: rgba(0,156,59,0.08);
+  border: 1px solid rgba(0,156,59,0.3);
   border-radius: 8px;
-  color: var(--yellow);
+  color: var(--green);
   font-size: 0.82rem;
   font-weight: 600;
   text-align: center;

@@ -125,7 +125,13 @@ export default function SalaPage({ roomData, gameData, myPlayerId, pendingReques
         {phase === 'idle' && (
           <motion.div key="idle" className={styles.card}
             initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-            <h2 className={styles.title}>GOLPE</h2>
+            <h2 className={styles.title}>
+              <span style={{ color: '#1351b4' }}>G</span>
+              <span style={{ color: '#009c3b' }}>O</span>
+              <span style={{ color: '#009c3b' }}>L</span>
+              <span style={{ color: '#ffdf00' }}>P</span>
+              <span style={{ color: '#1351b4' }}>E</span>
+            </h2>
             <p className={styles.codeLabel}>
               Entrando na sala <span className={styles.codeHighlight}>{code}</span>
             </p>

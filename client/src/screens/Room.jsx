@@ -21,7 +21,13 @@ export default function Room({ room, myPlayerId, pendingRequests = [], onApprove
   return (
     <div className={styles.container}>
       <div className={styles.card}>
-        <h2 className={styles.gameTitle}>GOLPE</h2>
+        <h2 className={styles.gameTitle}>
+          <span style={{ color: '#1351b4' }}>G</span>
+          <span style={{ color: '#009c3b' }}>O</span>
+          <span style={{ color: '#009c3b' }}>L</span>
+          <span style={{ color: '#ffdf00' }}>P</span>
+          <span style={{ color: '#1351b4' }}>E</span>
+        </h2>
 
         {/* Code / share box */}
         <div className={styles.codeBox} onClick={copyLink} title="Clique para copiar o link da sala">

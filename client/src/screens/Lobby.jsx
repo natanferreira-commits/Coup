@@ -110,7 +110,13 @@ export default function Lobby({ onCreated }) {
   return (
     <div className={styles.container}>
       <div className={styles.card}>
-        <h1 className={styles.title}>GOLPE</h1>
+        <h1 className={styles.title}>
+          <span style={{ color: '#1351b4' }}>G</span>
+          <span style={{ color: '#009c3b' }}>O</span>
+          <span style={{ color: '#009c3b' }}>L</span>
+          <span style={{ color: '#ffdf00' }}>P</span>
+          <span style={{ color: '#1351b4' }}>E</span>
+        </h1>
         <p className={styles.subtitle}>Blefe. Poder. Traição.</p>
 
         <div className={styles.form}>

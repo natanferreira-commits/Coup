@@ -3,32 +3,38 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(ellipse at 50% 0%, #1a1a2e 0%, #0f0f13 70%);
+  background:
+    radial-gradient(ellipse at 30% 20%, rgba(0,156,59,0.12) 0%, transparent 55%),
+    radial-gradient(ellipse at 70% 80%, rgba(19,81,180,0.10) 0%, transparent 55%),
+    radial-gradient(ellipse at 50% 50%, #0d1a10 0%, #060d08 100%);
   padding: 20px;
 }
 
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: 20px;
   padding: 48px 40px;
   width: 100%;
   max-width: 400px;
   text-align: center;
+  box-shadow:
+    0 0 0 1px rgba(0,156,59,0.08),
+    0 24px 64px rgba(0,0,0,0.55);
 }
 
 .title {
-  font-size: 5rem;
-  color: var(--yellow);
+  font-size: 5.5rem;
   line-height: 1;
-  text-shadow: 0 0 40px rgba(255, 214, 0, 0.3);
+  letter-spacing: 0.08em;
+  filter: drop-shadow(0 2px 16px rgba(0,156,59,0.25));
 }
 
 .subtitle {
   color: var(--muted);
   margin-bottom: 36px;
-  font-size: 0.9rem;
-  letter-spacing: 0.1em;
+  font-size: 0.82rem;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
 }
 
@@ -74,9 +80,9 @@
 .howToBtn {
   margin-top: 16px;
   width: 100%;
-  background: rgba(255,214,0,0.07);
-  border: 1px solid rgba(255,214,0,0.25);
-  color: var(--yellow);
+  background: rgba(0,156,59,0.08);
+  border: 1px solid rgba(0,156,59,0.25);
+  color: var(--green);
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
@@ -86,8 +92,8 @@
   font-family: inherit;
 }
 .howToBtn:hover {
-  background: rgba(255,214,0,0.13);
-  border-color: rgba(255,214,0,0.5);
+  background: rgba(0,156,59,0.15);
+  border-color: rgba(0,156,59,0.5);
 }
 
 .backBtn {

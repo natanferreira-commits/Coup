@@ -647,7 +647,13 @@ export default function Game({ data, myId, musicTrack, musicLastChanged }) {
           <button className={styles.mobileIconBtn} onClick={() => setMobileLeftOpen(v => !v)}
             title="Chat / Log">💬</button>
         </div>
-        <span className={styles.mobileLogo}>GOLPE</span>
+        <span className={styles.mobileLogo}>
+          <span style={{ color: '#1351b4' }}>G</span>
+          <span style={{ color: '#009c3b' }}>O</span>
+          <span style={{ color: '#009c3b' }}>L</span>
+          <span style={{ color: '#ffdf00' }}>P</span>
+          <span style={{ color: '#1351b4' }}>E</span>
+        </span>
         <div className={styles.mobileHeaderGroup}>
           <button className={styles.mobileIconBtn} onClick={() => setShowSettings(true)}
             title="Configurações">⚙️</button>

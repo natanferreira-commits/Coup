@@ -1,23 +1,32 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg: #0f0f13;
-  --surface: #1a1a24;
-  --surface2: #23232f;
-  --border: #2e2e3f;
-  --green: #00c853;
-  --yellow: #ffd600;
-  --red: #f44336;
-  --blue: #2979ff;
-  --text: #f0f0f0;
-  --muted: #888;
+  /* ── Fundo e superfícies (verde-escuro brasileiro) ── */
+  --bg:       #060d08;
+  --surface:  #0d1a10;
+  --surface2: #142018;
+  --border:   #1c3321;
 
-  /* Character colors */
-  --politico: #1565c0;
-  --empresario: #e65100;
-  --investigador: #6a1b9a;
-  --juiz: #1b5e20;
-  --assassino: #b71c1c;
+  /* ── Cores da bandeira do Brasil ── */
+  --green:  #009c3b;   /* verde bandeira */
+  --yellow: #ffdf00;   /* amarelo bandeira */
+  --blue:   #1351b4;   /* azul bandeira */
+  --red:    #f44336;
+
+  --text:  #f0f0f0;
+  --muted: #6a9270;
+
+  /* ── Atalhos de identidade ── */
+  --br-green:  #009c3b;
+  --br-yellow: #ffdf00;
+  --br-blue:   #1351b4;
+
+  /* ── Personagens ── */
+  --politico:      #1565c0;
+  --empresario:    #e65100;
+  --investigador:  #6a1b9a;
+  --juiz:          #1b5e20;
+  --assassino:     #b71c1c;
   --guarda_costas: #4e342e;
 }
 
@@ -62,7 +71,7 @@ input {
   transition: border-color 0.2s;
 }
 
-input:focus { border-color: var(--yellow); }
+input:focus { border-color: var(--green); }
 
 .btn {
   padding: 10px 20px;
@@ -74,13 +83,14 @@ input:focus { border-color: var(--yellow); }
 .btn:hover:not(:disabled) { background: var(--border); }
 
 .btn-primary {
-  background: var(--yellow);
-  color: #000;
+  background: var(--green);
+  color: #fff;
   border: none;
   font-size: 1rem;
   padding: 12px 28px;
+  letter-spacing: 0.04em;
 }
-.btn-primary:hover:not(:disabled) { background: #ffe033; }
+.btn-primary:hover:not(:disabled) { background: #00b844; }
 
 .btn-danger {
   background: var(--red);
@@ -90,11 +100,12 @@ input:focus { border-color: var(--yellow); }
 .btn-danger:hover:not(:disabled) { background: #e53935; }
 
 .btn-success {
-  background: var(--green);
+  background: var(--yellow);
   color: #000;
   border: none;
+  font-weight: 700;
 }
-.btn-success:hover:not(:disabled) { background: #00e676; }
+.btn-success:hover:not(:disabled) { background: #ffe833; }
 
 .btn-sm {
   padding: 6px 14px;
