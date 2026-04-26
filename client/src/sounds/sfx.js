@@ -554,12 +554,6 @@ export const sfx = {
     }
   },
 
-  startAmbient() {
-    if (!_activeTrackId) { _activeTrackId = 'ambient'; playAmbientLoop(); }
-  },
-
-  stopAmbient() { stopAllMusic(); },
-
   /** Jukebox — seleciona trilha sonora */
   playTrack(trackId) {
     stopAllMusic();

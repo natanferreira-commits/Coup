@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import styles from './Landing.module.css';
 import HowToPlayModal from '../components/HowToPlayModal';
@@ -51,8 +51,8 @@ const CHARS = [
   { name: 'Bicheiro',  color: '#b97916', desc: 'Extorquista nato, drena recursos alheios' },
   { name: 'X9',        color: '#6a1b9a', desc: 'Vê o que ninguém devia ver' },
   { name: 'Juiz',      color: '#1b5e20', desc: 'Garante que a lei valha — para ele mesmo' },
-  { name: 'Miliciano', color: '#b71c1c', desc: 'Elimina sem hesitar, cobra caro por isso' },
-  { name: 'Bandido',   color: '#4e342e', desc: 'Defesa de ferro contra bloqueios' },
+  { name: 'Miliciano', color: '#b71c1c', desc: 'Defesa de ferro, bloqueia assassinato e roubo' },
+  { name: 'Bandido',   color: '#4e342e', desc: 'Elimina sem hesitar por apenas 3 moedas' },
 ];
 
 /* ═══════════════════════════════════════════════════════════════════ */
@@ -68,12 +68,8 @@ function detectPlatform() {
 }
 
 export default function Landing({ onEnter }) {
-  const [email,         setEmail]        = useState('');
-  const [submitted,     setSubmitted]    = useState(false);
-  const [emailError,    setEmailError]   = useState('');
-  const [openFaq,       setOpenFaq]      = useState(null);
-  const [showHowTo,     setShowHowTo]    = useState(false);
-  const emailRef = useRef(null);
+  const [openFaq,   setOpenFaq]  = useState(null);
+  const [showHowTo, setShowHowTo] = useState(false);
 
   // ── PWA install ────────────────────────────────────────────────────────────
   const [installPrompt,  setInstallPrompt]  = useState(null);
@@ -101,21 +97,6 @@ export default function Landing({ onEnter }) {
 
   // Mostra botão de instalar se: Android com prompt disponível, iOS ainda não instalado, ou desktop
   const showInstallBtn = !installDone && (installPrompt || isIos);
-
-  function handleEmailSubmit(e) {
-    e.preventDefault();
-    if (!email.trim() || !email.includes('@')) {
-      setEmailError('Digite um e-mail válido');
-      return;
-    }
-    setEmailError('');
-    setSubmitted(true);
-    // TODO: send to backend / email service
-  }
-
-  function scrollToEmail() {
-    emailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }
 
   return (
     <div className={styles.page}>
@@ -198,7 +179,7 @@ export default function Landing({ onEnter }) {
               >→</motion.span>
             </motion.button>
 
-            {showInstallBtn ? (
+            {showInstallBtn && (
               <motion.button
                 className={styles.ctaInstall}
                 onClick={handleInstall}
@@ -207,30 +188,10 @@ export default function Landing({ onEnter }) {
               >
                 {isIos ? '📲 Adicionar à Tela de Início' : '⬇️ Instalar como App'}
               </motion.button>
-            ) : (
-              <motion.button
-                className={styles.ctaSecondary}
-                onClick={scrollToEmail}
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-              >
-                Entrar na lista
-              </motion.button>
             )}
           </motion.div>
         </motion.div>
 
-        {/* Hero visual placeholder — substitua pelo artwork do personagem */}
-        <motion.div
-          className={styles.heroArt}
-          initial={{ opacity: 0, x: 40 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.35, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-        >
-          <div className={styles.heroArtPlaceholder}>
-            <span className={styles.heroArtLabel}>[ artwork do personagem ]</span>
-          </div>
-        </motion.div>
       </section>
 
       {/* ── O QUE É O GOLPE ────────────────────────────────────────────── */}
@@ -269,12 +230,6 @@ export default function Landing({ onEnter }) {
             </div>
           </motion.div>
 
-          {/* Card mockup placeholder — substitua pelo seu mockup */}
-          <motion.div className={styles.whatVisual} variants={fadeUp}>
-            <div className={styles.cardMockupPlaceholder}>
-              <span className={styles.heroArtLabel}>[ mockup das cartas ]</span>
-            </div>
-          </motion.div>
         </motion.div>
       </section>
 
@@ -341,86 +296,12 @@ export default function Landing({ onEnter }) {
               whileHover={{ y: -6, borderColor: c.color }}
               transition={{ type: 'spring', stiffness: 280, damping: 18 }}
             >
-              {/* Placeholder — substitua pelo artwork do personagem */}
-              <div className={styles.charArtPlaceholder} />
               <div className={styles.charInfo}>
                 <span className={styles.charName}>{c.name}</span>
                 <span className={styles.charDesc}>{c.desc}</span>
               </div>
             </motion.div>
           ))}
-        </motion.div>
-      </section>
-
-      {/* ── EMAIL SIGNUP ──────────────────────────────────────────────── */}
-      <section className={`${styles.section} ${styles.emailSection}`} ref={emailRef}>
-        <div className={styles.emailGlow} />
-        <motion.div
-          className={styles.emailBox}
-          variants={stagger()}
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true, margin: '-60px' }}
-        >
-          <motion.span className={styles.sectionLabel} variants={fadeUp}>Pré-lançamento</motion.span>
-          <motion.h2 className={styles.sectionTitle} variants={fadeUp}>
-            Entre na lista<br />antes de todo mundo
-          </motion.h2>
-          <motion.p className={`${styles.bodyText} ${styles.centered}`} variants={fadeUp}>
-            Cadastre seu e-mail e seja o primeiro a saber sobre novas funcionalidades,
-            modos de jogo, torneios e muito mais.
-          </motion.p>
-
-          <motion.div className={styles.perks} variants={fadeUp}>
-            {['Acesso antecipado a novos modos', 'Notificações de torneios', 'Personagens exclusivos em breve'].map(p => (
-              <div key={p} className={styles.perk}>
-                <span className={styles.perkCheck}>✓</span>
-                <span>{p}</span>
-              </div>
-            ))}
-          </motion.div>
-
-          <AnimatePresence mode="wait">
-            {submitted ? (
-              <motion.div
-                key="success"
-                className={styles.emailSuccess}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0 }}
-              >
-                <span className={styles.successIcon}>🎉</span>
-                <p>Você está na lista! Te avisamos quando tiver novidade.</p>
-              </motion.div>
-            ) : (
-              <motion.form
-                key="form"
-                className={styles.emailForm}
-                onSubmit={handleEmailSubmit}
-                variants={fadeUp}
-              >
-                <div className={styles.emailInputRow}>
-                  <input
-                    type="email"
-                    placeholder="seu@email.com"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    className={styles.emailInput}
-                  />
-                  <motion.button
-                    type="submit"
-                    className={styles.emailBtn}
-                    whileHover={{ scale: 1.04 }}
-                    whileTap={{ scale: 0.97 }}
-                  >
-                    Entrar na lista
-                  </motion.button>
-                </div>
-                {emailError && <p className={styles.emailError}>{emailError}</p>}
-                <p className={styles.emailDisclaimer}>Sem spam. Cancele quando quiser.</p>
-              </motion.form>
-            )}
-          </AnimatePresence>
         </motion.div>
       </section>
 

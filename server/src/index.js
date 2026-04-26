@@ -254,8 +254,6 @@ io.on('connection', socket => {
   const pid = socket.handshake.auth?.pid || null;
   if (pid) socket._pid = pid;
 
-  console.log('connected:', socket.id, pid ? `(pid: ${pid.slice(0, 8)}…)` : '');
-
   // ── Reconnection restore ──────────────────────────────────────────────────
   if (pid && pidSessions.has(pid)) {
     // Cancel the grace-period removal timer
@@ -670,8 +668,6 @@ function attachGameHandlers(socket) {
   });
 
   socket.on('disconnect', () => {
-    console.log('disconnected:', socket.id);
-
     // Handle spectator disconnect — just remove immediately (no grace period)
     for (const room of Object.values(rooms)) {
       const si = room.spectators?.findIndex(s => s.id === socket.id || s.currentSocketId === socket.id);
