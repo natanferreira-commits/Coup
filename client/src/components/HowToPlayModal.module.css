@@ -1,8 +1,8 @@
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(4px);
+  background: rgba(10,20,50,0.5);
+  backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -11,15 +11,16 @@
 }
 
 .modal {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 16px;
+  background: #ffffff;
+  border: 1px solid #dde3f0;
+  border-radius: 18px;
   width: 100%;
   max-width: 560px;
   max-height: 88vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  box-shadow: 0 8px 48px rgba(19,81,180,0.16);
 }
 
 /* ── Header ──────────────────────────────────────────────── */
@@ -28,20 +29,21 @@
   align-items: center;
   justify-content: space-between;
   padding: 18px 22px 14px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid #dde3f0;
   flex-shrink: 0;
+  background: #ffffff;
 }
 
 .title {
   font-size: 1.35rem;
-  color: var(--yellow);
+  color: #1351b4;
   margin: 0;
 }
 
 .closeBtn {
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  color: var(--muted);
+  background: #f4f6fb;
+  border: 1px solid #dde3f0;
+  color: #7a8aaa;
   border-radius: 8px;
   width: 32px;
   height: 32px;
@@ -53,7 +55,7 @@
   transition: color 0.15s, border-color 0.15s;
   flex-shrink: 0;
 }
-.closeBtn:hover { color: var(--red); border-color: var(--red); }
+.closeBtn:hover { color: #d32f2f; border-color: #d32f2f; }
 
 /* ── Scroll body ─────────────────────────────────────────── */
 .body {
@@ -63,11 +65,12 @@
   flex-direction: column;
   gap: 26px;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 214, 0, 0.25) transparent;
+  scrollbar-color: rgba(19,81,180,0.2) transparent;
+  background: #ffffff;
 }
 .body::-webkit-scrollbar       { width: 4px; }
 .body::-webkit-scrollbar-track { background: transparent; }
-.body::-webkit-scrollbar-thumb { background: rgba(255, 214, 0, 0.25); border-radius: 4px; }
+.body::-webkit-scrollbar-thumb { background: rgba(19,81,180,0.2); border-radius: 4px; }
 
 /* ── Section ─────────────────────────────────────────────── */
 .section { display: flex; flex-direction: column; gap: 10px; }
@@ -75,14 +78,14 @@
 .sectionTitle {
   font-size: 1rem;
   font-weight: 700;
-  color: var(--yellow);
+  color: #1351b4;
   letter-spacing: 0.03em;
   margin: 0;
 }
 
 .text {
   font-size: 0.9rem;
-  color: var(--text);
+  color: #2a3550;
   line-height: 1.6;
   margin: 0;
 }
@@ -96,17 +99,17 @@
 }
 .list li {
   font-size: 0.88rem;
-  color: var(--text);
+  color: #2a3550;
   line-height: 1.55;
 }
 
 .tip {
-  background: rgba(255, 214, 0, 0.07);
-  border: 1px solid rgba(255, 214, 0, 0.22);
+  background: rgba(19,81,180,0.05);
+  border: 1px solid rgba(19,81,180,0.18);
   border-radius: 8px;
   padding: 10px 14px;
   font-size: 0.87rem;
-  color: var(--text);
+  color: #1a2540;
   line-height: 1.5;
   margin: 0;
 }
@@ -119,8 +122,8 @@
 }
 
 .actionCard {
-  background: var(--surface2);
-  border: 1px solid var(--border);
+  background: #f4f6fb;
+  border: 1px solid #dde3f0;
   border-radius: 10px;
   padding: 10px 14px;
   display: flex;
@@ -138,15 +141,15 @@
 .actionName {
   font-size: 0.88rem;
   font-weight: 700;
-  color: #fff;
+  color: #1a2540;
 }
 
 .actionCost {
   font-size: 0.78rem;
   font-weight: 700;
-  color: var(--yellow);
-  background: rgba(255, 214, 0, 0.1);
-  border: 1px solid rgba(255, 214, 0, 0.25);
+  color: #b8860b;
+  background: rgba(255,223,0,0.15);
+  border: 1px solid rgba(255,223,0,0.35);
   border-radius: 6px;
   padding: 1px 7px;
 }
@@ -159,19 +162,19 @@
   margin-left: auto;
 }
 .tag_green {
-  background: rgba(76, 175, 80, 0.12);
-  border: 1px solid rgba(76, 175, 80, 0.35);
-  color: #66bb6a;
+  background: rgba(0,156,59,0.1);
+  border: 1px solid rgba(0,156,59,0.28);
+  color: #007a2f;
 }
 .tag_blue {
-  background: rgba(33, 150, 243, 0.12);
-  border: 1px solid rgba(33, 150, 243, 0.3);
-  color: #64b5f6;
+  background: rgba(19,81,180,0.09);
+  border: 1px solid rgba(19,81,180,0.25);
+  color: #1351b4;
 }
 
 .actionDesc {
   font-size: 0.83rem;
-  color: var(--muted);
+  color: #7a8aaa;
   line-height: 1.5;
   margin: 0;
 }
@@ -212,6 +215,7 @@
 
 .charBody {
   padding: 8px 12px 10px;
+  background: #f9fafc;
   display: flex;
   flex-direction: column;
   gap: 5px;
@@ -219,10 +223,10 @@
 
 .charAbility, .charBlock, .charBlocked {
   font-size: 0.8rem;
-  color: var(--text);
+  color: #2a3550;
   line-height: 1.45;
   margin: 0;
 }
 
-.charBlock   { color: #81c784; }
-.charBlocked { color: #ffa726; }
+.charBlock   { color: #007a2f; }
+.charBlocked { color: #c07000; }
