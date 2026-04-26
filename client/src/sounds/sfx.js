@@ -303,103 +303,202 @@ function mVibNote(t, freq, dur = 0.28, vol = 0.065) {
 
 // ── Tracks ────────────────────────────────────────────────────────────────────
 
-function playSamba() {
-  // 110 BPM — surdo, caixa, tamborim, melodia C maior pentatônica
-  const mel  = [130.81,164.81,196.00,220.00,261.63,196.00,164.81,130.81];
-  const bass = [65.41, 65.41, 73.42, 65.41, 55.00, 65.41, 73.42, 82.41];
+// Helper: play melody note from a noteMap {'bar,step': [freq, durSec, vol]}
+function mMel(noteMap, bar, s, t, loopBars = 4) {
+  const e = noteMap[`${bar % loopBars},${s}`];
+  if (e) mNote(t, e[0], e[1], e[2] ?? 0.065);
+}
+
+// ── Aquarela do Brasil (Ary Barroso) — Samba 110 BPM, Sol maior ──────────────
+function playAquarelaDoBrasil() {
+  // Melodia: "Brasil! Meu Brasil brasileiro…" — arpejo ascendente G-B-D5 + tema
+  const NOTES = {
+    '0,0' :[293.66,0.20,0.050], // D4
+    '0,2' :[392.00,0.20,0.060], // G4
+    '0,4' :[493.88,0.20,0.062], // B4
+    '0,6' :[587.33,0.55,0.072], // D5 (hold — "Bra-sil!")
+    '0,10':[554.37,0.18,0.060], // C#5
+    '0,12':[587.33,0.18,0.062], // D5
+    '0,14':[493.88,0.48,0.060], // B4
+    '1,2' :[392.00,0.18,0.055], // G4
+    '1,4' :[440.00,0.18,0.055], // A4
+    '1,6' :[493.88,0.18,0.060], // B4
+    '1,8' :[587.33,0.18,0.062], // D5
+    '1,10':[659.25,0.18,0.068], // E5 (pico)
+    '1,12':[587.33,0.18,0.062], // D5
+    '1,14':[493.88,0.18,0.058], // B4
+    '2,0' :[440.00,0.18,0.055], // A4
+    '2,2' :[392.00,0.52,0.060], // G4
+    '2,8' :[493.88,0.18,0.055], // B4
+    '2,10':[440.00,0.18,0.055], // A4
+    '2,12':[392.00,0.18,0.055], // G4
+    '2,14':[369.99,0.18,0.052], // F#4
+    '3,0' :[392.00,1.10,0.065], // G4 (resolve longo)
+  };
+  const bass = [98.00,73.42,98.00,82.41]; // G2 D2 G2 E2
   let bar = 0;
   return makeSeq(110, 16, (s, t) => {
-    if (s === 0 || s === 8)          mKick(t, 65, 0.42, 0.68);         // surdo
-    if (s === 4 || s === 12)         mSnare(t, 0.24);                   // caixa
-    if (s === 6 || s === 14)         mSnare(t, 0.10);                   // ghost
-    if ([0,2,5,8,10,13].includes(s)) mHat(t, 0.18, 0.05);              // tamborim
-    if (s % 4 === 2)                 mHat(t, 0.07, 0.12);              // open hat
-    if (s === 0)  mBass(t, bass[bar % 8], 0.3, 0.30);
-    if (s === 4)  mBass(t, bass[(bar+1)%8] * 1.5, 0.2, 0.20);
-    if (s === 8)  mBass(t, bass[bar % 8], 0.3, 0.28);
-    if (s === 12) mBass(t, 55.00, 0.25, 0.22);
-    if (s === 0)  mNote(t, mel[bar % 8], 0.18, 0.045);
-    if (s === 5)  mNote(t, mel[(bar+2)%8], 0.14, 0.035);
-    if (s === 10) mNote(t, mel[(bar+4)%8], 0.14, 0.035);
-    if (s === 15) bar++;
+    if (s===0||s===8)            mKick(t,65,0.42,0.68);
+    if (s===4||s===12)           mSnare(t,0.22);
+    if (s===6||s===14)           mSnare(t,0.09);
+    if ([0,2,5,8,10,13].includes(s)) mHat(t,0.16,0.05);
+    if (s%4===2)                 mHat(t,0.07,0.12);
+    if (s===0)  mBass(t,bass[bar%4],0.30,0.30);
+    if (s===8)  mBass(t,bass[bar%4]*1.5,0.22,0.22);
+    mMel(NOTES,bar,s,t);
+    if (s===15) bar++;
   });
 }
 
-function playBossaNova() {
-  // 82 BPM — padrão João Gilberto, acordes Am7→Dm7→G7→Cmaj7
+// ── Garota de Ipanema (Tom Jobim) — Bossa Nova 80 BPM, Fá maior ──────────────
+function playGarotaDeIpanema() {
+  // Melodia: "Olha que coisa mais linda, mais cheia de graça"
+  // G G Ab G | F Eb Db | C … | Bb Bb C Bb | Ab G
   const chords = [
-    [110.00,130.81,164.81,196.00], // Am7
-    [146.83,174.61,220.00,261.63], // Dm7
-    [196.00,233.08,293.66,369.99], // G7
-    [261.63,329.63,392.00,493.88], // Cmaj7
+    [174.61,220.00,261.63,329.63], // Fmaj7
+    [196.00,220.00,261.63,311.13], // Gm7
+    [233.08,277.18,349.23,415.30], // Bbmaj7
+    [174.61,220.00,261.63,329.63], // Fmaj7
   ];
-  const bassNotes = [55.00, 73.42, 98.00, 130.81];
+  const NOTES = {
+    '0,0' :[392.00,0.55,0.068], // G4  "Olha"
+    '0,4' :[392.00,0.42,0.068], // G4  "que"
+    '0,8' :[415.30,0.22,0.065], // Ab4 "coi"
+    '0,10':[392.00,0.42,0.068], // G4  "sa"
+    '0,14':[349.23,0.22,0.060], // F4  "mais"
+    '1,0' :[311.13,0.42,0.065], // Eb4 "lin"
+    '1,4' :[277.18,0.55,0.060], // Db4 "da"
+    '1,10':[261.63,0.75,0.065], // C4  (longo)
+    '2,0' :[233.08,0.55,0.060], // Bb3 "mais"
+    '2,4' :[233.08,0.22,0.060], // Bb3 "che"
+    '2,6' :[261.63,0.22,0.062], // C4  "ia"
+    '2,8' :[233.08,0.42,0.062], // Bb3 "de"
+    '2,12':[207.65,0.42,0.058], // Ab3 "gra"
+    '3,0' :[196.00,1.20,0.065], // G3  "ça" (longo)
+  };
+  const bassNotes = [87.31,92.50,116.54,87.31]; // F2 Gb2 Db2 F2
   const chordSteps = [0,3,6,7,9,11,13,14];
   let bar = 0;
-  return makeSeq(82, 16, (s, t) => {
-    const ch = chords[bar % 4];
-    if (chordSteps.includes(s)) ch.forEach(f => mNote(t, f, 0.14, 0.038));
-    if (s === 0)  mBass(t, bassNotes[bar % 4], 0.28, 0.28);
-    if (s === 8)  mBass(t, bassNotes[bar % 4] * 1.5, 0.20, 0.20);
-    if (s % 2 === 0) mHat(t, 0.055, 0.04);
-    if (s === 4 || s === 12) mSnare(t, 0.12);
-    if (s === 15) bar++;
+  return makeSeq(80, 16, (s, t) => {
+    const ch = chords[bar%4];
+    if (chordSteps.includes(s)) ch.forEach(f => mNote(t,f,0.14,0.030));
+    if (s===0) mBass(t,bassNotes[bar%4],0.28,0.28);
+    if (s===8) mBass(t,bassNotes[bar%4]*1.5,0.20,0.20);
+    if (s%2===0) mHat(t,0.050,0.04);
+    if (s===4||s===12) mSnare(t,0.09);
+    mMel(NOTES,bar,s,t);
+    if (s===15) bar++;
   });
 }
 
-function playBaiao() {
-  // 118 BPM — zabumba, triângulo, sanfona (vibrato)
-  const mel = [164.81,196.00,220.00,246.94,293.66,246.94,220.00,196.00];
+// ── Asa Branca (Luiz Gonzaga) — Baião 118 BPM, Lá maior ─────────────────────
+function playAsaBranca() {
+  // "Quando o sol da boca do dia" — melodia na sanfona (vibrato)
+  // A A C# E | E D C# B | A B A A | C# C# E A
+  const mel = [
+    440.00,440.00,554.37,659.25, 659.25,587.33,554.37,493.88, // "Quan-do o sol da bo-ca do"
+    440.00,493.88,440.00,440.00, 329.63,329.63,554.37,659.25, // "di-a  A-sa   Bran-ca..."
+    587.33,554.37,493.88,440.00, 440.00,440.00,493.88,440.00, // baixando
+    554.37,554.37,659.25,440.00, 440.00,493.88,440.00,440.00, // resolve
+  ];
+  const bass = [110.00,82.41,73.42,82.41]; // A2 E2 D2 E2
   let bar = 0;
   return makeSeq(118, 8, (s, t) => {
-    if (s === 0 || s === 3 || s === 5) mKick(t, 72, 0.32, 0.62);      // zabumba
-    mHat(t, 0.16, 0.06);                                                // triângulo
-    if (s === 2 || s === 6) mSnare(t, 0.14);
-    if (s === 0) mVibNote(t, mel[bar % 8], 0.24, 0.07);
-    if (s === 2) mVibNote(t, mel[(bar+2)%8], 0.18, 0.055);
-    if (s === 4) mVibNote(t, mel[(bar+4)%8], 0.22, 0.065);
-    if (s === 6) mVibNote(t, mel[(bar+6)%8], 0.18, 0.050);
-    if (s === 0) mBass(t, 82.41, 0.18, 0.30);
-    if (s === 4) mBass(t, 98.00, 0.14, 0.22);
-    if (s === 7) bar++;
+    if (s===0||s===3||s===5) mKick(t,72,0.32,0.62);
+    mHat(t,0.16,0.06);
+    if (s===2||s===6) mSnare(t,0.14);
+    if (s===0) mBass(t,bass[bar%4],0.18,0.30);
+    if (s===4) mBass(t,bass[bar%4]*1.5,0.14,0.22);
+    const idx = (bar%4)*8 + s;
+    mVibNote(t, mel[idx], 0.20, 0.072);
+    if (s===7) bar++;
   });
 }
 
-function playFunk() {
-  // 96 BPM — bumbo pesado, caixa seca, baixo sintetizado
+// ── Baile de Favela (MC João) — Funk 96 BPM, Ré menor ───────────────────────
+function playBaileDeFavela() {
+  // Hook: arpejo Dm7 (D-F-A-C) subindo e descendo — típico do funk carioca
+  const NOTES = {
+    '0,0' :[293.66,0.16,0.065], // D4
+    '0,2' :[349.23,0.16,0.065], // F4
+    '0,4' :[440.00,0.16,0.065], // A4
+    '0,6' :[523.25,0.28,0.072], // C5
+    '0,10':[440.00,0.16,0.060], // A4
+    '0,12':[349.23,0.16,0.060], // F4
+    '0,14':[293.66,0.16,0.060], // D4
+    '1,0' :[261.63,0.16,0.058], // C4
+    '1,2' :[233.08,0.16,0.058], // Bb3
+    '1,4' :[196.00,0.28,0.055], // G3
+    '1,8' :[220.00,0.16,0.058], // A3
+    '1,10':[233.08,0.16,0.060], // Bb3
+    '1,12':[261.63,0.16,0.062], // C4
+    '1,14':[293.66,0.22,0.065], // D4
+    '2,0' :[293.66,0.16,0.065], // D4
+    '2,2' :[349.23,0.16,0.065], // F4
+    '2,4' :[440.00,0.16,0.065], // A4
+    '2,6' :[523.25,0.16,0.068], // C5
+    '2,8' :[587.33,0.28,0.072], // D5 (pico)
+    '2,12':[523.25,0.16,0.068], // C5
+    '2,14':[440.00,0.16,0.065], // A4
+    '3,0' :[349.23,0.16,0.060], // F4
+    '3,2' :[293.66,0.42,0.065], // D4
+    '3,6' :[261.63,0.16,0.058], // C4
+    '3,8' :[233.08,0.16,0.058], // Bb3
+    '3,10':[196.00,0.28,0.055], // G3
+    '3,14':[293.66,0.22,0.060], // D4
+  };
   const bassLine = [41.20,0,41.20,0, 0,55.00,0,0, 41.20,0,49.00,0, 0,0,41.20,0];
   let bar = 0;
   return makeSeq(96, 16, (s, t) => {
-    if ([0,4,6,8,12].includes(s)) mKick(t, 58, 0.40, 0.75);
-    if (s === 4 || s === 12)      mSnare(t, 0.32);
-    mHat(t, 0.10, 0.03);
-    if (s === 2 || s === 10) mHat(t, 0.14, 0.10);
-    if (bassLine[s]) mBass(t, bassLine[s], 0.18, 0.38);
-    if (s === 0)  mNote(t, 164.81, 0.08, 0.060, 'sawtooth');
-    if (s === 8)  mNote(t, 196.00, 0.08, 0.050, 'sawtooth');
-    if (s === 14) mNote(t, 146.83, 0.12, 0.055, 'sawtooth');
-    if (s === 15) bar++;
+    if ([0,4,6,8,12].includes(s)) mKick(t,58,0.40,0.75);
+    if (s===4||s===12)            mSnare(t,0.32);
+    mHat(t,0.10,0.03);
+    if (s===2||s===10) mHat(t,0.14,0.10);
+    if (bassLine[s]) mBass(t,bassLine[s],0.18,0.38);
+    mMel(NOTES,bar,s,t);
+    if (s===15) bar++;
   });
 }
 
-function playPagode() {
-  // 88 BPM — tantã, repique, melodia gostosa
-  const mel = [146.83,164.81,196.00,220.00,246.94,220.00,196.00,164.83];
+// ── Minha Filosofia (Seu Jorge) — Pagode 88 BPM, Ré maior ───────────────────
+function playMinhaFilosofia() {
+  // Melodia principal: D F# A B | G F# E D | F# G A B | D5 A G F# D
+  const NOTES = {
+    '0,0' :[293.66,0.20,0.060], // D4
+    '0,2' :[369.99,0.20,0.062], // F#4
+    '0,4' :[440.00,0.20,0.062], // A4
+    '0,6' :[493.88,0.45,0.065], // B4 (hold)
+    '0,10':[493.88,0.20,0.062], // B4
+    '0,12':[440.00,0.20,0.060], // A4
+    '1,0' :[392.00,0.20,0.060], // G4
+    '1,2' :[369.99,0.36,0.062], // F#4
+    '1,6' :[329.63,0.20,0.060], // E4
+    '1,8' :[293.66,0.36,0.062], // D4
+    '1,12':[329.63,0.20,0.058], // E4
+    '1,14':[369.99,0.20,0.060], // F#4
+    '2,0' :[369.99,0.20,0.060], // F#4
+    '2,2' :[392.00,0.20,0.062], // G4
+    '2,4' :[440.00,0.20,0.062], // A4
+    '2,6' :[493.88,0.36,0.065], // B4
+    '2,10':[587.33,0.36,0.068], // D5 (pico)
+    '2,14':[440.00,0.20,0.060], // A4
+    '3,0' :[440.00,0.36,0.062], // A4
+    '3,4' :[392.00,0.20,0.060], // G4
+    '3,6' :[369.99,0.36,0.062], // F#4
+    '3,10':[293.66,0.55,0.065], // D4 (resolve)
+  };
+  const bassNotes = [73.42,98.00,82.41,73.42]; // D2 G2 E2 D2
   let bar = 0;
   return makeSeq(88, 16, (s, t) => {
-    if ([0,3,6,8,11,14].includes(s)) mKick(t, 80, 0.30, 0.52);        // tantã
-    if ([2,5,10,13].includes(s))     mSnare(t, 0.16);                  // repique
-    if (s % 2 === 0) mHat(t, 0.07, 0.05);
-    if (s === 0)  mBass(t, 73.42, 0.30, 0.28);
-    if (s === 4)  mBass(t, 98.00, 0.20, 0.20);
-    if (s === 8)  mBass(t, 82.41, 0.25, 0.24);
-    if (s === 12) mBass(t, 73.42, 0.25, 0.22);
-    if (s === 0)  mNote(t, mel[bar % 8], 0.30, 0.060);
-    if (s === 4)  mNote(t, mel[(bar+2)%8], 0.25, 0.050);
-    if (s === 8)  mNote(t, mel[(bar+4)%8], 0.28, 0.055);
-    if (s === 12) mNote(t, mel[(bar+6)%8], 0.22, 0.045);
-    if (s === 6 && bar % 2 === 1) mNote(t, mel[(bar+3)%8], 0.12, 0.035);
-    if (s === 15) bar++;
+    if ([0,3,6,8,11,14].includes(s)) mKick(t,80,0.30,0.52);
+    if ([2,5,10,13].includes(s))     mSnare(t,0.16);
+    if (s%2===0) mHat(t,0.07,0.05);
+    if (s===0)  mBass(t,bassNotes[bar%4],0.30,0.28);
+    if (s===4)  mBass(t,bassNotes[bar%4]*1.5,0.20,0.20);
+    if (s===8)  mBass(t,bassNotes[(bar+1)%4],0.25,0.24);
+    if (s===12) mBass(t,bassNotes[bar%4],0.25,0.22);
+    mMel(NOTES,bar,s,t);
+    if (s===15) bar++;
   });
 }
 
@@ -445,15 +544,14 @@ export const sfx = {
     stopAllMusic();
     if (!trackId || trackId === 'none') { _activeTrackId = 'none'; return; }
     _activeTrackId = trackId;
-    const fns = {
-      ambient:   () => playAmbientLoop(),
-      samba:     playSamba,
-      bossanova: playBossaNova,
-      baiao:     playBaiao,
-      funk:      playFunk,
-      pagode:    playPagode,
-    };
     if (trackId === 'ambient') { playAmbientLoop(); return; }
+    const fns = {
+      samba:     playAquarelaDoBrasil,
+      bossanova: playGarotaDeIpanema,
+      baiao:     playAsaBranca,
+      funk:      playBaileDeFavela,
+      pagode:    playMinhaFilosofia,
+    };
     if (fns[trackId]) _sequencerStop = fns[trackId]();
   },
 

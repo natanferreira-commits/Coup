@@ -52,7 +52,7 @@ const TARGET_ACTIONS = ['golpe','roubar','assassinar','veredito','meter_x9','tro
 
 const BLOCK_OPTIONS = {
   ajuda_externa:['politico'], roubar:['juiz','guarda_costas'],
-  assassinar:['guarda_costas'], meter_x9:['juiz'], disfarce:['juiz'], trocar_carta:['juiz'],
+  assassinar:['guarda_costas'], meter_x9:['juiz'], trocar_carta:['juiz'],
 };
 
 // Which character an action belongs to (null = basic, no character)
@@ -100,7 +100,7 @@ const ACTION_CATEGORIES = [
     id: 'investigador', label: '🕵️ X9', labelColor: '#6a1b9a', bg: 'rgba(106,27,154,0.04)', charKey: 'investigador',
     actions: [
       { action:'meter_x9',     icon:'🕵️', label:'Meter o X9',      sub:'Espia carta',   tooltip:'Afirma ser o X9. Vê uma carta secreta do alvo. Juiz pode bloquear.' },
-      { action:'disfarce',     icon:'🎭', label:'Disfarce',          sub:'Troca sua carta', tooltip:'Afirma ser o X9. Troca uma de suas cartas pelo baralho em segredo. Juiz pode bloquear.' },
+      { action:'disfarce',     icon:'🎭', label:'Disfarce',          sub:'Troca sua carta', tooltip:'Afirma ser o X9. Troca uma de suas cartas pelo baralho em segredo. Não pode ser bloqueada.' },
       { action:'trocar_carta', icon:'🕵️', label:'Infiltrar',          sub:'Força troca',   tooltip:'Afirma ser o X9. Infiltra o alvo e força uma troca de carta. Juiz pode bloquear.' },
     ],
   },
@@ -883,19 +883,7 @@ export default function Game({ data, myId, musicTrack, musicLastChanged }) {
           )}
 
           <div className={styles.mesaRow}>
-            <motion.img src={mesaImg} className={styles.mesaImg} alt="mesa"
-              animate={
-                phase==='RESPONSE_WINDOW'       ?{filter:'brightness(1.15) drop-shadow(0 0 18px #ffd60088)'}:
-                phase==='BLOCK_CHALLENGE_WINDOW' ?{filter:'brightness(1.1) drop-shadow(0 0 18px #f4433688)'}:
-                phase==='LOSE_INFLUENCE'         ?{filter:'brightness(1.05) drop-shadow(0 0 16px #f4433666)'}:
-                phase==='COIN_FLIP'              ?{filter:'brightness(1.15) drop-shadow(0 0 20px #ffd60099)'}:
-                phase==='X9_PEEK_SELECT'         ?{filter:'brightness(1.1) drop-shadow(0 0 18px #9c27b088)'}:
-                phase==='X9_PEEK_VIEW'           ?{filter:'brightness(1.1) drop-shadow(0 0 18px #9c27b088)'}:
-                {filter:'brightness(1) drop-shadow(0 0 0px transparent)'}
-              }
-              transition={{duration:0.4}} />
-
-            {/* Jukebox — ao lado da mesa */}
+            {/* Jukebox — entre o chat (esq) e a mesa */}
             <motion.button
               className={styles.jukeboxBtn}
               onClick={() => setShowJukebox(v => !v)}
@@ -908,6 +896,18 @@ export default function Game({ data, myId, musicTrack, musicLastChanged }) {
                 : <span className={styles.jukeboxFallback}>🎰</span>
               }
             </motion.button>
+
+            <motion.img src={mesaImg} className={styles.mesaImg} alt="mesa"
+              animate={
+                phase==='RESPONSE_WINDOW'       ?{filter:'brightness(1.15) drop-shadow(0 0 18px #ffd60088)'}:
+                phase==='BLOCK_CHALLENGE_WINDOW' ?{filter:'brightness(1.1) drop-shadow(0 0 18px #f4433688)'}:
+                phase==='LOSE_INFLUENCE'         ?{filter:'brightness(1.05) drop-shadow(0 0 16px #f4433666)'}:
+                phase==='COIN_FLIP'              ?{filter:'brightness(1.15) drop-shadow(0 0 20px #ffd60099)'}:
+                phase==='X9_PEEK_SELECT'         ?{filter:'brightness(1.1) drop-shadow(0 0 18px #9c27b088)'}:
+                phase==='X9_PEEK_VIEW'           ?{filter:'brightness(1.1) drop-shadow(0 0 18px #9c27b088)'}:
+                {filter:'brightness(1) drop-shadow(0 0 0px transparent)'}
+              }
+              transition={{duration:0.4}} />
           </div>
         </div>
 

@@ -33,8 +33,8 @@ const ACTION_DEFS = {
     blockedBy: ['juiz'], requiresTarget: true, anyoneCanBlock: false,
   },
   disfarce: {
-    character: 'investigador', challengeable: true, blockable: true,
-    blockedBy: ['juiz'], requiresTarget: false, anyoneCanBlock: false,
+    character: 'investigador', challengeable: true, blockable: false,
+    blockedBy: [], requiresTarget: false, anyoneCanBlock: false,
   },
   trocar_carta: {
     character: 'investigador', challengeable: true, blockable: true,

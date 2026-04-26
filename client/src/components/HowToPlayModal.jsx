@@ -27,9 +27,9 @@ const CHARS = [
     color: '#6a1b9a',
     emoji: '🕵️',
     ability: 'Meter o X9 / Disfarce / Infiltrar',
-    desc: '3 ações: (1) Espia as cartas de um alvo. (2) Troca suas próprias cartas com o baralho. (3) Infiltrar — força o alvo a trocar uma carta.',
+    desc: '3 ações: (1) Meter o X9 — espia as cartas de um alvo. (2) Disfarce — troca suas próprias cartas com o baralho (não pode ser bloqueada). (3) Infiltrar — força o alvo a trocar uma carta.',
     block: null,
-    blocked: 'Todas as 3 ações podem ser bloqueadas pelo Juiz.',
+    blocked: 'Meter o X9 e Infiltrar podem ser bloqueadas pelo Juiz. Disfarce não pode ser bloqueada.',
   },
   {
     name: 'Juiz',
@@ -121,7 +121,7 @@ const ACTIONS = [
   {
     name: 'Disfarce (X9)',
     cost: 0,
-    desc: 'Declare ser o X9 e troque suas próprias cartas com o baralho. Pode ser bloqueado pelo Juiz.',
+    desc: 'Declare ser o X9 e troque suas próprias cartas com o baralho. Não pode ser bloqueada.',
     tag: 'Blefe possível',
     tagColor: 'blue',
   },

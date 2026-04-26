@@ -142,7 +142,7 @@
 }
 
 .jukeboxImg {
-  width: 72px;
+  width: 96px;
   height: auto;
   object-fit: contain;
   display: block;
@@ -920,7 +920,7 @@
 
   /* ── Mesa menor ── */
   .mesaImg { width: min(200px, 72%); }
-  .jukeboxImg { width: 50px; }
+  .jukeboxImg { width: 64px; }
 
   /* ── Minha área compacta ── */
   .myArea { gap: 10px; }
