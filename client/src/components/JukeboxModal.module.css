@@ -15,8 +15,8 @@
   border: 1px solid rgba(255, 214, 0, 0.4);
   border-radius: 14px;
   overflow: hidden;
-  min-width: 210px;
-  max-width: 250px;
+  min-width: 230px;
+  max-width: 268px;
   box-shadow:
     0 12px 48px rgba(0, 0, 0, 0.75),
     0 0 0 1px rgba(255, 214, 0, 0.07),
@@ -54,6 +54,39 @@
 }
 .closeBtn:hover { color: #ef5350; }
 
+/* ── Cooldown bar ── */
+.cooldownRow {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 10px 5px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.cooldownBar {
+  flex: 1;
+  height: 4px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.cooldownFill {
+  height: 100%;
+  background: linear-gradient(90deg, #ffd600, #ff9800);
+  border-radius: 2px;
+  transition: width 0.5s linear;
+}
+
+.cooldownTime {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #ffd600;
+  min-width: 28px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
 /* ── Track list ── */
 .list {
   display: flex;
@@ -77,14 +110,23 @@
   width: 100%;
   transition: background 0.15s, border-color 0.15s;
 }
-.trackBtn:hover {
+.trackBtn:hover:not(:disabled) {
   background: rgba(255, 214, 0, 0.07);
   border-color: rgba(255, 214, 0, 0.18);
+}
+.trackBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .trackActive {
   background: rgba(255, 214, 0, 0.11) !important;
   border-color: rgba(255, 214, 0, 0.42) !important;
+}
+
+.trackPending {
+  background: rgba(255, 152, 0, 0.12) !important;
+  border-color: rgba(255, 152, 0, 0.45) !important;
 }
 
 .trackEmoji { font-size: 1.05rem; flex-shrink: 0; line-height: 1; }
@@ -100,6 +142,67 @@
   color: var(--yellow);
   font-size: 0.6rem;
   flex-shrink: 0;
+}
+
+/* ── Pay coin box ── */
+.payCoinBox {
+  overflow: hidden;
+  border-top: 1px solid rgba(255, 152, 0, 0.25);
+  background: rgba(255, 152, 0, 0.06);
+  padding: 10px 12px;
+}
+
+.payCoinText {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.75);
+  margin: 0 0 9px;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.payCoinBtns {
+  display: flex;
+  gap: 6px;
+}
+
+.payCoinYes {
+  flex: 1;
+  padding: 7px 10px;
+  background: #ffd600;
+  color: #000;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity 0.15s;
+}
+.payCoinYes:hover:not(:disabled) { opacity: 0.88; }
+.payCoinYes:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.payCoinNo {
+  padding: 7px 10px;
+  background: rgba(255,255,255,0.07);
+  color: var(--muted);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+.payCoinNo:hover:not(:disabled) { background: rgba(255,255,255,0.12); }
+.payCoinNo:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* ── Feedback ── */
+.feedback {
+  font-size: 0.73rem;
+  color: #ef5350;
+  text-align: center;
+  padding: 4px 10px 6px;
+  margin: 0;
 }
 
 /* ── Hint ── */

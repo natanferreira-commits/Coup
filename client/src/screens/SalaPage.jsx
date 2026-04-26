@@ -12,7 +12,7 @@ import styles from './SalaPage.module.css';
  *  - If already in the room/game (App.jsx state) → render Room or Game directly
  *  - Otherwise → show the join-request flow (name input → waiting for host approval → denied)
  */
-export default function SalaPage({ roomData, gameData, myPlayerId, pendingRequests, isSpectator, spectatorData, onApprove, onDeny, onLeave }) {
+export default function SalaPage({ roomData, gameData, myPlayerId, pendingRequests, isSpectator, spectatorData, musicTrack, musicLastChanged, onApprove, onDeny, onLeave }) {
   const { code }   = useParams();
   const location   = useLocation();
   const navigate   = useNavigate();
@@ -41,7 +41,7 @@ export default function SalaPage({ roomData, gameData, myPlayerId, pendingReques
   }
 
   if (gameData) {
-    return <Game data={gameData} myId={myPlayerId || socket.id} />;
+    return <Game data={gameData} myId={myPlayerId || socket.id} musicTrack={musicTrack} musicLastChanged={musicLastChanged} />;
   }
 
   if (roomData && roomData.code === code) {

@@ -219,6 +219,8 @@ function broadcast(room, extraForPlayer = null) {
       game: sanitizeGame(room.game, p.id),
       timerStartedAt: room._timerStartedAt || null,
       timeRemaining: _timeRemaining,
+      musicTrack: room.musicTrack || 'none',
+      musicLastChanged: room.musicLastChanged || 0,
     };
     if (extraForPlayer && extraForPlayer.playerId === p.id) {
       Object.assign(payload, extraForPlayer);
@@ -283,6 +285,8 @@ io.on('connection', socket => {
             game: sanitizeGame(room.game, playerId), reconnected: true, playerId,
             timerStartedAt: room._timerStartedAt || null,
             timeRemaining: _rRemaining,
+            musicTrack: room.musicTrack || 'none',
+            musicLastChanged: room.musicLastChanged || 0,
           });
         } else {
           socket.emit('room_updated', {
@@ -605,6 +609,49 @@ function attachGameHandlers(socket) {
     if (!caller || caller.id !== room.hostId) return cb?.({ success: false, error: 'Só o host pode alterar' });
     room.eventsEnabled = !!enabled;
     broadcastLobby(room);
+    cb?.({ success: true });
+  });
+
+  // ── Jukebox: troca música sincronizada (3 min cooldown, ou 1 moeda para pular) ──
+  socket.on('change_music', ({ trackId, payCoins }, cb) => {
+    const room = getRoomByPlayer(socket.id);
+    if (!room) return cb?.({ success: false, error: 'Sala não encontrada' });
+
+    const now = Date.now();
+    const THREE_MIN = 3 * 60 * 1000;
+    const timeSince = now - (room.musicLastChanged || 0);
+    const inCooldown = timeSince < THREE_MIN;
+    const remaining = inCooldown ? Math.ceil((THREE_MIN - timeSince) / 1000) : 0;
+
+    if (inCooldown && !payCoins) {
+      return cb?.({ success: false, error: 'cooldown', remaining });
+    }
+
+    if (inCooldown && payCoins) {
+      const player = room.game?.players.find(
+        p => p.currentSocketId === socket.id || p.id === socket.id
+      );
+      if (!player) return cb?.({ success: false, error: 'Só pode pagar dentro de uma partida' });
+      if (player.coins < 1) return cb?.({ success: false, error: 'Sem moedas suficientes' });
+      player.coins -= 1;
+      broadcast(room);
+    }
+
+    room.musicTrack = trackId;
+    room.musicLastChanged = now;
+
+    const changerName =
+      room.game?.players.find(p => p.currentSocketId === socket.id || p.id === socket.id)?.name ||
+      room.players.find(p => p.id === socket.id || p.currentSocketId === socket.id)?.name ||
+      '?';
+
+    io.to(room.code).emit('music_changed', {
+      trackId,
+      changedBy: changerName,
+      lastChanged: now,
+      paidCoin: !!(inCooldown && payCoins),
+    });
+
     cb?.({ success: true });
   });
 

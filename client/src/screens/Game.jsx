@@ -123,7 +123,7 @@ function getAvatarColor(name) {
 
 const QUICK_MSGS = ['MENTIROSO 🤡', 'CONFIA 😂', 'me rouba não 😭', 'X9 safado 👀', 'FAZ O L 🇧🇷'];
 
-export default function Game({ data, myId }) {
+export default function Game({ data, myId, musicTrack, musicLastChanged }) {
   const [selectedTarget,   setSelectedTarget]   = useState(null);
   const [pendingConfirm,   setPendingConfirm]   = useState(null);
   const [blockChar,        setBlockChar]        = useState(null);
@@ -1280,7 +1280,7 @@ export default function Game({ data, myId }) {
       </motion.button>
 
       {showHelp    && <HowToPlayModal onClose={() => setShowHelp(false)} />}
-      {showJukebox && <JukeboxModal  onClose={() => setShowJukebox(false)} />}
+      {showJukebox && <JukeboxModal onClose={() => setShowJukebox(false)} musicTrack={musicTrack} musicLastChanged={musicLastChanged} myCoins={me?.coins ?? 0} />}
     </div>
 
     {/* ── Overlays de animação ── */}

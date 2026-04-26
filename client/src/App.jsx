@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import socket from './socket';
+import { sfx } from './sounds/sfx';
 import Landing  from './screens/Landing';
 import Lobby    from './screens/Lobby';
 import SalaPage from './screens/SalaPage';
@@ -15,6 +16,8 @@ export default function App() {
   const [isReconnecting,       setIsReconnecting]       = useState(false);
   const [showInactiveWarning,  setShowInactiveWarning]  = useState(false);
   const [inactiveCountdown,    setInactiveCountdown]    = useState(30);
+  const [musicTrack,           setMusicTrack]           = useState('none');
+  const [musicLastChanged,     setMusicLastChanged]     = useState(0);
 
   // Spectator state
   const [isSpectator,   setIsSpectator]   = useState(false);
@@ -51,12 +54,24 @@ export default function App() {
       // If we were spectating and now receive game_state, we've been promoted
       setIsSpectator(false);
       setSpectatorData(null);
+      // Sync music state for reconnecting players
+      if (data.musicTrack !== undefined) {
+        setMusicTrack(data.musicTrack);
+        setMusicLastChanged(data.musicLastChanged || 0);
+        sfx.playTrack(data.musicTrack);
+      }
       if (data.reconnected && data.playerId) {
         setMyPlayerId(data.playerId);
         setIsReconnecting(false);
         clearTimeout(reconnTimerRef.current);
         navigate(`/sala/${data.code}`, { replace: true });
       }
+    });
+
+    socket.on('music_changed', ({ trackId, lastChanged }) => {
+      setMusicTrack(trackId);
+      setMusicLastChanged(lastChanged);
+      sfx.playTrack(trackId);
     });
 
     // ── Spectator events ──────────────────────────────────────────────────
@@ -130,6 +145,7 @@ export default function App() {
       socket.off('disconnect');
       socket.off('connect');
       socket.off('session_expired');
+      socket.off('music_changed');
     };
   }, [navigate]);
 
@@ -349,6 +365,8 @@ export default function App() {
               pendingRequests={pendingRequests}
               isSpectator={isSpectator}
               spectatorData={spectatorData}
+              musicTrack={musicTrack}
+              musicLastChanged={musicLastChanged}
               onApprove={handleApprove}
               onDeny={handleDeny}
               onLeave={handleLeave}

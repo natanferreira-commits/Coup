@@ -146,6 +146,7 @@
   height: auto;
   object-fit: contain;
   display: block;
+  mix-blend-mode: multiply;
 }
 
 .jukeboxFallback {

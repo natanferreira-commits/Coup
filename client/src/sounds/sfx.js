@@ -185,12 +185,12 @@ function noise({ start = 0, duration = 0.08, gain = 0.15 }) {
 // ── Music Track List (exportado para a JukeboxModal) ──────────────────────────
 export const MUSIC_TRACKS = [
   { id: 'none',      emoji: '🔇', label: 'Sem Música' },
-  { id: 'ambient',   emoji: '🌌', label: 'Ambiente' },
-  { id: 'samba',     emoji: '🥁', label: 'Samba' },
-  { id: 'bossanova', emoji: '🎸', label: 'Bossa Nova' },
-  { id: 'baiao',     emoji: '🪗', label: 'Baião' },
-  { id: 'funk',      emoji: '⚡', label: 'Funk Carioca' },
-  { id: 'pagode',    emoji: '🎵', label: 'Pagode' },
+  { id: 'ambient',   emoji: '🌌', label: 'Trilha do Golpe' },
+  { id: 'samba',     emoji: '🥁', label: 'Aquarela do Brasil' },
+  { id: 'bossanova', emoji: '🎸', label: 'Garota de Ipanema' },
+  { id: 'baiao',     emoji: '🪗', label: 'Asa Branca' },
+  { id: 'funk',      emoji: '⚡', label: 'Baile de Favela' },
+  { id: 'pagode',    emoji: '🎵', label: 'Minha Filosofia' },
 ];
 
 // ── Music Sequencer Engine ────────────────────────────────────────────────────
