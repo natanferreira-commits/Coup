@@ -127,7 +127,12 @@ export default function SalaPage({ roomData, gameData, myPlayerId, pendingReques
             initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
             <h2 className={styles.title}>
               <span style={{ color: '#1351b4' }}>G</span>
-              <span style={{ color: '#009c3b' }}>O</span>
+              <span style={{
+                background: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 40'%3E%3Crect width='60' height='40' fill='%23009c3b'/%3E%3Cpolygon points='30,3 57,20 30,37 3,20' fill='%23ffdf00'/%3E%3Ccircle cx='30' cy='20' r='11' fill='%231351b4'/%3E%3C/svg%3E\") center / cover",
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+              }}>O</span>
               <span style={{ color: '#009c3b' }}>L</span>
               <span style={{ color: '#ffdf00' }}>P</span>
               <span style={{ color: '#1351b4' }}>E</span>

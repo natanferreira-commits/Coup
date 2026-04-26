@@ -4,9 +4,9 @@
   align-items: center;
   justify-content: center;
   background:
-    radial-gradient(ellipse at 20% 10%, rgba(0,156,59,0.18) 0%, transparent 45%),
-    radial-gradient(ellipse at 80% 90%, rgba(255,223,0,0.12) 0%, transparent 45%),
-    radial-gradient(ellipse at 50% 50%, #132278 0%, #0c1855 100%);
+    radial-gradient(ellipse at 20% 10%, rgba(0,156,59,0.10) 0%, transparent 45%),
+    radial-gradient(ellipse at 80% 90%, rgba(255,223,0,0.08) 0%, transparent 45%),
+    #f4f6fb;
   padding: 20px;
 }
 
