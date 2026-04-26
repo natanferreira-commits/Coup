@@ -54,11 +54,13 @@ export default function App() {
       // If we were spectating and now receive game_state, we've been promoted
       setIsSpectator(false);
       setSpectatorData(null);
-      // Sync music state for reconnecting players
+      // Sync music state for reconnecting players (only auto-play non-silent tracks)
       if (data.musicTrack !== undefined) {
         setMusicTrack(data.musicTrack);
         setMusicLastChanged(data.musicLastChanged || 0);
-        sfx.playTrack(data.musicTrack);
+        if (data.musicTrack && data.musicTrack !== 'none') {
+          sfx.playTrack(data.musicTrack);
+        }
       }
       if (data.reconnected && data.playerId) {
         setMyPlayerId(data.playerId);
@@ -69,6 +71,8 @@ export default function App() {
     });
 
     socket.on('music_changed', ({ trackId, lastChanged }) => {
+      // Only play music while inside a game
+      if (!gameDataRef.current) return;
       setMusicTrack(trackId);
       setMusicLastChanged(lastChanged);
       sfx.playTrack(trackId);
@@ -157,6 +161,9 @@ export default function App() {
     setPendingRequests([]);
     setIsSpectator(false);
     setSpectatorData(null);
+    setMusicTrack('none');
+    setMusicLastChanged(0);
+    sfx.stopMusic();
   }
 
   function handleApprove(requestId) {

@@ -294,12 +294,7 @@ export default function Game({ data, myId, musicTrack, musicLastChanged }) {
     if (muted !== sfx.isMuted()) sfx.toggleMute();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Start ambient music once user interacts (autoplay policy)
-  useEffect(() => {
-    const start = () => { sfx.startAmbient(); window.removeEventListener('click', start); };
-    window.addEventListener('click', start, { once: true });
-    return () => window.removeEventListener('click', start);
-  }, []);
+  // Music is server-controlled via App.jsx music_changed listener — no local auto-start
 
   // ── Stable dismiss callbacks (useCallback evita resets de timer por nova referência) ──
   const dismissCinematic   = useCallback(() => setActionNotif(null), []);
