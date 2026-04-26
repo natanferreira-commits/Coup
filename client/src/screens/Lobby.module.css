@@ -4,34 +4,34 @@
   align-items: center;
   justify-content: center;
   background:
-    radial-gradient(ellipse at 30% 20%, rgba(0,156,59,0.12) 0%, transparent 55%),
-    radial-gradient(ellipse at 70% 80%, rgba(19,81,180,0.10) 0%, transparent 55%),
-    radial-gradient(ellipse at 50% 50%, #0d1a10 0%, #060d08 100%);
+    radial-gradient(ellipse at 25% 30%, rgba(19,81,180,0.10) 0%, transparent 50%),
+    radial-gradient(ellipse at 75% 70%, rgba(0,156,59,0.07) 0%, transparent 50%),
+    #f4f6fb;
   padding: 20px;
 }
 
 .card {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: #ffffff;
+  border: 1px solid #dde3f0;
   border-radius: 20px;
   padding: 48px 40px;
   width: 100%;
   max-width: 400px;
   text-align: center;
   box-shadow:
-    0 0 0 1px rgba(0,156,59,0.08),
-    0 24px 64px rgba(0,0,0,0.55);
+    0 4px 24px rgba(19,81,180,0.10),
+    0 1px 4px rgba(0,0,0,0.06);
 }
 
 .title {
   font-size: 5.5rem;
   line-height: 1;
   letter-spacing: 0.08em;
-  filter: drop-shadow(0 2px 16px rgba(0,156,59,0.25));
+  filter: drop-shadow(0 2px 12px rgba(19,81,180,0.18));
 }
 
 .subtitle {
-  color: var(--muted);
+  color: #7a8aaa;
   margin-bottom: 36px;
   font-size: 0.82rem;
   letter-spacing: 0.18em;
@@ -44,11 +44,38 @@
   gap: 12px;
 }
 
+/* Inputs scoped ao lobby claro */
+.form input {
+  background: #f4f6fb;
+  border: 1.5px solid #dde3f0;
+  color: #1a2540;
+  border-radius: 10px;
+}
+.form input::placeholder { color: #a0aac0; }
+.form input:focus { border-color: #1351b4; outline: none; }
+
+/* Botões globais override no lobby */
+.form .btn {
+  background: #eef1f8;
+  border: 1.5px solid #dde3f0;
+  color: #1a2540;
+  font-weight: 600;
+}
+.form .btn:hover:not(:disabled) { background: #dde3f0; border-color: #c5cedf; }
+
+/* Botão primário azul */
+.form .btn-primary {
+  background: #1351b4;
+  color: #fff;
+  border: none;
+}
+.form .btn-primary:hover:not(:disabled) { background: #1761d0; }
+
 .divider {
   display: flex;
   align-items: center;
   gap: 12px;
-  color: var(--muted);
+  color: #a0aac0;
   font-size: 0.8rem;
   margin: 4px 0;
 }
@@ -56,11 +83,11 @@
   content: '';
   flex: 1;
   height: 1px;
-  background: var(--border);
+  background: #dde3f0;
 }
 
 .error {
-  color: var(--red);
+  color: #d32f2f;
   font-size: 0.85rem;
   margin-top: 4px;
 }
@@ -80,9 +107,9 @@
 .howToBtn {
   margin-top: 16px;
   width: 100%;
-  background: rgba(0,156,59,0.08);
-  border: 1px solid rgba(0,156,59,0.25);
-  color: var(--green);
+  background: rgba(19,81,180,0.07);
+  border: 1.5px solid rgba(19,81,180,0.2);
+  color: #1351b4;
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
@@ -92,21 +119,21 @@
   font-family: inherit;
 }
 .howToBtn:hover {
-  background: rgba(0,156,59,0.15);
-  border-color: rgba(0,156,59,0.5);
+  background: rgba(19,81,180,0.13);
+  border-color: rgba(19,81,180,0.4);
 }
 
 .backBtn {
   margin-top: 10px;
   background: none;
   border: none;
-  color: var(--muted);
+  color: #a0aac0;
   font-size: 0.85rem;
   cursor: pointer;
   padding: 6px 0;
   transition: color 0.2s;
 }
-.backBtn:hover { color: var(--text); }
+.backBtn:hover { color: #1a2540; }
 
 /* ════════════════════════════════════
    Modal de salas abertas
@@ -114,8 +141,8 @@
 .roomsOverlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(4px);
+  background: rgba(10,20,50,0.45);
+  backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -124,15 +151,16 @@
 }
 
 .roomsModal {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 16px;
+  background: #ffffff;
+  border: 1px solid #dde3f0;
+  border-radius: 18px;
   width: 100%;
   max-width: 440px;
   max-height: 80vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  box-shadow: 0 8px 40px rgba(19,81,180,0.14);
 }
 
 .roomsHeader {
@@ -140,13 +168,13 @@
   align-items: center;
   justify-content: space-between;
   padding: 18px 20px 14px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid #dde3f0;
   flex-shrink: 0;
 }
 
 .roomsTitle {
   font-size: 1.3rem;
-  color: var(--yellow);
+  color: #1351b4;
   margin: 0;
 }
 
@@ -156,22 +184,22 @@
 }
 
 .roomsRefresh, .roomsClose {
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  color: var(--muted);
+  background: #f4f6fb;
+  border: 1px solid #dde3f0;
+  color: #7a8aaa;
   border-radius: 8px;
   padding: 5px 10px;
   font-size: 0.9rem;
   cursor: pointer;
   transition: color 0.15s, border-color 0.15s;
 }
-.roomsRefresh:hover { color: var(--text); border-color: var(--yellow); }
-.roomsClose:hover   { color: var(--red);  border-color: var(--red); }
+.roomsRefresh:hover { color: #1351b4; border-color: #1351b4; }
+.roomsClose:hover   { color: #d32f2f; border-color: #d32f2f; }
 
 .roomsEmpty {
   padding: 32px 20px;
   text-align: center;
-  color: var(--muted);
+  color: #a0aac0;
   font-size: 0.9rem;
 }
 
@@ -182,28 +210,28 @@
   padding: 10px 14px 14px;
   gap: 8px;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255,214,0,0.25) transparent;
+  scrollbar-color: rgba(19,81,180,0.2) transparent;
 }
 .roomsList::-webkit-scrollbar       { width: 4px; }
 .roomsList::-webkit-scrollbar-track { background: transparent; }
-.roomsList::-webkit-scrollbar-thumb { background: rgba(255,214,0,0.25); border-radius: 4px; }
+.roomsList::-webkit-scrollbar-thumb { background: rgba(19,81,180,0.2); border-radius: 4px; }
 
 .roomsItem {
   display: flex;
   align-items: center;
   gap: 12px;
-  background: var(--surface2);
-  border: 1px solid var(--border);
+  background: #f4f6fb;
+  border: 1.5px solid #dde3f0;
   border-radius: 10px;
   padding: 12px 14px;
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, background 0.15s;
 }
-.roomsItem:hover { border-color: rgba(255,214,0,0.35); }
+.roomsItem:hover { border-color: #1351b4; background: #eef2fb; }
 
 .roomsCode {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 1.6rem;
-  color: var(--yellow);
+  color: #1351b4;
   letter-spacing: 0.15em;
   line-height: 1;
   flex-shrink: 0;
@@ -220,7 +248,7 @@
 .roomsHost {
   font-size: 0.9rem;
   font-weight: 600;
-  color: var(--text);
+  color: #1a2540;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -231,13 +259,13 @@
   align-items: center;
   gap: 8px;
   font-size: 0.75rem;
-  color: var(--muted);
+  color: #a0aac0;
 }
 
 .roomsTiktok {
-  background: rgba(255,214,0,0.12);
-  border: 1px solid rgba(255,214,0,0.35);
-  color: var(--yellow);
+  background: rgba(19,81,180,0.09);
+  border: 1px solid rgba(19,81,180,0.25);
+  color: #1351b4;
   border-radius: 10px;
   padding: 1px 7px;
   font-size: 0.68rem;
@@ -245,9 +273,9 @@
 }
 
 .roomsPlaying {
-  background: rgba(255, 193, 7, 0.12);
-  border: 1px solid rgba(255, 193, 7, 0.35);
-  color: #ffc107;
+  background: rgba(255,193,7,0.12);
+  border: 1px solid rgba(255,193,7,0.35);
+  color: #b8860b;
   border-radius: 10px;
   padding: 1px 7px;
   font-size: 0.68rem;
@@ -255,9 +283,9 @@
 }
 
 .roomsWaiting {
-  background: rgba(76, 175, 80, 0.12);
-  border: 1px solid rgba(76, 175, 80, 0.35);
-  color: #66bb6a;
+  background: rgba(0,156,59,0.1);
+  border: 1px solid rgba(0,156,59,0.3);
+  color: #007a2f;
   border-radius: 10px;
   padding: 1px 7px;
   font-size: 0.68rem;
@@ -268,4 +296,7 @@
   flex-shrink: 0;
   padding: 7px 16px !important;
   font-size: 0.82rem !important;
+  background: #1351b4 !important;
+  color: #fff !important;
+  border: none !important;
 }
