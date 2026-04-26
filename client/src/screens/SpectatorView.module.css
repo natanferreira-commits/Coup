@@ -3,10 +3,10 @@
   display: flex;
   flex-direction: column;
   background:
-    radial-gradient(ellipse at 25% 30%, rgba(19,81,180,0.10) 0%, transparent 50%),
-    radial-gradient(ellipse at 75% 70%, rgba(0,156,59,0.07) 0%, transparent 50%),
-    #f4f6fb;
-  color: #1a2540;
+    radial-gradient(ellipse at 20% 10%, rgba(0,156,59,0.18) 0%, transparent 45%),
+    radial-gradient(ellipse at 80% 90%, rgba(255,223,0,0.12) 0%, transparent 45%),
+    radial-gradient(ellipse at 50% 50%, #132278 0%, #0c1855 100%);
+  color: #eef2ff;
 }
 
 /* ── Banner ─────────────────────────────────────────────────────── */
@@ -15,8 +15,8 @@
   align-items: center;
   gap: 12px;
   padding: 14px 24px;
-  background: rgba(19,81,180,0.06);
-  border-bottom: 1px solid rgba(19,81,180,0.15);
+  background: rgba(12,24,85,0.5);
+  border-bottom: 1px solid rgba(45,70,192,0.4);
 }
 
 .bannerIcon { font-size: 1.6rem; flex-shrink: 0; }
@@ -24,28 +24,28 @@
 .bannerTitle {
   font-size: 0.95rem;
   font-weight: 700;
-  color: #1351b4;
+  color: var(--yellow);
   margin: 0;
 }
 
 .bannerSub {
   font-size: 0.78rem;
-  color: #7a8aaa;
+  color: #8099d0;
   margin: 2px 0 0;
 }
 
 .leaveBtn {
   margin-left: auto;
   background: transparent;
-  border: 1.5px solid #dde3f0;
-  color: #7a8aaa;
+  border: 1.5px solid rgba(45,70,192,0.5);
+  color: #8099d0;
   border-radius: 8px;
   padding: 6px 14px;
   font-size: 0.8rem;
   cursor: pointer;
   transition: border-color 0.15s, color 0.15s;
 }
-.leaveBtn:hover { border-color: #d32f2f; color: #d32f2f; }
+.leaveBtn:hover { border-color: #ff6b6b; color: #ff6b6b; }
 
 /* ── Content ────────────────────────────────────────────────────── */
 .content {
@@ -63,16 +63,16 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #ffffff;
-  border: 1px solid #dde3f0;
+  background: rgba(26,45,148,0.85);
+  border: 1px solid rgba(45,70,192,0.45);
   border-radius: 10px;
   padding: 12px 16px;
-  box-shadow: 0 1px 4px rgba(19,81,180,0.06);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.25);
 }
 
 .phaseLabel {
   font-size: 0.8rem;
-  color: #1351b4;
+  color: var(--yellow);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   font-weight: 700;
@@ -80,7 +80,7 @@
 
 .turnLabel {
   font-size: 0.85rem;
-  color: #7a8aaa;
+  color: #8099d0;
 }
 
 /* ── Players ────────────────────────────────────────────────────── */
@@ -92,8 +92,8 @@
 
 .playerCard {
   flex: 1 1 140px;
-  background: #ffffff;
-  border: 1.5px solid #dde3f0;
+  background: rgba(26,45,148,0.85);
+  border: 1.5px solid rgba(45,70,192,0.45);
   border-radius: 10px;
   padding: 12px 14px;
   display: flex;
@@ -101,12 +101,12 @@
   gap: 6px;
   position: relative;
   transition: border-color 0.2s;
-  box-shadow: 0 1px 4px rgba(19,81,180,0.06);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.25);
 }
 
 .playerCard.active {
-  border-color: #1351b4;
-  background: rgba(19,81,180,0.04);
+  border-color: var(--yellow);
+  background: rgba(255,223,0,0.06);
 }
 
 .playerCard.eliminated {
@@ -116,13 +116,13 @@
 .playerName {
   font-weight: 700;
   font-size: 0.95rem;
-  color: #1a2540;
+  color: #eef2ff;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.coins { font-size: 0.85rem; color: #b8860b; font-weight: 600; }
+.coins { font-size: 0.85rem; color: var(--yellow); font-weight: 600; }
 
 .cardPips { display: flex; gap: 6px; }
 .pip { font-size: 1.1rem; }
@@ -132,23 +132,23 @@
   position: absolute;
   top: 6px; right: 8px;
   font-size: 0.6rem;
-  color: #d32f2f;
+  color: #ff6b6b;
   font-weight: 700;
   letter-spacing: 0.05em;
 }
 
 /* ── Log ────────────────────────────────────────────────────────── */
 .logBox {
-  background: #ffffff;
-  border: 1px solid #dde3f0;
+  background: rgba(26,45,148,0.85);
+  border: 1px solid rgba(45,70,192,0.45);
   border-radius: 10px;
   padding: 14px 16px;
-  box-shadow: 0 1px 4px rgba(19,81,180,0.06);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.25);
 }
 
 .logTitle {
   font-size: 0.75rem;
-  color: #7a8aaa;
+  color: #8099d0;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   margin: 0 0 10px;
@@ -160,12 +160,17 @@
   gap: 4px;
   max-height: 260px;
   overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,223,0,0.3) transparent;
 }
+.logList::-webkit-scrollbar       { width: 4px; }
+.logList::-webkit-scrollbar-track { background: transparent; }
+.logList::-webkit-scrollbar-thumb { background: rgba(255,223,0,0.3); border-radius: 4px; }
 
 .logLine {
   font-size: 0.8rem;
-  color: #4a5570;
+  color: #c8d8f8;
   margin: 0;
   padding: 3px 0;
-  border-bottom: 1px solid #f0f2f8;
+  border-bottom: 1px solid rgba(45,70,192,0.25);
 }

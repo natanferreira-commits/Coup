@@ -1,20 +1,20 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  /* ── Fundo e superfícies (tema claro) ── */
-  --bg:       #f4f6fb;
-  --surface:  #ffffff;
-  --surface2: #eef1f8;
-  --border:   #dde3f0;
+  /* ── Fundo e superfícies (azul brasileiro) ── */
+  --bg:       #0c1855;
+  --surface:  #132278;
+  --surface2: #1a2d94;
+  --border:   #2d46c0;
 
   /* ── Cores da bandeira do Brasil ── */
-  --green:  #009c3b;   /* verde bandeira */
-  --yellow: #ffdf00;   /* amarelo bandeira */
-  --blue:   #1351b4;   /* azul bandeira */
+  --green:  #009c3b;
+  --yellow: #ffdf00;
+  --blue:   #1351b4;
   --red:    #e53935;
 
-  --text:  #1a2540;
-  --muted: #7a8aaa;
+  --text:  #eef2ff;
+  --muted: #8099d0;
 
   /* ── Atalhos de identidade ── */
   --br-green:  #009c3b;
@@ -71,7 +71,7 @@ input {
   transition: border-color 0.2s;
 }
 
-input:focus { border-color: var(--green); }
+input:focus { border-color: var(--yellow); }
 
 .btn {
   padding: 10px 20px;
@@ -89,6 +89,7 @@ input:focus { border-color: var(--green); }
   font-size: 1rem;
   padding: 12px 28px;
   letter-spacing: 0.04em;
+  font-weight: 700;
 }
 .btn-primary:hover:not(:disabled) { background: #00b844; }
 
@@ -97,13 +98,13 @@ input:focus { border-color: var(--green); }
   color: #fff;
   border: none;
 }
-.btn-danger:hover:not(:disabled) { background: #e53935; }
+.btn-danger:hover:not(:disabled) { background: #f44336; }
 
 .btn-success {
   background: var(--yellow);
-  color: #000;
+  color: #0c1855;
   border: none;
-  font-weight: 700;
+  font-weight: 800;
 }
 .btn-success:hover:not(:disabled) { background: #ffe833; }
 
