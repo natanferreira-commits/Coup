@@ -129,14 +129,6 @@
   pointer-events: none;
 }
 
-/* Jukebox — row at the bottom of leftPanel */
-.jukeboxRow {
-  display: flex;
-  justify-content: center;
-  padding: 6px 0 2px;
-  flex-shrink: 0;
-}
-
 /* Jukebox button */
 .jukeboxBtn {
   background: none;
