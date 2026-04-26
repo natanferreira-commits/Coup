@@ -1,20 +1,20 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  /* ── Fundo e superfícies (verde-escuro brasileiro) ── */
-  --bg:       #060d08;
-  --surface:  #0d1a10;
-  --surface2: #142018;
-  --border:   #1c3321;
+  /* ── Fundo e superfícies (tema claro) ── */
+  --bg:       #f4f6fb;
+  --surface:  #ffffff;
+  --surface2: #eef1f8;
+  --border:   #dde3f0;
 
   /* ── Cores da bandeira do Brasil ── */
   --green:  #009c3b;   /* verde bandeira */
   --yellow: #ffdf00;   /* amarelo bandeira */
   --blue:   #1351b4;   /* azul bandeira */
-  --red:    #f44336;
+  --red:    #e53935;
 
-  --text:  #f0f0f0;
-  --muted: #6a9270;
+  --text:  #1a2540;
+  --muted: #7a8aaa;
 
   /* ── Atalhos de identidade ── */
   --br-green:  #009c3b;
