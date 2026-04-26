@@ -712,6 +712,22 @@ export default function Game({ data, myId, musicTrack, musicLastChanged }) {
             ))}
           </div>
         </div>
+
+        {/* ── Jukebox — abaixo do chat ── */}
+        <div className={styles.jukeboxRow}>
+          <motion.button
+            className={styles.jukeboxBtn}
+            onClick={() => setShowJukebox(v => !v)}
+            whileHover={{ scale: 1.07, rotate: -2 }}
+            whileTap={{ scale: 0.93 }}
+            title="Música de fundo"
+          >
+            {jukeboxImg
+              ? <img src={jukeboxImg} alt="Jukebox" className={styles.jukeboxImg} />
+              : <span className={styles.jukeboxFallback}>🎰</span>
+            }
+          </motion.button>
+        </div>
       </div>
 
       {/* ── CENTER ── */}
@@ -883,20 +899,6 @@ export default function Game({ data, myId, musicTrack, musicLastChanged }) {
           )}
 
           <div className={styles.mesaRow}>
-            {/* Jukebox — entre o chat (esq) e a mesa */}
-            <motion.button
-              className={styles.jukeboxBtn}
-              onClick={() => setShowJukebox(v => !v)}
-              whileHover={{ scale: 1.07, rotate: -2 }}
-              whileTap={{ scale: 0.93 }}
-              title="Música de fundo"
-            >
-              {jukeboxImg
-                ? <img src={jukeboxImg} alt="Jukebox" className={styles.jukeboxImg} />
-                : <span className={styles.jukeboxFallback}>🎰</span>
-              }
-            </motion.button>
-
             <motion.img src={mesaImg} className={styles.mesaImg} alt="mesa"
               animate={
                 phase==='RESPONSE_WINDOW'       ?{filter:'brightness(1.15) drop-shadow(0 0 18px #ffd60088)'}:

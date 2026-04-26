@@ -196,9 +196,11 @@ export const MUSIC_TRACKS = [
 // ── Music Sequencer Engine ────────────────────────────────────────────────────
 let _activeTrackId = null;
 let _sequencerStop = null;
+let _htmlAudio     = null;  // HTMLAudioElement para faixas em MP3
 
 function stopAllMusic() {
   if (_sequencerStop) { _sequencerStop(); _sequencerStop = null; }
+  if (_htmlAudio) { _htmlAudio.pause(); _htmlAudio.currentTime = 0; _htmlAudio = null; }
   _ambientRunning = false;
   _ambientNodes.forEach(n => { try { n.stop(); } catch {} });
   _ambientNodes = [];
@@ -391,51 +393,6 @@ function playGarotaDeIpanema() {
   });
 }
 
-// ── Asa Branca (Luiz Gonzaga) — Baião 118 BPM, Lá maior ─────────────────────
-function playAsaBranca() {
-  // 118 BPM baião — melodia exata de Luiz Gonzaga (Dó maior)
-  // C4=261.63  D4=293.66  E4=329.63  F4=349.23  G4=392.00
-  //
-  // Loop de 5 compassos (40 colcheias):
-  //  Bar 0: C D E G G E F F
-  //  Bar 1: C D E G G F E [rest]
-  //  Bar 2: C C D E G G F E
-  //  Bar 3: C F E E D D E D
-  //  Bar 4: D C(semínima) . . . . . .
-  const mel = [
-    // Bar 0
-    261.63, 293.66, 329.63, 392.00, 392.00, 329.63, 349.23, 349.23,
-    // Bar 1 (7 notas + 1 pausa)
-    261.63, 293.66, 329.63, 392.00, 392.00, 349.23, 329.63,   0,
-    // Bar 2
-    261.63, 261.63, 293.66, 329.63, 392.00, 392.00, 349.23, 329.63,
-    // Bar 3
-    261.63, 349.23, 329.63, 329.63, 293.66, 293.66, 329.63, 293.66,
-    // Bar 4: D D C(semínima=2 slots) + silêncio até fechar o loop
-    293.66, 261.63,   0,     0,     0,     0,     0,     0,
-  ];
-
-  // Baixo em Dó maior: C3 e G2 alternados por compasso
-  const bassRoot = [130.81, 98.00, 130.81, 87.31, 98.00]; // C3 G2 C3 F2 G2
-
-  return makeSeq(118, 40, (s, t) => {
-    // Ritmo de baião (se repete a cada 8 colcheias)
-    if (s % 8 === 0 || s % 8 === 3 || s % 8 === 5) mKick(t, 72, 0.32, 0.62); // zabumba
-    mHat(t, 0.16, 0.06);                                                        // triângulo
-    if (s % 8 === 2 || s % 8 === 6) mSnare(t, 0.14);                           // pandeiro
-
-    const barIdx = Math.floor(s / 8);
-    if (s % 8 === 0) mBass(t, bassRoot[barIdx], 0.18, 0.30);
-    if (s % 8 === 4) mBass(t, bassRoot[barIdx] * 1.5, 0.14, 0.22);
-
-    // Melodia na sanfona (vibrato) — semínima final no step 33
-    if (mel[s]) {
-      const dur = (s === 33) ? 0.46 : 0.22;
-      mVibNote(t, mel[s], dur, 0.072);
-    }
-  });
-}
-
 // ── Baile de Favela (MC João) — Funk 96 BPM, Ré menor ───────────────────────
 function playBaileDeFavela() {
   // Hook: arpejo Dm7 (D-F-A-C) subindo e descendo — típico do funk carioca
@@ -551,6 +508,7 @@ export const sfx = {
     if (type === 'music') {
       _musicVolume = value;
       if (_musicGain) _musicGain.gain.value = value;
+      if (_htmlAudio) _htmlAudio.volume = value;
     }
   },
 
@@ -560,10 +518,24 @@ export const sfx = {
     if (!trackId || trackId === 'none') { _activeTrackId = 'none'; return; }
     _activeTrackId = trackId;
     if (trackId === 'ambient') { playAmbientLoop(); return; }
+
+    // Faixas com arquivo MP3 real
+    const mp3Map = {
+      baiao: '/sounds/asa-branca.mp3',
+    };
+    if (mp3Map[trackId]) {
+      const audio = new Audio(mp3Map[trackId]);
+      audio.loop   = true;
+      audio.volume = _musicVolume;
+      audio.play().catch(() => {}); // autoplay policy — browser ignora se sem gesture
+      _htmlAudio = audio;
+      return;
+    }
+
+    // Faixas sintetizadas via Web Audio
     const fns = {
       samba:     playAquarelaDoBrasil,
       bossanova: playGarotaDeIpanema,
-      baiao:     playAsaBranca,
       funk:      playBaileDeFavela,
       pagode:    playMinhaFilosofia,
     };

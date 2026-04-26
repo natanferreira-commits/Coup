@@ -129,6 +129,14 @@
   pointer-events: none;
 }
 
+/* Jukebox — row at the bottom of leftPanel */
+.jukeboxRow {
+  display: flex;
+  justify-content: center;
+  padding: 6px 0 2px;
+  flex-shrink: 0;
+}
+
 /* Jukebox button */
 .jukeboxBtn {
   background: none;
@@ -138,15 +146,14 @@
   flex-shrink: 0;
   display: flex;
   align-items: flex-end;
-  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.55));
+  filter: drop-shadow(0 4px 14px rgba(0,0,0,0.65));
 }
 
 .jukeboxImg {
-  width: 96px;
+  width: 116px;
   height: auto;
   object-fit: contain;
   display: block;
-  mix-blend-mode: multiply;
 }
 
 .jukeboxFallback {
@@ -920,7 +927,7 @@
 
   /* ── Mesa menor ── */
   .mesaImg { width: min(200px, 72%); }
-  .jukeboxImg { width: 64px; }
+  .jukeboxImg { width: 80px; }
 
   /* ── Minha área compacta ── */
   .myArea { gap: 10px; }
