@@ -393,25 +393,46 @@ function playGarotaDeIpanema() {
 
 // ── Asa Branca (Luiz Gonzaga) — Baião 118 BPM, Lá maior ─────────────────────
 function playAsaBranca() {
-  // "Quando o sol da boca do dia" — melodia na sanfona (vibrato)
-  // A A C# E | E D C# B | A B A A | C# C# E A
+  // 118 BPM baião — melodia exata de Luiz Gonzaga (Dó maior)
+  // C4=261.63  D4=293.66  E4=329.63  F4=349.23  G4=392.00
+  //
+  // Loop de 5 compassos (40 colcheias):
+  //  Bar 0: C D E G G E F F
+  //  Bar 1: C D E G G F E [rest]
+  //  Bar 2: C C D E G G F E
+  //  Bar 3: C F E E D D E D
+  //  Bar 4: D C(semínima) . . . . . .
   const mel = [
-    440.00,440.00,554.37,659.25, 659.25,587.33,554.37,493.88, // "Quan-do o sol da bo-ca do"
-    440.00,493.88,440.00,440.00, 329.63,329.63,554.37,659.25, // "di-a  A-sa   Bran-ca..."
-    587.33,554.37,493.88,440.00, 440.00,440.00,493.88,440.00, // baixando
-    554.37,554.37,659.25,440.00, 440.00,493.88,440.00,440.00, // resolve
+    // Bar 0
+    261.63, 293.66, 329.63, 392.00, 392.00, 329.63, 349.23, 349.23,
+    // Bar 1 (7 notas + 1 pausa)
+    261.63, 293.66, 329.63, 392.00, 392.00, 349.23, 329.63,   0,
+    // Bar 2
+    261.63, 261.63, 293.66, 329.63, 392.00, 392.00, 349.23, 329.63,
+    // Bar 3
+    261.63, 349.23, 329.63, 329.63, 293.66, 293.66, 329.63, 293.66,
+    // Bar 4: D D C(semínima=2 slots) + silêncio até fechar o loop
+    293.66, 261.63,   0,     0,     0,     0,     0,     0,
   ];
-  const bass = [110.00,82.41,73.42,82.41]; // A2 E2 D2 E2
-  let bar = 0;
-  return makeSeq(118, 8, (s, t) => {
-    if (s===0||s===3||s===5) mKick(t,72,0.32,0.62);
-    mHat(t,0.16,0.06);
-    if (s===2||s===6) mSnare(t,0.14);
-    if (s===0) mBass(t,bass[bar%4],0.18,0.30);
-    if (s===4) mBass(t,bass[bar%4]*1.5,0.14,0.22);
-    const idx = (bar%4)*8 + s;
-    mVibNote(t, mel[idx], 0.20, 0.072);
-    if (s===7) bar++;
+
+  // Baixo em Dó maior: C3 e G2 alternados por compasso
+  const bassRoot = [130.81, 98.00, 130.81, 87.31, 98.00]; // C3 G2 C3 F2 G2
+
+  return makeSeq(118, 40, (s, t) => {
+    // Ritmo de baião (se repete a cada 8 colcheias)
+    if (s % 8 === 0 || s % 8 === 3 || s % 8 === 5) mKick(t, 72, 0.32, 0.62); // zabumba
+    mHat(t, 0.16, 0.06);                                                        // triângulo
+    if (s % 8 === 2 || s % 8 === 6) mSnare(t, 0.14);                           // pandeiro
+
+    const barIdx = Math.floor(s / 8);
+    if (s % 8 === 0) mBass(t, bassRoot[barIdx], 0.18, 0.30);
+    if (s % 8 === 4) mBass(t, bassRoot[barIdx] * 1.5, 0.14, 0.22);
+
+    // Melodia na sanfona (vibrato) — semínima final no step 33
+    if (mel[s]) {
+      const dur = (s === 33) ? 0.46 : 0.22;
+      mVibNote(t, mel[s], dur, 0.072);
+    }
   });
 }
 
