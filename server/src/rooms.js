@@ -1,5 +1,6 @@
 const { v4: uuidv4 } = require('uuid');
 const { createDeck } = require('./game/deck');
+const { BOT_COUNTS, BOT_NAMES } = require('./game/bot');
 // rollAndApplyRoundEvent é importado com require lazy para evitar dep circular
 // (engine.js não importa rooms.js, então é seguro importar aqui)
 let _rollAndApplyRoundEvent = null;
@@ -32,6 +33,43 @@ function createRoom(hostId, hostName, hostPid, eventsEnabled = false) {
     pendingRequests: [], // [{ requestId, socketId, playerName }]
     game: null,
     eventsEnabled: !!eventsEnabled,
+  };
+
+  rooms[code] = room;
+  return room;
+}
+
+function createPveRoom(hostId, hostName, hostPid, difficulty = 'estagiario') {
+  let code;
+  do { code = generateCode(); } while (rooms[code]);
+
+  const botCount = BOT_COUNTS[difficulty] ?? 2;
+  const bots = [];
+  for (let i = 0; i < botCount; i++) {
+    const botId = `bot_${code}_${i}`;
+    bots.push({
+      id: botId,
+      name: BOT_NAMES[i] || `Bot ${i + 1}`,
+      currentSocketId: botId,
+      isBot: true,
+      botDifficulty: difficulty,
+    });
+  }
+
+  const room = {
+    code,
+    hostId,
+    hostPid: hostPid || null,
+    players: [
+      { id: hostId, name: hostName, currentSocketId: hostId },
+      ...bots,
+    ],
+    spectators: [],
+    pendingRequests: [],
+    game: null,
+    eventsEnabled: false,
+    isPve: true,
+    pveDifficulty: difficulty,
   };
 
   rooms[code] = room;
@@ -123,4 +161,4 @@ function generateRoomForClient(room) {
   };
 }
 
-module.exports = { rooms, createRoom, joinRoom, startGame, removePlayerFromRoom, getRoomByPlayer, getRoomByCode, generateRoomForClient };
+module.exports = { rooms, createRoom, createPveRoom, joinRoom, startGame, removePlayerFromRoom, getRoomByPlayer, getRoomByCode, generateRoomForClient };

@@ -4,9 +4,22 @@ const { Server } = require('socket.io');
 const cors = require('cors');
 const {
   rooms,
-  createRoom, joinRoom, startGame: startGameInRoom,
+  createRoom, createPveRoom, joinRoom, startGame: startGameInRoom,
   removePlayerFromRoom, getRoomByPlayer, getRoomByCode, generateRoomForClient,
 } = require('./rooms');
+const {
+  BOT_DIFFICULTY_LEVELS,
+  getThinkDelay,
+  chooseBotAction,
+  decideBotChallenge,
+  decideBotBlock,
+  decideBotChallengeBlock,
+  decideChallengeWonSwap,
+  chooseLoseInfluence,
+  chooseBotCardSwap,
+  chooseBotDisfarce,
+  chooseBotCardShow,
+} = require('./game/bot');
 const {
   handleAction, handlePass, handleBlock, handleChallenge,
   handleLoseInfluence, handleChallengeWonChoice, handleFlipCoin, handleAcknowledgeCoinFlip,
@@ -43,6 +56,13 @@ function setTurnTimer(room) {
   // Phases that don't need a timeout (player interaction expected but no rush)
   if (NO_TIMER_PHASES.includes(game.phase)) {
     room._timerStartedAt = null; // garante que clientes não mostram timer nessas fases
+    return;
+  }
+
+  // In PVE rooms, skip the turn timer when it's a bot's ACTION_SELECT turn —
+  // the bot scheduler handles it. The timer still runs for the human player.
+  if (room.isPve && game.phase === 'ACTION_SELECT' && isBotPlayer(room, game.currentPlayerId)) {
+    room._timerStartedAt = null;
     return;
   }
 
@@ -117,6 +137,213 @@ function setTurnTimer(room) {
   turnTimers.set(room.code, timer);
 }
 
+// ── Bot turn scheduler ────────────────────────────────────────────────────────
+
+const botTimers = new Map(); // roomCode → setTimeout handle
+
+function clearBotTimer(roomCode) {
+  if (botTimers.has(roomCode)) {
+    clearTimeout(botTimers.get(roomCode));
+    botTimers.delete(roomCode);
+  }
+}
+
+function isBotPlayer(room, playerId) {
+  if (!playerId) return false;
+  return !!room.players.find(p => p.id === playerId && p.isBot);
+}
+
+/**
+ * After every broadcast() in a PVE room, figure out if a bot needs to act
+ * and schedule it with a think-time delay.
+ */
+function scheduleBotTurn(room) {
+  if (!room.isPve) return;
+  if (!room.game || room.game.phase === 'GAME_OVER') return;
+
+  clearBotTimer(room.code);
+
+  const game = room.game;
+  const pa   = game.pendingAction;
+  let botId  = null;
+
+  switch (game.phase) {
+    case 'ACTION_SELECT':
+      if (isBotPlayer(room, game.currentPlayerId)) botId = game.currentPlayerId;
+      break;
+
+    case 'RESPONSE_WINDOW':
+      if (pa) {
+        const bot = getAlivePlayers(game).find(p =>
+          isBotPlayer(room, p.id) &&
+          p.id !== pa.actorId &&
+          !pa.respondedPlayers?.includes(p.id),
+        );
+        if (bot) botId = bot.id;
+      }
+      break;
+
+    case 'BLOCK_CHALLENGE_WINDOW':
+      if (pa && isBotPlayer(room, pa.actorId)) botId = pa.actorId;
+      break;
+
+    case 'LOSE_INFLUENCE':
+      if (pa?.loseInfluenceQueue?.length) {
+        const lid = pa.loseInfluenceQueue[0].playerId;
+        if (isBotPlayer(room, lid)) botId = lid;
+      }
+      break;
+
+    case 'COIN_FLIP':
+      if (pa?.blocker) {
+        if (!pa.coinFlipResult && isBotPlayer(room, pa.blocker.playerId)) {
+          botId = pa.blocker.playerId;
+        } else if (pa.coinFlipResult && isBotPlayer(room, pa.actorId)) {
+          botId = pa.actorId;
+        }
+      }
+      break;
+
+    case 'CHALLENGE_WON':
+      if (pa && isBotPlayer(room, pa.actorId)) botId = pa.actorId;
+      break;
+
+    case 'X9_PEEK_SELECT':
+      if (pa && isBotPlayer(room, pa.targetId)) botId = pa.targetId;
+      break;
+
+    case 'X9_PEEK_VIEW':
+      if (pa && isBotPlayer(room, pa.actorId)) botId = pa.actorId;
+      break;
+
+    case 'CARD_SWAP_SELECT':
+      if (pa?.swapPlayerId && isBotPlayer(room, pa.swapPlayerId)) botId = pa.swapPlayerId;
+      break;
+
+    case 'DISFARCE_SELECT':
+      if (pa && isBotPlayer(room, pa.actorId)) botId = pa.actorId;
+      break;
+
+    default:
+      break;
+  }
+
+  if (!botId) return;
+
+  const level = BOT_DIFFICULTY_LEVELS[room.pveDifficulty] ?? 1;
+  const delay = getThinkDelay(level);
+
+  const timer = setTimeout(() => {
+    botTimers.delete(room.code);
+    if (!room.game || room.game.phase === 'GAME_OVER') return;
+
+    try {
+      executeBotAction(room, botId, level);
+    } catch (e) {
+      console.error('[bot] error executing turn:', e);
+    }
+
+    // broadcast already calls scheduleBotTurn internally
+    broadcast(room);
+  }, delay);
+
+  botTimers.set(room.code, timer);
+}
+
+function executeBotAction(room, botId, level) {
+  const game = room.game;
+  const pa   = game.pendingAction;
+
+  switch (game.phase) {
+    case 'ACTION_SELECT': {
+      const { action, targetId } = chooseBotAction(game, botId, level);
+      handleAction(room, botId, action, targetId, {});
+      break;
+    }
+
+    case 'RESPONSE_WINDOW': {
+      if (!pa) { handlePass(room, botId); break; }
+      if (decideBotChallenge(game, botId, level)) {
+        handleChallenge(room, botId);
+        break;
+      }
+      const blockChar = decideBotBlock(game, botId, level);
+      if (blockChar) {
+        handleBlock(room, botId, blockChar);
+        break;
+      }
+      handlePass(room, botId);
+      break;
+    }
+
+    case 'BLOCK_CHALLENGE_WINDOW': {
+      if (!pa || pa.actorId !== botId) break;
+      if (decideBotChallengeBlock(game, botId, level)) {
+        handleChallenge(room, botId);
+        break;
+      }
+      handlePass(room, botId); // accept the block
+      break;
+    }
+
+    case 'LOSE_INFLUENCE': {
+      if (!pa?.loseInfluenceQueue?.length) break;
+      if (pa.loseInfluenceQueue[0].playerId !== botId) break;
+      const cardIdx = chooseLoseInfluence(game, botId, level);
+      handleLoseInfluence(room, botId, cardIdx);
+      break;
+    }
+
+    case 'COIN_FLIP': {
+      if (!pa) break;
+      if (!pa.coinFlipResult && pa.blocker?.playerId === botId) {
+        handleFlipCoin(room, botId);
+      } else if (pa.coinFlipResult && pa.actorId === botId) {
+        handleAcknowledgeCoinFlip(room, botId);
+      }
+      break;
+    }
+
+    case 'CHALLENGE_WON': {
+      if (!pa || pa.actorId !== botId) break;
+      const wantsSwap = decideChallengeWonSwap(game, botId, level);
+      handleChallengeWonChoice(room, botId, wantsSwap);
+      break;
+    }
+
+    case 'X9_PEEK_SELECT': {
+      if (!pa || pa.targetId !== botId) break;
+      const cardIdx = chooseBotCardShow(game, botId, level);
+      handleSelectCardShow(room, botId, cardIdx);
+      break;
+    }
+
+    case 'X9_PEEK_VIEW': {
+      if (!pa || pa.actorId !== botId) break;
+      handleAcknowledgePeek(room, botId);
+      break;
+    }
+
+    case 'CARD_SWAP_SELECT': {
+      if (!pa || pa.swapPlayerId !== botId) break;
+      const cardIdx = chooseBotCardSwap(game, botId, level);
+      handleSelectCardSwap(room, botId, cardIdx);
+      break;
+    }
+
+    case 'DISFARCE_SELECT': {
+      if (!pa || pa.actorId !== botId) break;
+      const opts = pa.disfarceOptions || [];
+      const { myCardIndex, pickedOption } = chooseBotDisfarce(game, botId, opts, level);
+      handleSelectDisfarce(room, botId, { myCardIndex, pickedOption });
+      break;
+    }
+
+    default:
+      break;
+  }
+}
+
 // ── Reconnection state ────────────────────────────────────────────────────────
 
 /** pid → { roomCode, playerId (original socket id) } */
@@ -134,6 +361,7 @@ function sanitizeGame(game, playerId) {
     players: game.players.map(p => ({
       id: p.id, name: p.name, coins: p.coins,
       alive: p.cards.some(c => !c.dead),
+      isBot: p.isBot || false,
       cards: p.cards.map((c, i) => ({
         index: i, dead: c.dead,
         character: (p.id === playerId || c.dead) ? c.character : null,
@@ -213,6 +441,7 @@ function broadcast(room, extraForPlayer = null) {
     : null;
 
   room.players.forEach(p => {
+    if (p.isBot) return; // bots don't have real sockets
     const sid = p.currentSocketId || p.id;
     const payload = {
       code: room.code, hostId: room.hostId, status: 'playing',
@@ -221,6 +450,8 @@ function broadcast(room, extraForPlayer = null) {
       timeRemaining: _timeRemaining,
       musicTrack: room.musicTrack || 'none',
       musicLastChanged: room.musicLastChanged || 0,
+      isPve: room.isPve || false,
+      pveDifficulty: room.pveDifficulty || null,
     };
     if (extraForPlayer && extraForPlayer.playerId === p.id) {
       Object.assign(payload, extraForPlayer);
@@ -228,6 +459,8 @@ function broadcast(room, extraForPlayer = null) {
     io.to(sid).emit('game_state', payload);
   });
   broadcastSpectators(room);
+  // Schedule bot turn if needed (no-op for non-PVE rooms)
+  scheduleBotTurn(room);
 }
 
 function broadcastLobby(room) {
@@ -323,6 +556,18 @@ io.on('connection', socket => {
     const room = createRoom(socket.id, playerName, pid);
     socket.join(room.code);
     if (pid) pidSessions.set(pid, { roomCode: room.code, playerId: socket.id });
+    cb?.({ success: true, room: generateRoomForClient(room) });
+  });
+
+  socket.on('create_pve_room', ({ playerName, difficulty }, cb) => {
+    const diff = ['estagiario', 'clt', 'patrao', 'deputado', 'dono_morro'].includes(difficulty)
+      ? difficulty : 'estagiario';
+    const room = createPveRoom(socket.id, playerName, pid, diff);
+    socket.join(room.code);
+    if (pid) pidSessions.set(pid, { roomCode: room.code, playerId: socket.id });
+    // Start game immediately — bots are already in room.players
+    startGameInRoom(room);
+    broadcast(room); // triggers scheduleBotTurn if bot goes first
     cb?.({ success: true, room: generateRoomForClient(room) });
   });
 
@@ -495,6 +740,9 @@ function attachGameHandlers(socket) {
   /** Player voluntarily leaves — immediate removal, no grace period */
   socket.on('leave_room', (_, cb) => {
     const pid = socket._pid;
+    // If PVE room, cancel any pending bot timers
+    const _lr = getRoomByPlayer(socket.id);
+    if (_lr?.isPve) clearBotTimer(_lr.code);
 
     // Remove from players
     const room = getRoomByPlayer(socket.id);
@@ -588,11 +836,15 @@ function attachGameHandlers(socket) {
     const caller = room.players.find(p => p.id === socket.id || p.currentSocketId === socket.id);
     if (!caller || caller.id !== room.hostId) return cb?.({ success: false, error: 'Só o host pode reiniciar' });
     clearTurnTimer(room.code);
+    clearBotTimer(room.code);
     room._lastPhase         = null;
     room._lastCurrentPlayer = null;
-    const slots = Math.max(0, 6 - room.players.length);
-    const promoted = (room.spectators || []).splice(0, slots);
-    promoted.forEach(s => room.players.push({ id: s.id, name: s.name, currentSocketId: s.currentSocketId || s.id }));
+    if (!room.isPve) {
+      // Only promote spectators in non-PVE rooms
+      const slots = Math.max(0, 6 - room.players.length);
+      const promoted = (room.spectators || []).splice(0, slots);
+      promoted.forEach(s => room.players.push({ id: s.id, name: s.name, currentSocketId: s.currentSocketId || s.id }));
+    }
     startGameInRoom(room);
     broadcast(room);
     cb?.({ success: true });

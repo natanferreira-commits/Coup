@@ -301,6 +301,199 @@
   border: none !important;
 }
 
+/* ── PVE button ──────────────────────────────────────────────────── */
+.pveBtn {
+  margin-top: 6px;
+  width: 100%;
+  background: rgba(0,156,59,0.08);
+  border: 1.5px solid rgba(0,156,59,0.28);
+  color: #007a2f;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 9px 0;
+  border-radius: 8px;
+  transition: background 0.2s, border-color 0.2s;
+  font-family: inherit;
+}
+.pveBtn:hover {
+  background: rgba(0,156,59,0.15);
+  border-color: rgba(0,156,59,0.5);
+}
+
+/* ── PVE Modal ───────────────────────────────────────────────────── */
+.pveOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10,20,50,0.50);
+  backdrop-filter: blur(7px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 300;
+  padding: 20px;
+}
+
+.pveModal {
+  background: #ffffff;
+  border: 1px solid #dde3f0;
+  border-radius: 18px;
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 8px 48px rgba(19,81,180,0.16);
+}
+
+.pveHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px 14px;
+  border-bottom: 1px solid #dde3f0;
+}
+
+.pveTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1351b4;
+  margin: 0;
+}
+
+.pveClose {
+  background: #f4f6fb;
+  border: 1px solid #dde3f0;
+  color: #7a8aaa;
+  border-radius: 8px;
+  width: 30px;
+  height: 30px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s, border-color 0.15s;
+  padding: 0;
+}
+.pveClose:hover { color: #d32f2f; border-color: #d32f2f; }
+
+.pveBody {
+  padding: 20px 22px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.pveNameRow {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.pveLabel {
+  font-size: 0.75rem;
+  color: #7a8aaa;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+.pveNameInput {
+  background: #f4f6fb;
+  border: 1.5px solid #dde3f0;
+  color: #1a2540;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  width: 100%;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.pveNameInput:focus { border-color: #1351b4; }
+.pveNameInput::placeholder { color: #a0aac0; }
+
+.pveDiffLabel {
+  font-size: 0.75rem;
+  color: #7a8aaa;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-bottom: 2px;
+}
+
+.pveDiffGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.pveDiffOption {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1.5px solid #dde3f0;
+  border-radius: 10px;
+  background: #f4f6fb;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  font-family: inherit;
+  text-align: left;
+  width: 100%;
+}
+.pveDiffOption:hover {
+  border-color: rgba(19,81,180,0.35);
+  background: #eef2fb;
+}
+.pveDiffOptionActive {
+  border-color: #1351b4 !important;
+  background: rgba(19,81,180,0.06) !important;
+}
+
+.pveDiffEmoji { font-size: 1.4rem; flex-shrink: 0; }
+
+.pveDiffInfo { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.pveDiffName {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #1a2540;
+}
+.pveDiffDesc {
+  font-size: 0.75rem;
+  color: #7a8aaa;
+  line-height: 1.4;
+}
+
+.pveBotCount {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #1351b4;
+  background: rgba(19,81,180,0.09);
+  border: 1px solid rgba(19,81,180,0.22);
+  border-radius: 8px;
+  padding: 2px 8px;
+}
+
+.pvePlayBtn {
+  margin-top: 4px;
+  width: 100%;
+  padding: 13px;
+  background: #1351b4;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+.pvePlayBtn:hover:not(:disabled) { background: #1761d0; }
+.pvePlayBtn:disabled { opacity: 0.55; cursor: default; }
+
 /* ══ DARK MODE ══════════════════════════════════════════════════════ */
 :global([data-theme="dark"]) .container {
   background:
@@ -355,3 +548,24 @@
 :global([data-theme="dark"]) .roomsHost { color: #eef2ff; }
 :global([data-theme="dark"]) .roomsMeta { color: #4a5880; }
 :global([data-theme="dark"]) .roomsJoinBtn { background: #5b8ef0 !important; }
+/* PVE dark */
+:global([data-theme="dark"]) .pveBtn { background: rgba(77,218,126,0.1); border-color: rgba(77,218,126,0.3); color: #4dda7e; }
+:global([data-theme="dark"]) .pveBtn:hover { background: rgba(77,218,126,0.18); border-color: rgba(77,218,126,0.5); }
+:global([data-theme="dark"]) .pveModal { background: #1a1d2e; border-color: #2e3555; }
+:global([data-theme="dark"]) .pveHeader { border-bottom-color: #2e3555; }
+:global([data-theme="dark"]) .pveTitle  { color: #5b8ef0; }
+:global([data-theme="dark"]) .pveClose  { background: #22263a; border-color: #2e3555; color: #8099d0; }
+:global([data-theme="dark"]) .pveClose:hover { color: #ef8080; border-color: #ef8080; }
+:global([data-theme="dark"]) .pveLabel     { color: #8099d0; }
+:global([data-theme="dark"]) .pveDiffLabel { color: #8099d0; }
+:global([data-theme="dark"]) .pveNameInput { background: #22263a; border-color: #2e3555; color: #eef2ff; }
+:global([data-theme="dark"]) .pveNameInput::placeholder { color: #4a5880; }
+:global([data-theme="dark"]) .pveNameInput:focus { border-color: #5b8ef0; }
+:global([data-theme="dark"]) .pveDiffOption { background: #22263a; border-color: #2e3555; }
+:global([data-theme="dark"]) .pveDiffOption:hover { border-color: rgba(91,142,240,0.4); background: rgba(91,142,240,0.07); }
+:global([data-theme="dark"]) .pveDiffOptionActive { border-color: #5b8ef0 !important; background: rgba(91,142,240,0.1) !important; }
+:global([data-theme="dark"]) .pveDiffName { color: #eef2ff; }
+:global([data-theme="dark"]) .pveDiffDesc { color: #8099d0; }
+:global([data-theme="dark"]) .pveBotCount { color: #5b8ef0; background: rgba(91,142,240,0.1); border-color: rgba(91,142,240,0.25); }
+:global([data-theme="dark"]) .pvePlayBtn  { background: #5b8ef0; }
+:global([data-theme="dark"]) .pvePlayBtn:hover:not(:disabled) { background: #7aaaf5; }

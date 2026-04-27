@@ -4,6 +4,14 @@ import socket from '../socket';
 import styles from './Lobby.module.css';
 import HowToPlayModal from '../components/HowToPlayModal';
 
+const DIFFICULTIES = [
+  { key: 'estagiario', emoji: '🐣', name: 'Estagiário',   bots: 2, desc: 'Joga aleatório, não sabe blefar. Bom pra aprender.' },
+  { key: 'clt',        emoji: '📋', name: 'CLT',           bots: 3, desc: 'Segue as regras mas é previsível.' },
+  { key: 'patrao',     emoji: '👔', name: 'Patrão',        bots: 3, desc: 'Usa as cartas direito e blefa às vezes.' },
+  { key: 'deputado',   emoji: '🏛️', name: 'Deputado',      bots: 4, desc: 'Desafia suspeitos, bloqueia e blefa bastante.' },
+  { key: 'dono_morro', emoji: '👑', name: 'Dono do Morro', bots: 5, desc: 'Jogo quase perfeito. Boa sorte sobreviver.' },
+];
+
 export default function Lobby({ onCreated }) {
   const navigate  = useNavigate();
   const [name,         setName]         = useState(() => localStorage.getItem('golpe_name') || '');
@@ -15,6 +23,10 @@ export default function Lobby({ onCreated }) {
   const [roomsList,    setRoomsList]    = useState([]);
   const [loadingRooms, setLoadingRooms] = useState(false);
   const [showHowTo,    setShowHowTo]    = useState(false);
+  const [showPve,      setShowPve]      = useState(false);
+  const [pveName,      setPveName]      = useState(() => localStorage.getItem('golpe_name') || '');
+  const [pveDiff,      setPveDiff]      = useState('estagiario');
+  const [pveLoading,   setPveLoading]   = useState(false);
 
   function connect(cb) {
     if (!name.trim()) return setError('Digite seu nome');
@@ -97,6 +109,29 @@ export default function Lobby({ onCreated }) {
     }
   }
 
+  function handlePvePlay() {
+    if (!pveName.trim()) return;
+    setPveLoading(true);
+    localStorage.setItem('golpe_name', pveName.trim());
+
+    const doCreate = () => {
+      socket.emit('create_pve_room', { playerName: pveName.trim(), difficulty: pveDiff }, res => {
+        setPveLoading(false);
+        if (res.success) {
+          setShowPve(false);
+          onCreated(res.room, pveName.trim());
+        } else {
+          setPveLoading(false);
+        }
+      });
+    };
+
+    if (socket.connected) { doCreate(); return; }
+    socket.connect();
+    socket.once('connect', doCreate);
+    socket.once('connect_error', () => setPveLoading(false));
+  }
+
   function joinRoom(roomCode) {
     if (!name.trim()) {
       setShowRooms(false);
@@ -159,6 +194,10 @@ export default function Lobby({ onCreated }) {
           {error && <p className={styles.error}>{error}</p>}
         </div>
 
+        <button className={styles.pveBtn} onClick={() => { setPveName(name || localStorage.getItem('golpe_name') || ''); setShowPve(true); }}>
+          🤖 Jogar contra Bots (PVE)
+        </button>
+
         <button className={styles.howToBtn} onClick={() => setShowHowTo(true)}>
           📖 Como Jogar
         </button>
@@ -169,6 +208,62 @@ export default function Lobby({ onCreated }) {
       </div>
 
       {showHowTo && <HowToPlayModal onClose={() => setShowHowTo(false)} />}
+
+      {/* ── Modal PVE ── */}
+      {showPve && (
+        <div className={styles.pveOverlay} onClick={() => setShowPve(false)}>
+          <div className={styles.pveModal} onClick={e => e.stopPropagation()}>
+            <div className={styles.pveHeader}>
+              <h2 className={styles.pveTitle}>🤖 Jogar contra Bots</h2>
+              <button className={styles.pveClose} onClick={() => setShowPve(false)}>✕</button>
+            </div>
+            <div className={styles.pveBody}>
+              {/* Name field */}
+              <div className={styles.pveNameRow}>
+                <span className={styles.pveLabel}>Seu nome</span>
+                <input
+                  className={styles.pveNameInput}
+                  placeholder="Como você quer ser chamado?"
+                  value={pveName}
+                  onChange={e => setPveName(e.target.value)}
+                  maxLength={20}
+                />
+              </div>
+
+              {/* Difficulty */}
+              <div>
+                <p className={styles.pveDiffLabel}>Dificuldade</p>
+                <div className={styles.pveDiffGrid}>
+                  {DIFFICULTIES.map(d => (
+                    <button
+                      key={d.key}
+                      className={`${styles.pveDiffOption} ${pveDiff === d.key ? styles.pveDiffOptionActive : ''}`}
+                      onClick={() => setPveDiff(d.key)}
+                    >
+                      <span className={styles.pveDiffEmoji}>{d.emoji}</span>
+                      <span className={styles.pveDiffInfo}>
+                        <span className={styles.pveDiffName}>{d.name}</span>
+                        <span className={styles.pveDiffDesc}>{d.desc}</span>
+                      </span>
+                      <span className={styles.pveBotCount}>
+                        {d.bots} bot{d.bots > 1 ? 's' : ''}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <button
+                className={styles.pvePlayBtn}
+                onClick={handlePvePlay}
+                disabled={pveLoading || !pveName.trim()}
+              >
+                {pveLoading ? 'Iniciando…' : '▶ Jogar Agora'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Modal de salas abertas ── */}
       {showRooms && (

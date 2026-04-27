@@ -648,6 +648,7 @@ export default function Game({ data, myId, musicTrack, musicLastChanged }) {
             title="Chat / Log">💬</button>
         </div>
         <span className={styles.mobileLogo}>
+          {data?.isPve && <span style={{ fontSize: '0.8rem', marginRight: 4 }}>🤖</span>}
           <span style={{ color: '#1351b4' }}>G</span>
           <span style={{ color: '#009c3b' }}>O</span>
           <span style={{ color: '#009c3b' }}>L</span>
@@ -752,7 +753,9 @@ export default function Game({ data, myId, musicTrack, musicLastChanged }) {
                   </div>
                   <div className={styles.opponentInfo}>
                     <div className={styles.opponentNameRow}>
-                      <span className={styles.opponentName}>{p.name}</span>
+                      <span className={styles.opponentName}>
+                        {p.isBot && <span style={{marginRight:3}}>🤖</span>}{p.name}
+                      </span>
                       {isHost && <span className={styles.hostBadge}>HOST</span>}
                     </div>
                     <div className={styles.opponentCoins}>
