@@ -372,7 +372,9 @@ function sanitizeGame(game, playerId) {
     pendingAction: sanitizePA(game.pendingAction, playerId),
     log: game.log.slice(-25),
     winner: game.winner,
-    activeEvent: game.activeEvent ?? null,
+    activeEvent: game.activeEvent
+      ? { ...game.activeEvent, bigFoneClaimed: game.activeEvent.bigFoneClaimed ?? false }
+      : null,
     roundNumber: game.roundNumber || 1,
     eventsEnabled: game.eventsEnabled ?? false,
   };
@@ -894,6 +896,17 @@ function attachGameHandlers(socket) {
       room.game?.players.find(p => p.currentSocketId === socket.id || p.id === socket.id)?.name ||
       room.players.find(p => p.id === socket.id || p.currentSocketId === socket.id)?.name ||
       '?';
+
+    // ── Big Fone: primeiro a tocar/trocar música neste round ganha 2 moedas ──
+    if (room.game && room.game.activeEvent?.type === 'big_fone' && !room.game.activeEvent.bigFoneClaimed) {
+      const winner = room.game.players.find(p => p.id === socket.id || p.currentSocketId === socket.id);
+      if (winner && winner.cards.some(c => !c.dead)) {
+        room.game.activeEvent.bigFoneClaimed = true;
+        winner.coins += 2;
+        room.game.log.push(`📞 BIG FONE! ${winner.name} tocou a música primeiro e ganhou 2 moedas! 🎶💰`);
+        broadcast(room);
+      }
+    }
 
     io.to(room.code).emit('music_changed', {
       trackId,

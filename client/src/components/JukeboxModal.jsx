@@ -13,7 +13,7 @@ function formatSeconds(ms) {
   return `${m}:${sec.toString().padStart(2, '0')}`;
 }
 
-export default function JukeboxModal({ onClose, musicTrack, musicLastChanged, myCoins }) {
+export default function JukeboxModal({ onClose, musicTrack, musicLastChanged, myCoins, activeEvent }) {
   // How many ms of cooldown remain right now
   const [remaining, setRemaining] = useState(() => {
     const elapsed = Date.now() - (musicLastChanged || 0);
@@ -106,6 +106,18 @@ export default function JukeboxModal({ onClose, musicTrack, musicLastChanged, my
             <span className={styles.title}>🎵 Jukebox</span>
             <button className={styles.closeBtn} onClick={onClose}>✕</button>
           </div>
+
+          {/* Big Fone banner */}
+          {activeEvent?.type === 'big_fone' && (
+            <div className={styles.bigFoneBanner} style={activeEvent.bigFoneClaimed ? { opacity: 0.5 } : {}}>
+              <span className={styles.bigFoneEmoji}>📞</span>
+              <span className={styles.bigFoneText}>
+                {activeEvent.bigFoneClaimed
+                  ? 'Big Fone já foi atendido neste round.'
+                  : <><strong>BIG FONE!</strong> Toque uma música agora e ganhe +2 moedas!</>}
+              </span>
+            </div>
+          )}
 
           {/* Cooldown bar */}
           {inCooldown && (

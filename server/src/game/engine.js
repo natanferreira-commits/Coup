@@ -51,6 +51,7 @@ const EVENT_DEFS = [
   { type: 'mensalao',        name: 'Mensalão',          emoji: '💵', description: 'Todos ganham 1 moeda do governo.',                   weight: 1 },
   { type: 'arrastaoo',       name: 'Arrastão',          emoji: '💸', description: 'Jogador com mais moedas perde 2.',                   weight: 1 },
   { type: 'crise_economica', name: 'Crise Econômica',   emoji: '📉', description: 'Ações que geram moedas dão 1 a menos neste round.',  weight: 1 },
+  { type: 'big_fone',        name: 'Big Fone',          emoji: '📞', description: 'O Big Fone tocou! Quem tocar ou trocar música primeiro ganha 2 moedas. Só vale pro primeiro desta rodada.', weight: 1 },
 ];
 
 const BICHO_OUTCOMES = [
@@ -144,6 +145,11 @@ function applyEventEffect(game, event) {
 
     case 'crise_economica':
       log(game, `📉 CRISE ECONÔMICA! Ações rendem 1 moeda a menos neste round.`);
+      break;
+
+    case 'big_fone':
+      event.bigFoneClaimed = false;
+      log(game, `📞 BIG FONE! Quem tocar ou trocar uma música agora ganha 2 moedas — só vale pro primeiro! 🎶`);
       break;
 
     case 'no_event':

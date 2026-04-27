@@ -11,6 +11,7 @@ const EVENT_META = {
   mensalao:        { emoji: '💵', color: '#69f0ae', bg: '#061a0a', glow: '#4caf50' },
   arrastaoo:       { emoji: '💸', color: '#ef9a9a', bg: '#1a0606', glow: '#f44336' },
   crise_economica: { emoji: '📉', color: '#ffcc02', bg: '#161200', glow: '#ff9800' },
+  big_fone:        { emoji: '📞', color: '#ffd600', bg: '#17130a', glow: '#e6a800' },
 };
 
 const DICE_FACES = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];

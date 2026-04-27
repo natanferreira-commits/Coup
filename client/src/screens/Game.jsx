@@ -887,7 +887,8 @@ export default function Game({ data, myId, musicTrack, musicLastChanged }) {
           {/* Timer — lateral, só número */}
           {phase&&phase!=='GAME_OVER'&&timerStartRef.current&&(
             <div className={styles.timerLateral}
-              style={{color: timeLeft<=10?'var(--red)':timeLeft<=20?'#ffd600':timeLeft<=30?'rgba(255,255,255,0.5)':'rgba(255,255,255,0.22)'}}>
+              style={{color: timeLeft<=10?'var(--red)':timeLeft<=20?'#d4a800':'var(--muted)',
+                      opacity: timeLeft>30?0.35:timeLeft>20?0.65:1}}>
               {timeLeft}
             </div>
           )}
@@ -1285,7 +1286,7 @@ export default function Game({ data, myId, musicTrack, musicLastChanged }) {
       </motion.button>
 
       {showHelp    && <HowToPlayModal onClose={() => setShowHelp(false)} />}
-      {showJukebox && <JukeboxModal onClose={() => setShowJukebox(false)} musicTrack={musicTrack} musicLastChanged={musicLastChanged} myCoins={me?.coins ?? 0} />}
+      {showJukebox && <JukeboxModal onClose={() => setShowJukebox(false)} musicTrack={musicTrack} musicLastChanged={musicLastChanged} myCoins={me?.coins ?? 0} activeEvent={game?.activeEvent} />}
     </div>
 
     {/* ── Overlays de animação ── */}

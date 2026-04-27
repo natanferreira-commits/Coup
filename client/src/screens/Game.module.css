@@ -352,21 +352,22 @@
   background: rgba(19,81,180,0.05);
 }
 
-/* Tooltip */
+/* Tooltip — aparece ABAIXO do botão para não ser cortado pelo topo do painel */
 .actionBtn[data-tooltip]:hover::after {
   content: attr(data-tooltip);
   position: absolute;
-  bottom: calc(100% + 7px);
+  top: calc(100% + 5px);
+  bottom: auto;
   left: 0; right: 0;
-  background: #fff;
-  border: 1px solid var(--border);
-  color: var(--text);
+  background: #ffffff;
+  border: 1px solid #c5cedf;
+  color: #1a2540;
   padding: 7px 10px;
   border-radius: 8px;
   font-size: 0.64rem;
   font-weight: 400;
   line-height: 1.5;
-  z-index: 200;
+  z-index: 999;
   pointer-events: none;
   text-align: left;
   white-space: normal;
@@ -427,7 +428,7 @@
   display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px;
 }
 .helpModal {
-  background: #fff; border: 1px solid var(--border);
+  background: var(--surface); border: 1px solid var(--border);
   border-radius: 16px; padding: 24px; max-width: 360px; width: 100%;
   box-shadow: 0 8px 40px rgba(19,81,180,0.14);
 }
@@ -455,7 +456,7 @@
 }
 .gameOverCard {
   text-align: center; display: flex; flex-direction: column; align-items: center; gap: 14px;
-  background: #fff; border: 1px solid var(--border);
+  background: var(--surface); border: 1px solid var(--border);
   border-radius: 20px; padding: 28px 32px; min-width: 260px; flex: 0 0 auto;
   box-shadow: 0 4px 24px rgba(19,81,180,0.10);
 }
@@ -485,7 +486,7 @@
 
 /* Game over log */
 .gameOverLog {
-  background: #fff; border: 1px solid var(--border);
+  background: var(--surface); border: 1px solid var(--border);
   border-radius: 16px; padding: 18px 16px;
   display: flex; flex-direction: column; gap: 8px;
   flex: 1; min-width: 220px; max-width: 480px; max-height: 500px;
@@ -535,7 +536,7 @@
 /* ── Restart button ── */
 .restartBtn {
   position: fixed; bottom: 52px; left: 14px; top: auto; transform: none;
-  background: #fff; border: 1px solid rgba(229,57,53,0.4);
+  background: var(--surface); border: 1px solid rgba(229,57,53,0.4);
   color: var(--red); border-radius: 20px; padding: 5px 14px;
   font-size: 0.75rem; font-weight: 600; cursor: pointer; z-index: 50;
   white-space: nowrap; box-shadow: 0 1px 4px rgba(0,0,0,0.08);
@@ -547,7 +548,7 @@
   position: fixed;
   bottom: 14px;
   left: 14px;
-  background: #fff;
+  background: var(--surface);
   border: 1px solid rgba(229,57,53,0.3);
   color: var(--red);
   border-radius: 10px;
@@ -584,7 +585,7 @@
   z-index: 800; pointer-events: none;
 }
 .actionNotifCard {
-  background: #fff;
+  background: var(--surface);
   border: 2px solid var(--blue);
   border-radius: 22px; padding: 22px 36px;
   text-align: center; display: flex; flex-direction: column;
@@ -790,7 +791,7 @@
     padding: 0 12px;
     height: 44px;
     flex-shrink: 0;
-    background: #fff;
+    background: var(--surface);
     border-bottom: 1px solid var(--border);
     z-index: 50;
     box-shadow: 0 1px 4px rgba(19,81,180,0.06);
@@ -824,7 +825,7 @@
     gap: 10px;
     transform: translateX(-100%);
     transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
-    background: #fff;
+    background: var(--surface);
     border-right: 1px solid var(--border);
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
@@ -862,7 +863,7 @@
     border-left: none;
     border-top: 1px solid var(--border);
     border-radius: 16px 16px 0 0;
-    background: #fff;
+    background: var(--surface);
     max-height: 55vh;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
@@ -1077,3 +1078,18 @@
 :global([data-theme="dark"]) .leftPanel  { background: #1a1d2e !important; border-right-color:  #2e3555 !important; }
 :global([data-theme="dark"]) .rightPanel { background: #1a1d2e !important; border-top-color:    #2e3555 !important; }
 :global([data-theme="dark"]) .rightPanel::before { background: #2e3555; }
+/* action button text — strong já usa var(--text), small usa var(--muted); ambos ok em dark */
+:global([data-theme="dark"]) .actionBtn { background: #22263a; border-color: #2e3555; }
+:global([data-theme="dark"]) .actionBtn:hover:not(:disabled) { background: rgba(91,142,240,0.08); border-color: #5b8ef0; }
+:global([data-theme="dark"]) .actionBtn strong { color: #eef2ff; }
+:global([data-theme="dark"]) .actionBtn small  { color: #8099d0; }
+:global([data-theme="dark"]) .actionBtnSuccess { background: rgba(0,156,59,0.08) !important; border-color: rgba(0,156,59,0.3) !important; }
+/* category label dark */
+:global([data-theme="dark"]) .catLabel { color: #8099d0; }
+/* tooltip dark mode */
+:global([data-theme="dark"]) .actionBtn[data-tooltip]:hover::after {
+  background: #22263a;
+  border-color: #3d4a7a;
+  color: #eef2ff;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.45);
+}
