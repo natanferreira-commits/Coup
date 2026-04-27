@@ -1007,3 +1007,73 @@
   .actionIcon        { font-size: 0.9rem; width: 18px; }
   .quickChatSection  { display: none; }
 }
+
+/* ══ DARK MODE ══════════════════════════════════════════════════════════
+   Panels (leftPanel, rightPanel, opponent) use var(--surface/--border)
+   and auto-adapt. Only hardcoded light values need overrides below.
+   ═══════════════════════════════════════════════════════════════════ */
+:global([data-theme="dark"]) .board {
+  background:
+    radial-gradient(ellipse at 20% 30%, rgba(91,142,240,0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 70%, rgba(0,156,59,0.05) 0%, transparent 50%),
+    #0f1117;
+}
+:global([data-theme="dark"]) .gameOver {
+  background:
+    radial-gradient(ellipse at 25% 30%, rgba(91,142,240,0.10) 0%, transparent 50%),
+    radial-gradient(ellipse at 75% 70%, rgba(0,156,59,0.06) 0%, transparent 50%),
+    #0f1117;
+}
+:global([data-theme="dark"]) .gameOverCard {
+  background: #1a1d2e; border-color: #2e3555;
+  box-shadow: 0 4px 28px rgba(0,0,0,0.5);
+}
+:global([data-theme="dark"]) .winnerName { color: #5b8ef0; }
+:global([data-theme="dark"]) .winnerSub  { color: #8099d0; }
+:global([data-theme="dark"]) .loserRow   { background: #22263a; border-color: #2e3555; }
+:global([data-theme="dark"]) .loserName  { color: #8099d0; }
+:global([data-theme="dark"]) .gameOverLog {
+  background: #1a1d2e; border-color: #2e3555;
+  box-shadow: 0 4px 28px rgba(0,0,0,0.4);
+}
+:global([data-theme="dark"]) .gameOverLogMsg { color: #c8d8f8; border-bottom-color: #2e3555; }
+:global([data-theme="dark"]) .helpModal {
+  background: #1a1d2e; border-color: #2e3555;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.55);
+}
+:global([data-theme="dark"]) .helpModal h2 { color: #5b8ef0; }
+:global([data-theme="dark"]) .helpRow { border-bottom-color: #2e3555; color: #eef2ff; }
+:global([data-theme="dark"]) .helpRow span:last-child { color: #8099d0; }
+:global([data-theme="dark"]) .actionNotifCard {
+  background: #1a1d2e; border-color: rgba(91,142,240,0.5);
+  box-shadow: 0 0 60px rgba(0,0,0,0.5), 0 8px 40px rgba(0,0,0,0.4);
+}
+:global([data-theme="dark"]) .actionNotifLabel  { color: #5b8ef0; }
+:global([data-theme="dark"]) .actionNotifPlayers { color: #eef2ff; }
+:global([data-theme="dark"]) .actionNotifChar   { background: #22263a; border-color: #2e3555; color: #8099d0; }
+:global([data-theme="dark"]) .chatBubble {
+  background: #22263a; color: #eef2ff; border-color: #2e3555;
+}
+:global([data-theme="dark"]) .chatBubble::after { border-top-color: #22263a; }
+:global([data-theme="dark"]) .restartBtn {
+  background: #1a1d2e; border-color: rgba(239,83,80,0.4); color: #ef8080;
+}
+:global([data-theme="dark"]) .restartBtn:hover { background: rgba(239,83,80,0.12); }
+:global([data-theme="dark"]) .leaveBtn {
+  background: #1a1d2e; border-color: rgba(239,83,80,0.35); color: #ef8080;
+}
+:global([data-theme="dark"]) .leaveBtn:hover { background: rgba(239,83,80,0.12); border-color: #ef8080; }
+:global([data-theme="dark"]) .playerCardDeadBadge { background: rgba(15,17,23,0.9); }
+:global([data-theme="dark"]) .miniCardDead { background: #22263a; border-color: #2e3555; }
+:global([data-theme="dark"]) .waitingBox { background: rgba(91,142,240,0.06); border-color: rgba(91,142,240,0.18); }
+:global([data-theme="dark"]) .coinFlipBox { background: rgba(91,142,240,0.06); border-color: rgba(91,142,240,0.22); }
+:global([data-theme="dark"]) .coinFlipTitle { color: #5b8ef0; }
+:global([data-theme="dark"]) .x9Result { background: rgba(150,80,200,0.08); border-color: rgba(150,80,200,0.28); }
+:global([data-theme="dark"]) .x9ResultTitle { color: #ce93d8; }
+:global([data-theme="dark"]) .x9ResultCard { background: #22263a; border-color: rgba(150,80,200,0.3); }
+:global([data-theme="dark"]) .x9AckBtn { background: rgba(150,80,200,0.12); border-color: rgba(150,80,200,0.35); color: #ce93d8; }
+/* mobile panels */
+:global([data-theme="dark"]) .mobileHeader { background: #0f1117; border-bottom-color: #2e3555; }
+:global([data-theme="dark"]) .leftPanel  { background: #1a1d2e !important; border-right-color:  #2e3555 !important; }
+:global([data-theme="dark"]) .rightPanel { background: #1a1d2e !important; border-top-color:    #2e3555 !important; }
+:global([data-theme="dark"]) .rightPanel::before { background: #2e3555; }

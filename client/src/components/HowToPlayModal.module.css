@@ -230,3 +230,27 @@
 
 .charBlock   { color: #007a2f; }
 .charBlocked { color: #c07000; }
+
+/* ══ DARK MODE ══════════════════════════════════════════════════════ */
+:global([data-theme="dark"]) .overlay  { background: rgba(0,0,0,0.75); }
+:global([data-theme="dark"]) .modal    { background: #1a1d2e; border-color: #2e3555; box-shadow: 0 8px 48px rgba(0,0,0,0.55); }
+:global([data-theme="dark"]) .header   { background: #1a1d2e; border-bottom-color: #2e3555; }
+:global([data-theme="dark"]) .title    { color: #5b8ef0; }
+:global([data-theme="dark"]) .closeBtn { background: #22263a; border-color: #2e3555; color: #8099d0; }
+:global([data-theme="dark"]) .closeBtn:hover { color: #ef8080; border-color: #ef8080; }
+:global([data-theme="dark"]) .body     { background: #1a1d2e; scrollbar-color: rgba(91,142,240,0.3) transparent; }
+:global([data-theme="dark"]) .body::-webkit-scrollbar-thumb { background: rgba(91,142,240,0.3); }
+:global([data-theme="dark"]) .sectionTitle { color: #5b8ef0; }
+:global([data-theme="dark"]) .text        { color: #c8d8f8; }
+:global([data-theme="dark"]) .list li     { color: #c8d8f8; }
+:global([data-theme="dark"]) .tip         { background: rgba(91,142,240,0.08); border-color: rgba(91,142,240,0.25); color: #c8d8f8; }
+:global([data-theme="dark"]) .actionCard  { background: #22263a; border-color: #2e3555; }
+:global([data-theme="dark"]) .actionName  { color: #eef2ff; }
+:global([data-theme="dark"]) .actionDesc  { color: #8099d0; }
+:global([data-theme="dark"]) .actionCost  { color: #ffdf00; background: rgba(255,223,0,0.1); border-color: rgba(255,223,0,0.3); }
+:global([data-theme="dark"]) .tag_green   { background: rgba(0,156,59,0.15); border-color: rgba(0,156,59,0.35); color: #4dda7e; }
+:global([data-theme="dark"]) .tag_blue    { background: rgba(91,142,240,0.12); border-color: rgba(91,142,240,0.3); color: #5b8ef0; }
+:global([data-theme="dark"]) .charBody    { background: #0f1117; }
+:global([data-theme="dark"]) .charAbility { color: #c8d8f8; }
+:global([data-theme="dark"]) .charBlock   { color: #4dda7e; }
+:global([data-theme="dark"]) .charBlocked { color: #ffd54f; }

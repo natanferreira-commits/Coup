@@ -265,3 +265,40 @@
   font-weight: 600;
   text-align: center;
 }
+
+/* ══ DARK MODE ══════════════════════════════════════════════════════ */
+:global([data-theme="dark"]) .container {
+  background:
+    radial-gradient(ellipse at 25% 30%, rgba(91,142,240,0.10) 0%, transparent 50%),
+    radial-gradient(ellipse at 75% 70%, rgba(0,156,59,0.06) 0%, transparent 50%),
+    #0f1117;
+}
+:global([data-theme="dark"]) .card {
+  background: #1a1d2e; border-color: #2e3555;
+  box-shadow: 0 4px 28px rgba(0,0,0,0.45), 0 1px 4px rgba(0,0,0,0.3);
+}
+:global([data-theme="dark"]) .codeBox { background: #22263a; border-color: #2e3555; }
+:global([data-theme="dark"]) .codeBox:hover { border-color: #5b8ef0; background: rgba(91,142,240,0.07); }
+:global([data-theme="dark"]) .codeLabel { color: #8099d0; }
+:global([data-theme="dark"]) .code { color: #5b8ef0; }
+:global([data-theme="dark"]) .copyHint { color: #4a5880; }
+:global([data-theme="dark"]) .playersLabel { color: #8099d0; }
+:global([data-theme="dark"]) .playerRow { background: #22263a; border-color: #2e3555; color: #eef2ff; }
+:global([data-theme="dark"]) .waiting { color: #8099d0; }
+:global([data-theme="dark"]) .hostBadge { background: #ffdf00; color: #1a2540; }
+:global([data-theme="dark"]) .youBadge  { background: #5b8ef0; color: #fff; }
+:global([data-theme="dark"]) .pendingSection { background: rgba(91,142,240,0.07); border-color: rgba(91,142,240,0.3); }
+:global([data-theme="dark"]) .pendingLabel { color: #5b8ef0; }
+:global([data-theme="dark"]) .pendingRow { background: #22263a; border-color: #2e3555; }
+:global([data-theme="dark"]) .pendingName { color: #eef2ff; }
+:global([data-theme="dark"]) .leaveBtn { color: #4a5880; }
+:global([data-theme="dark"]) .leaveBtn:hover { color: #ef8080; }
+:global([data-theme="dark"]) .tiktokToggle { background: #22263a; border-color: #2e3555; color: #eef2ff; }
+:global([data-theme="dark"]) .tiktokToggle:hover { border-color: rgba(91,142,240,0.5); }
+:global([data-theme="dark"]) .tiktokOn { border-color: #5b8ef0 !important; background: rgba(91,142,240,0.1) !important; }
+:global([data-theme="dark"]) .tiktokLabel strong { color: #eef2ff; }
+:global([data-theme="dark"]) .tiktokLabel small  { color: #8099d0; }
+:global([data-theme="dark"]) .tiktokOn .tiktokLabel strong { color: #5b8ef0; }
+:global([data-theme="dark"]) .tiktokPill { background: #2e3555; }
+:global([data-theme="dark"]) .tiktokPillOn { background: #5b8ef0; }
+:global([data-theme="dark"]) .tiktokBadge { background: rgba(91,142,240,0.1); border-color: rgba(91,142,240,0.3); color: #5b8ef0; }

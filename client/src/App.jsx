@@ -2,9 +2,10 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import socket from './socket';
 import { sfx } from './sounds/sfx';
-import Landing  from './screens/Landing';
-import Lobby    from './screens/Lobby';
-import SalaPage from './screens/SalaPage';
+import Landing     from './screens/Landing';
+import Lobby       from './screens/Lobby';
+import SalaPage    from './screens/SalaPage';
+import ThemeToggle from './components/ThemeToggle';
 
 export default function App() {
   const navigate = useNavigate();
@@ -357,6 +358,7 @@ export default function App() {
 
   return (
     <>
+      <ThemeToggle />
       {reconnOverlay}
       {inactiveOverlay}
       <Routes>

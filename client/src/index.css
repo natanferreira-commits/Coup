@@ -111,3 +111,37 @@ input:focus { border-color: var(--blue); }
   padding: 6px 14px;
   font-size: 0.82rem;
 }
+
+/* ════════════════════════════════════════════════════════════
+   DARK MODE — override CSS variables
+   ════════════════════════════════════════════════════════════ */
+[data-theme="dark"] {
+  --bg:       #0f1117;
+  --surface:  #1a1d2e;
+  --surface2: #22263a;
+  --border:   #2e3555;
+  --text:     #eef2ff;
+  --muted:    #8099d0;
+  --blue:     #5b8ef0;
+  --red:      #ef5350;
+}
+
+[data-theme="dark"] body {
+  background: #0f1117;
+  color: #eef2ff;
+}
+
+[data-theme="dark"] input {
+  background: #22263a;
+  border-color: #2e3555;
+  color: #eef2ff;
+}
+[data-theme="dark"] input::placeholder { color: #4a5880; }
+[data-theme="dark"] input:focus { border-color: #5b8ef0; }
+
+[data-theme="dark"] .btn {
+  background: #22263a;
+  border-color: #2e3555;
+  color: #eef2ff;
+}
+[data-theme="dark"] .btn:hover:not(:disabled) { background: #2e3555; }

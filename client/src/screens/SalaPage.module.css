@@ -121,3 +121,28 @@
   font-size: 0.85rem;
   margin: 0;
 }
+
+/* ══ DARK MODE ══════════════════════════════════════════════════════ */
+:global([data-theme="dark"]) .container {
+  background:
+    radial-gradient(ellipse at 25% 30%, rgba(91,142,240,0.10) 0%, transparent 50%),
+    radial-gradient(ellipse at 75% 70%, rgba(0,156,59,0.06) 0%, transparent 50%),
+    #0f1117;
+}
+:global([data-theme="dark"]) .card {
+  background: #1a1d2e; border-color: #2e3555;
+  box-shadow: 0 4px 28px rgba(0,0,0,0.45), 0 1px 4px rgba(0,0,0,0.3);
+}
+:global([data-theme="dark"]) .codeLabel { color: #8099d0; }
+:global([data-theme="dark"]) .codeHighlight { color: #5b8ef0; }
+:global([data-theme="dark"]) .roomCode { color: #5b8ef0; }
+:global([data-theme="dark"]) .form input { background: #22263a; border-color: #2e3555; color: #eef2ff; }
+:global([data-theme="dark"]) .form input::placeholder { color: #4a5880; }
+:global([data-theme="dark"]) .form input:focus { border-color: #5b8ef0; }
+:global([data-theme="dark"]) .form .btn-primary { background: #5b8ef0; }
+:global([data-theme="dark"]) .form .btn-primary:hover:not(:disabled) { background: #7aaaf5; }
+:global([data-theme="dark"]) .spinner { border-color: rgba(91,142,240,0.2); border-top-color: #5b8ef0; }
+:global([data-theme="dark"]) .message { color: #eef2ff; }
+:global([data-theme="dark"]) .sub { color: #8099d0; }
+:global([data-theme="dark"]) .error { color: #ef8080; }
+:global([data-theme="dark"]) .deniedMsg { color: #ef8080; }
