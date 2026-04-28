@@ -141,14 +141,53 @@ function countDeadChar(game, char) {
   return game.players.flatMap(p => p.cards).filter(c => c.dead && c.character === char).length;
 }
 
-/** Estimate probability that a player actually holds `char` given dead cards and own hand. */
-function suspicionScore(game, botId, char) {
-  const dead   = countDeadChar(game, char);
-  const own    = botCharacters(game, botId).filter(c => c === char).length;
-  const remaining = 3 - dead - own; // copies unaccounted for
-  if (remaining <= 0) return 0.95;  // almost certainly bluffing
-  if (own > 0)        return 0.45;  // bot holds one copy → reduced pool
-  return 0.10;                      // normal suspicion
+/**
+ * Logic-based suspicion score — how confident is the bot that `actorId` is bluffing `char`?
+ * Returns 0.0 (definitely has it) → 1.0 (definitely bluffing).
+ *
+ * Level 5 uses server-side omniscience (sees all cards directly).
+ * Levels 2-4 reason from dead cards + own hand.
+ */
+function advancedSuspicionScore(game, botId, actorId, char, level) {
+  const dead = countDeadChar(game, char);
+  const own  = botCharacters(game, botId).filter(c => c === char).length;
+
+  // ── Level 5 (Dono do Morro): reads all live cards on server ──────────────
+  if (level >= 5) {
+    const actor = game.players.find(p => p.id === actorId);
+    if (actor) {
+      const actorHasIt = actor.cards.some(c => !c.dead && c.character === char);
+      if (actorHasIt) return 0.02; // knows for certain → don't challenge
+    }
+    // Count copies held by other non-bot, non-actor players
+    let takenElsewhere = 0;
+    game.players.forEach(p => {
+      if (p.id === botId || p.id === actorId) return;
+      p.cards.forEach(c => { if (!c.dead && c.character === char) takenElsewhere++; });
+    });
+    const remaining = 3 - dead - own - takenElsewhere;
+    if (remaining <= 0) return 0.97; // every copy accounted for — definite bluff
+    return remaining === 1 ? 0.22 : 0.08;
+  }
+
+  // ── Levels 2-4: reason from observable info ───────────────────────────────
+  const remaining = 3 - dead - own;
+  if (remaining <= 0) return 0.95; // all copies dead or in bot's hand
+  if (own >= 2)       return 0.85; // bot holds 2 copies; actor could have at most 1
+  if (own >= 1)       return 0.42; // bot holds 1 copy; reduced pool
+  if (dead >= 2)      return 0.52; // only 1 copy unaccounted; still possible but suspicious
+  return 0.10;                     // normal: no special information
+}
+
+/**
+ * Can the bot plausibly bluff `character`?
+ * Returns false if all 3 copies are dead or already in the bot's hand —
+ * claiming it would be logically impossible and should never happen.
+ */
+function canBluff(game, botId, character) {
+  const dead = countDeadChar(game, character);
+  const own  = botCharacters(game, botId).filter(c => c === character).length;
+  return (3 - dead - own) > 0; // at least 1 copy could plausibly be elsewhere
 }
 
 // ── Public: think delays ──────────────────────────────────────────────────────
@@ -229,8 +268,12 @@ function tryCharAction(candidates, game, botId, character, action, targetMode, c
   const rawBluff    = [0, 0.0, 0.12, 0.28, 0.44, 0.60][level] ?? 0.10;
   const bluffChance = rawBluff * persona.bluffMult;
 
-  // Skip if bluffing and didn't pass the bluff gate
-  if (!hasChar && Math.random() > bluffChance) return;
+  if (!hasChar) {
+    // Logic check: never claim a character if all copies are verifiably dead/in hand
+    if (!canBluff(game, botId, character)) return;
+    // Personality/level gate
+    if (Math.random() > bluffChance) return;
+  }
 
   // Determine target
   let targetId = null;
@@ -311,6 +354,11 @@ function weightedPick(candidates, level) {
 
 /**
  * Should the bot challenge the current pending action?
+ *
+ * Decision is now suspicion-threshold-based, not purely random:
+ *   - High suspicion (e.g. all copies dead) → challenge with high probability
+ *   - Low suspicion → almost never challenge
+ * Level 5 uses server-side card knowledge for near-perfect decisions.
  */
 function decideBotChallenge(game, botId, level) {
   const pa = game.pendingAction;
@@ -319,26 +367,32 @@ function decideBotChallenge(game, botId, level) {
   if (!def?.challengeable) return false;
   if (pa.respondedPlayers?.includes(botId)) return false;
 
-  // 🐣 Estagiário never challenges — too scared
+  // 🐣 Estagiário: never challenges
   if (level === 1) return false;
 
-  // Base random challenge chance — very low to avoid constant challenges
-  // Level 2: 2%, 3: 4%, 4: 8%, 5: 13%
-  const base = [0, 0, 0.02, 0.04, 0.08, 0.13][level] ?? 0.02;
+  // No claimed character → nothing to logically contest
+  if (!pa.claimedCharacter) return false;
 
-  let chance = base;
+  const susp = advancedSuspicionScore(game, botId, pa.actorId, pa.claimedCharacter, level);
 
-  // Suspicion bonus: only activates at level 3+ with strong evidence
-  // (e.g. all copies of the character are already dead / bot holds them)
-  if (level >= 3 && pa.claimedCharacter) {
-    const susp = suspicionScore(game, botId, pa.claimedCharacter);
-    if (susp >= 0.7) {
-      const bonus = [0, 0, 0, 0.06, 0.14, 0.24][level] ?? 0;
-      chance = Math.min(0.55, base + bonus * susp);
-    }
+  // ── Near-certain bluff (≥0.85): actor almost definitely lying ────────────
+  // Lv2: 35%, Lv3: 62%, Lv4: 84%, Lv5: 96%
+  if (susp >= 0.85) {
+    const rate = [0, 0, 0.35, 0.62, 0.84, 0.96][level] ?? 0.62;
+    return Math.random() < rate;
   }
 
-  return Math.random() < chance;
+  // ── Medium suspicion (0.40–0.85): suspicious but not certain ─────────────
+  // Lv2: 5%, Lv3: 12%, Lv4: 26%, Lv5: 42%
+  if (susp >= 0.40) {
+    const rate = [0, 0, 0.05, 0.12, 0.26, 0.42][level] ?? 0.08;
+    return Math.random() < rate;
+  }
+
+  // ── Low suspicion: rare gut-feeling challenge ─────────────────────────────
+  // Lv2: 1%, Lv3: 2%, Lv4: 3%, Lv5: 4%
+  const rate = [0, 0, 0.01, 0.02, 0.03, 0.04][level] ?? 0.01;
+  return Math.random() < rate;
 }
 
 // ── Block Decision ────────────────────────────────────────────────────────────
@@ -378,8 +432,11 @@ function decideBotBlock(game, botId, level) {
     ? [0, 0.00, 0.03, 0.06, 0.10, 0.14][level] ?? 0.02
     : [0, 0.00, 0.01, 0.02, 0.04, 0.06][level] ?? 0.01;
 
-  if (blockers.length > 0 && Math.random() < bluffChance) {
-    return rand(blockers);
+  if (Math.random() < bluffChance) {
+    // Only bluff-block with characters that still have unaccounted copies
+    // (bluffing a dead character is logically impossible and should never happen)
+    const viable = blockers.filter(b => canBluff(game, botId, b));
+    if (viable.length > 0) return rand(viable);
   }
 
   return null;
@@ -389,21 +446,38 @@ function decideBotBlock(game, botId, level) {
 
 /**
  * Should the bot challenge the blocker?
+ * Uses the same suspicion-threshold logic as decideBotChallenge.
  */
 function decideBotChallengeBlock(game, botId, level) {
   const pa = game.pendingAction;
   if (!pa || pa.actorId !== botId || !pa.blocker) return false;
 
-  const base = [0, 0.04, 0.09, 0.17, 0.28, 0.44][level] ?? 0.05;
-  const blocker = pa.blocker;
+  // 🐣 Estagiário: accepts all blocks, too scared to push back
+  if (level === 1) return false;
 
-  let chance = base;
-  if (level >= 3 && blocker.character) {
-    const susp = suspicionScore(game, botId, blocker.character);
-    chance = Math.min(0.88, base + susp * [0, 0, 0.10, 0.22, 0.38, 0.52][level]);
+  const blockerId   = pa.blocker.playerId;
+  const blockerChar = pa.blocker.character;
+  if (!blockerChar) {
+    // No claimed character — small base chance to challenge anyway
+    const base = [0, 0, 0.06, 0.14, 0.24, 0.38][level] ?? 0.10;
+    return Math.random() < base;
   }
 
-  return Math.random() < chance;
+  const susp = advancedSuspicionScore(game, botId, blockerId, blockerChar, level);
+
+  // Near-certain bluff (≥0.85)
+  if (susp >= 0.85) {
+    const rate = [0, 0, 0.28, 0.55, 0.78, 0.94][level] ?? 0.55;
+    return Math.random() < rate;
+  }
+  // Medium (0.40–0.85)
+  if (susp >= 0.40) {
+    const rate = [0, 0, 0.08, 0.20, 0.36, 0.54][level] ?? 0.15;
+    return Math.random() < rate;
+  }
+  // Low — base acceptance rate
+  const base = [0, 0, 0.02, 0.06, 0.12, 0.22][level] ?? 0.04;
+  return Math.random() < base;
 }
 
 // ── Challenge Won: swap or keep ───────────────────────────────────────────────
