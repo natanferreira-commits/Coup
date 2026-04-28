@@ -27,7 +27,7 @@ const BG_COLORS = {
   ajuda_externa: '#06080f',
 };
 
-const DURATION_MS = 5000;
+const DURATION_MS = 4000;
 
 /**
  * ActionCinematic — fullscreen cutscene sincronizada para todos os jogadores

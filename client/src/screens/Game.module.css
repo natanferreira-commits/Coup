@@ -38,14 +38,44 @@
   flex-direction: column;
   align-items: center;
   overflow-y: auto;
-  padding: 12px 16px 16px;
+  padding: 8px 10px 12px;
+  gap: 6px;
+}
+
+/* Opponents — topo da mesa */
+.topOps {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+/* Mesa + laterais */
+.tableRow {
+  display: flex;
+  align-items: center;
   gap: 8px;
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Coluna lateral (4º e 5º jogador) */
+.sideOpCol {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 /* Opponents */
+/* .opponents — legado, mantido por mobile e fallback */
 .opponents {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
   justify-content: center;
   width: 100%;
@@ -67,6 +97,21 @@
 .opponentActive   { border-color: var(--blue) !important; box-shadow: 0 0 0 2px rgba(19,81,180,0.12) !important; }
 .opponentDead     { pointer-events: none; opacity: 0.45; }
 .opponentTargeted { border-color: var(--red) !important; background: rgba(229,57,53,0.05) !important; }
+
+/* Variante lateral: vertical, mais compacta */
+.opponentSide {
+  flex-direction: column;
+  align-items: center;
+  min-width: 68px;
+  max-width: 80px;
+  padding: 7px 6px;
+  text-align: center;
+  gap: 4px;
+}
+.opponentSide .opponentInfo { align-items: center; }
+.opponentSide .opponentName { font-size: 0.68rem; white-space: normal; text-align: center; word-break: break-word; }
+.opponentSide .opponentCards { justify-content: center; }
+.opponentSide .opponentAvatar { width: 26px; height: 26px; font-size: 0.75rem; }
 
 .opponentAvatar {
   width: 30px; height: 30px; border-radius: 50%;
@@ -101,7 +146,8 @@
 /* ── Mesa ── */
 .mesaWrapper {
   display: flex; flex-direction: column; align-items: center;
-  width: 100%; gap: 10px; flex: 1; min-height: 200px; justify-content: center;
+  gap: 8px; flex: 1; min-height: 0; justify-content: center;
+  min-width: 0;
 }
 
 /* Status badge — floats above the diamond */
@@ -892,8 +938,8 @@
     font-size: 3.5rem;
   }
 
-  /* Adversários scroll horizontal */
-  .opponents {
+  /* Adversários scroll horizontal no mobile */
+  .opponents, .topOps {
     flex-wrap: nowrap;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
@@ -901,9 +947,14 @@
     padding-bottom: 2px;
     scrollbar-width: none;
   }
-  .opponents::-webkit-scrollbar { display: none; }
+  .opponents::-webkit-scrollbar, .topOps::-webkit-scrollbar { display: none; }
 
-  .opponent { min-width: 130px; flex-shrink: 0; padding: 6px 10px; }
+  /* Em mobile, lateral vira linha horizontal embaixo do topo */
+  .tableRow { flex-wrap: wrap; }
+  .sideOpCol { flex-direction: row; }
+
+  .opponent { min-width: 120px; flex-shrink: 0; padding: 6px 8px; }
+  .opponentSide { flex-direction: row; min-width: 120px; max-width: unset; }
 
   .mesaImg    { width: min(200px, 72%); }
   .jukeboxImg { width: 80px; }

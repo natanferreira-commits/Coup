@@ -446,6 +446,13 @@ export default function Game({ data, myId, musicTrack, musicLastChanged }) {
 
   const me       = players.find(p => p.id === myId);
   const others   = players.filter(p => p.id !== myId);
+
+  // ── Layout ao redor da mesa ───────────────────────────────────────────────
+  // ≤3 jogadores: todos no topo  |  4+: últimos 2 vão para as laterais
+  const hasSideOps   = others.length > 3;
+  const topOpponents = hasSideOps ? others.slice(0, -2) : others;
+  const leftOp       = hasSideOps ? others[others.length - 2] : null;
+  const rightOp      = hasSideOps ? others[others.length - 1] : null;
   const isMyTurn = currentPlayerId === myId;
   const myCoins  = me?.coins ?? 0;
 
@@ -735,74 +742,18 @@ export default function Game({ data, myId, musicTrack, musicLastChanged }) {
       {/* ── CENTER ── */}
       <div className={styles.center}>
 
-        {/* Opponents */}
-        <div className={styles.opponents}>
-          {others.map(p => {
-            const isHost = p.id === data?.hostId;
-            return (
-              <div
-                key={p.id}
-                className={styles.opponentWrapper}
-                ref={el => { if (el) playerElRefs.current.set(p.id, el); else playerElRefs.current.delete(p.id); }}
-              >
-                {/* Chat bubbles gerenciados pelo ChatBubblesLayer (portal fixo) */}
-
-                <motion.div
-                  className={`${styles.opponent}
-                    ${p.id===currentPlayerId?styles.opponentActive:''}
-                    ${!p.alive?styles.opponentDead:''}
-                    ${selectedTarget===p.id?styles.opponentTargeted:''}
-                  `}
-                  whileHover={canAct&&p.alive?{scale:1.03,y:-2}:{}}
-                  whileTap={canAct&&p.alive?{scale:0.97}:{}}
-                  onClick={()=>canAct&&p.alive&&setSelectedTarget(prev=>prev===p.id?null:p.id)}
-                  style={{cursor:canAct&&p.alive?'pointer':'default'}}>
-                  <div className={styles.opponentAvatar}
-                    style={{ background: getAvatarColor(p.name) }}>
-                    {p.name.charAt(0).toUpperCase()}
-                  </div>
-                  <div className={styles.opponentInfo}>
-                    <div className={styles.opponentNameRow}>
-                      <span className={styles.opponentName}>
-                        {p.isBot && <span style={{marginRight:3}}>🤖</span>}{p.name}
-                      </span>
-                      {isHost && <span className={styles.hostBadge}>HOST</span>}
-                    </div>
-                    <div className={styles.opponentCoins}>
-                      <img src={moedaImg} className={styles.coinIconSm} alt="" />
-                      <span>{p.coins}</span>
-                    </div>
-                  </div>
-                  <div className={styles.opponentCards}>
-                    {p.cards.map((c,i)=>{
-                      const cfg = CHAR_CONFIG[c.character] || {};
-                      return (
-                        <div key={i} className={`${styles.playerCard} ${c.dead?styles.playerCardDead:''}`}>
-                          {c.dead ? (
-                            cfg.img
-                              ? <img src={cfg.img} className={styles.playerCardImg} alt={cfg.label}/>
-                              : <span className={styles.playerCardFallback}>{cfg.icon||'?'}</span>
-                          ) : (
-                            <div className={styles.playerCardBack}>🃏</div>
-                          )}
-                          {c.dead&&<div className={styles.playerCardDeadBadge}>💀 {cfg.label}</div>}
-                        </div>
-                      );
-                    })}
-                  </div>
-                  {p.id===currentPlayerId&&(
-                    <motion.div className={styles.turnBadge}
-                      animate={{ opacity:[1,0.5,1] }}
-                      transition={{ repeat:Infinity, duration:0.9 }}>
-                      🔥 VEZ
-                    </motion.div>
-                  )}
-                  {selectedTarget===p.id&&<div className={styles.targetBadge}>🎯 ALVO</div>}
-                </motion.div>
-              </div>
-            );
-          })}
+        {/* Opponents — topo */}
+        <div className={styles.topOps}>
+          {topOpponents.map(p => <OpCard key={p.id} p={p} hostId={data?.hostId} currentPlayerId={currentPlayerId} selectedTarget={selectedTarget} canAct={canAct} setSelectedTarget={setSelectedTarget} playerElRefs={playerElRefs} />)}
         </div>
+
+        {/* Mesa + laterais */}
+        <div className={styles.tableRow}>
+          {leftOp && (
+            <div className={styles.sideOpCol}>
+              <OpCard p={leftOp} hostId={data?.hostId} currentPlayerId={currentPlayerId} selectedTarget={selectedTarget} canAct={canAct} setSelectedTarget={setSelectedTarget} playerElRefs={playerElRefs} side />
+            </div>
+          )}
 
         {/* Mesa */}
         <div className={styles.mesaWrapper}>
@@ -930,7 +881,14 @@ export default function Game({ data, myId, musicTrack, musicLastChanged }) {
               }
               transition={{duration:0.4}} />
           </div>
-        </div>
+        </div>{/* /mesaWrapper */}
+
+          {rightOp && (
+            <div className={styles.sideOpCol}>
+              <OpCard p={rightOp} hostId={data?.hostId} currentPlayerId={currentPlayerId} selectedTarget={selectedTarget} canAct={canAct} setSelectedTarget={setSelectedTarget} playerElRefs={playerElRefs} side />
+            </div>
+          )}
+        </div>{/* /tableRow */}
 
         {/* My cards + coins */}
         <div
@@ -1414,6 +1372,70 @@ function WaitingBox({ phase, pa, actorName, targetName, blockerName, iAmActor, a
         {sub && <span className={styles.waitingSub}>{sub}</span>}
       </div>
     </motion.div>
+  );
+}
+
+// ── OpCard — carta compacta de oponente (top ou lateral) ────────────────────
+function OpCard({ p, hostId, currentPlayerId, selectedTarget, canAct, setSelectedTarget, playerElRefs, side = false }) {
+  const isHostP = p.id === hostId;
+  return (
+    <div
+      className={styles.opponentWrapper}
+      ref={el => { if (el) playerElRefs.current.set(p.id, el); else playerElRefs.current.delete(p.id); }}
+    >
+      <motion.div
+        className={`${styles.opponent}
+          ${side ? styles.opponentSide : ''}
+          ${p.id===currentPlayerId ? styles.opponentActive : ''}
+          ${!p.alive ? styles.opponentDead : ''}
+          ${selectedTarget===p.id ? styles.opponentTargeted : ''}
+        `}
+        whileHover={canAct&&p.alive?{scale:1.03,y:-2}:{}}
+        whileTap={canAct&&p.alive?{scale:0.97}:{}}
+        onClick={()=>canAct&&p.alive&&setSelectedTarget(prev=>prev===p.id?null:p.id)}
+        style={{cursor:canAct&&p.alive?'pointer':'default'}}>
+        <div className={styles.opponentAvatar} style={{ background: getAvatarColor(p.name) }}>
+          {p.name.charAt(0).toUpperCase()}
+        </div>
+        <div className={styles.opponentInfo}>
+          <div className={styles.opponentNameRow}>
+            <span className={styles.opponentName}>
+              {p.isBot && <span style={{marginRight:3}}>🤖</span>}{p.name}
+            </span>
+            {isHostP && <span className={styles.hostBadge}>HOST</span>}
+          </div>
+          <div className={styles.opponentCoins}>
+            <img src={moedaImg} className={styles.coinIconSm} alt="" />
+            <span>{p.coins}</span>
+          </div>
+        </div>
+        <div className={styles.opponentCards}>
+          {p.cards.map((c,i)=>{
+            const cfg = CHAR_CONFIG[c.character] || {};
+            return (
+              <div key={i} className={`${styles.playerCard} ${c.dead?styles.playerCardDead:''}`}>
+                {c.dead ? (
+                  cfg.img
+                    ? <img src={cfg.img} className={styles.playerCardImg} alt={cfg.label}/>
+                    : <span className={styles.playerCardFallback}>{cfg.icon||'?'}</span>
+                ) : (
+                  <div className={styles.playerCardBack}>🃏</div>
+                )}
+                {c.dead&&<div className={styles.playerCardDeadBadge}>💀 {cfg.label}</div>}
+              </div>
+            );
+          })}
+        </div>
+        {p.id===currentPlayerId&&(
+          <motion.div className={styles.turnBadge}
+            animate={{ opacity:[1,0.5,1] }}
+            transition={{ repeat:Infinity, duration:0.9 }}>
+            🔥 VEZ
+          </motion.div>
+        )}
+        {selectedTarget===p.id&&<div className={styles.targetBadge}>🎯 ALVO</div>}
+      </motion.div>
+    </div>
   );
 }
 
