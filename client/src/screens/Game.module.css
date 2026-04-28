@@ -91,8 +91,8 @@
   padding: 8px 12px;
   position: relative;
   min-width: 140px;
-  transition: border-color 0.2s;
-  box-shadow: 0 1px 4px rgba(19,81,180,0.06);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 8px rgba(19,81,180,0.08), 0 1px 3px rgba(0,0,0,0.06);
 }
 .opponentActive   { border-color: var(--blue) !important; box-shadow: 0 0 0 2px rgba(19,81,180,0.12) !important; }
 .opponentDead     { pointer-events: none; opacity: 0.45; }
@@ -146,11 +146,77 @@
 /* ── Mesa ── */
 .mesaWrapper {
   display: flex; flex-direction: column; align-items: center;
-  gap: 8px; flex: 1; min-height: 0; justify-content: center;
+  gap: 10px; flex: 1; min-height: 0; justify-content: center;
   min-width: 0;
 }
 
-/* Status badge — floats above the diamond */
+/* ── Green felt poker table (replaces the diamond SVG) ── */
+.feltTable {
+  width: min(360px, 96%);
+  min-height: 130px;
+  border-radius: 50%;                       /* horizontal oval */
+  background:
+    radial-gradient(ellipse at 38% 32%, #4caf50 0%, #2e7d32 40%, #1b5e20 72%, #0d4a12 100%);
+  border: 7px solid #4e342e;
+  /* box-shadow overridden by Framer Motion animate */
+  box-shadow: inset 0 4px 18px rgba(0,0,0,0.38), 0 6px 28px rgba(0,0,0,0.22);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 36px;
+  position: relative;
+  overflow: hidden;
+  cursor: default;
+}
+
+/* Felt texture */
+.feltTable::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(0,0,0,0.025) 0px,
+    rgba(0,0,0,0.025) 1px,
+    transparent 1px,
+    transparent 7px
+  );
+  pointer-events: none;
+}
+
+/* Rim highlight */
+.feltTable::after {
+  content: '';
+  position: absolute;
+  inset: 5px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.08);
+  pointer-events: none;
+}
+
+/* Status text — white on green */
+.feltTable .mesaStatus {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  text-align: center; max-width: 280px;
+  position: relative; z-index: 1;
+}
+.feltTable .mesaStatusIcon { font-size: 1.35rem; line-height: 1; filter: drop-shadow(0 1px 3px rgba(0,0,0,0.6)); }
+.feltTable .mesaStatusMain {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.1rem; letter-spacing: 0.07em; line-height: 1.1;
+  color: rgba(255,255,255,0.95);
+  text-shadow: 0 1px 4px rgba(0,0,0,0.55);
+}
+.feltTable .mesaStatusSub  {
+  font-size: 0.72rem; font-weight: 600;
+  color: rgba(255,255,255,0.78);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+}
+.feltTable .mesaStatusBlock { font-size: 0.68rem; color: #a5d6a7; font-weight: 700; }
+
+/* Legacy .mesaStatus outside of table (kept for any fallback) */
 .mesaStatus {
   display: flex; flex-direction: column; align-items: center; gap: 3px;
   text-align: center; max-width: 340px;
@@ -163,7 +229,7 @@
 .mesaStatusSub  { font-size: 0.76rem; color: var(--text); font-weight: 600; }
 .mesaStatusBlock { font-size: 0.7rem; color: var(--green); font-weight: 700; }
 
-/* Mesa + Jukebox lado a lado */
+/* Mesa + Jukebox side by side (legacy — no longer rendered) */
 .mesaRow {
   display: flex;
   align-items: flex-end;
@@ -172,7 +238,7 @@
   width: 100%;
 }
 
-/* The diamond SVG itself */
+/* Diamond SVG (kept for reference, no longer rendered) */
 .mesaImg {
   width: min(300px, 85%);
   height: auto;
@@ -180,7 +246,7 @@
   pointer-events: none;
 }
 
-/* Jukebox button */
+/* Jukebox button — now below the felt table */
 .jukeboxBtn {
   background: none;
   border: none;
@@ -188,19 +254,19 @@
   padding: 0;
   flex-shrink: 0;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   filter: drop-shadow(0 4px 10px rgba(0,0,0,0.18));
 }
 
 .jukeboxImg {
-  width: 116px;
+  width: 90px;
   height: auto;
   object-fit: contain;
   display: block;
 }
 
 .jukeboxFallback {
-  font-size: 2.6rem;
+  font-size: 2.2rem;
   line-height: 1;
 }
 
@@ -210,6 +276,12 @@
   align-items: flex-end;
   gap: 16px;
   padding-top: 4px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  padding: 8px 14px;
+  box-shadow: 0 2px 8px rgba(19,81,180,0.07), 0 1px 3px rgba(0,0,0,0.05);
+  position: relative;
 }
 
 .coinSide {
@@ -956,8 +1028,8 @@
   .opponent { min-width: 120px; flex-shrink: 0; padding: 6px 8px; }
   .opponentSide { flex-direction: row; min-width: 120px; max-width: unset; }
 
-  .mesaImg    { width: min(200px, 72%); }
-  .jukeboxImg { width: 80px; }
+  .feltTable  { min-height: 100px; padding: 14px 24px; }
+  .jukeboxImg { width: 64px; }
   .myArea     { gap: 10px; }
 
   .leaveBtn   { bottom: calc(55vh + 10px); left: 10px; }
@@ -1057,7 +1129,8 @@
   .charFilter  { padding: 5px 7px 7px; gap: 4px; }
   .charChip    { padding: 3px 8px 3px 6px; font-size: 0.62rem; }
   .charChipIcon { font-size: 0.72rem; }
-  .mesaWrapper { min-height: 60px; gap: 4px; justify-content: center; }
+  .mesaWrapper { min-height: 60px; gap: 6px; justify-content: center; }
+  .feltTable   { min-height: 90px; padding: 12px 20px; border-width: 5px; }
   .timerLateral { font-size: 3.6rem; right: 215px; top: 50%; transform: translateY(-50%); }
   .leaveBtn   { padding: 4px 10px; font-size: 0.67rem; bottom: 6px;  left: 6px; }
   .restartBtn { padding: 3px 10px; font-size: 0.67rem; bottom: 34px; left: 6px; }
@@ -1142,6 +1215,12 @@
 :global([data-theme="dark"]) .x9ResultTitle { color: #ce93d8; }
 :global([data-theme="dark"]) .x9ResultCard { background: #22263a; border-color: rgba(150,80,200,0.3); }
 :global([data-theme="dark"]) .x9AckBtn { background: rgba(150,80,200,0.12); border-color: rgba(150,80,200,0.35); color: #ce93d8; }
+/* felt table dark mode — slightly lighter green so it reads against dark bg */
+:global([data-theme="dark"]) .feltTable {
+  background: radial-gradient(ellipse at 38% 32%, #388e3c 0%, #1b5e20 45%, #0d4a12 80%, #051f07 100%);
+  border-color: #3e2723;
+}
+
 /* mobile panels */
 :global([data-theme="dark"]) .mobileHeader { background: #0f1117; border-bottom-color: #2e3555; }
 :global([data-theme="dark"]) .leftPanel  { background: #1a1d2e !important; border-right-color:  #2e3555 !important; }

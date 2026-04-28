@@ -50,6 +50,54 @@ const REACT_DELAYS = {
   5: [3000, 5000],
 };
 
+// ── Personality profiles ─────────────────────────────────────────────────────
+// Each level has a distinct playing style that changes action scoring,
+// bluffing tendency, and target selection.
+const PERSONALITY = {
+  1: { // 🐣 Estagiário — medroso: only safe actions, never bluffs, never challenges
+    bluffMult:  0.0,   // never bluffs
+    safeMult:   2.2,   // loves renda/ajuda_externa
+    aggroMult:  0.0,   // hates damage actions
+    charBonus:  0.0,
+    usesChars:  false, // never picks character actions
+    targetLeader: false,
+  },
+  2: { // 📋 CLT — balanceado: standard play, modest bluffing
+    bluffMult:  1.0,
+    safeMult:   1.0,
+    aggroMult:  1.0,
+    charBonus:  0.0,
+    usesChars:  true,
+    targetLeader: false,
+  },
+  3: { // 💼 Patrão — agressivo: loves violence, coins > safety
+    bluffMult:  1.1,
+    safeMult:   0.45,  // rarely plays it safe
+    aggroMult:  1.9,   // assassinar/golpe/veredito heavily preferred
+    charBonus:  6.0,   // big bonus when using own card
+    usesChars:  true,
+    targetLeader: false,
+  },
+  4: { // 🏛️ Deputado — blefador: claims characters boldly even without cards
+    bluffMult:  2.8,   // bluffs very aggressively
+    safeMult:   0.6,
+    aggroMult:  1.1,
+    charBonus:  9.0,   // loves showing off
+    usesChars:  true,
+    targetLeader: false,
+  },
+  5: { // 👑 Dono do Morro — mata líder: neutralises the richest/most powerful player
+    bluffMult:  1.3,
+    safeMult:   0.3,
+    aggroMult:  2.1,
+    charBonus:  5.0,
+    usesChars:  true,
+    targetLeader: true, // always aims at the leader (most coins + cards)
+  },
+};
+
+const AGGRO_ACTIONS = new Set(['assassinar', 'golpe', 'veredito']);
+
 // How much each character is "worth" (used for discard decisions)
 const CHAR_VALUE = {
   guarda_costas: 6,
@@ -127,9 +175,10 @@ function getThinkDelay(difficultyLevel) {
  * Returns { action: string, targetId: string|null }
  */
 function chooseBotAction(game, botId, level) {
-  const coins = botCoins(game, botId);
-  const chars = botCharacters(game, botId);
-  const alive = getAlivePlayers(game).filter(p => p.id !== botId);
+  const coins   = botCoins(game, botId);
+  const chars   = botCharacters(game, botId);
+  const alive   = getAlivePlayers(game).filter(p => p.id !== botId);
+  const persona = PERSONALITY[level] || PERSONALITY[2];
 
   // Forced golpe at ≥10 coins
   if (coins >= 10 && alive.length > 0) {
@@ -139,20 +188,24 @@ function chooseBotAction(game, botId, level) {
   const candidates = [];
 
   // ── Basic actions ────────────────────────────────────────────────────────
-  candidates.push({ action: 'renda',        targetId: null, score: scoreBasic('renda',        coins, level) });
-  candidates.push({ action: 'ajuda_externa', targetId: null, score: scoreBasic('ajuda_externa', coins, level) });
+  candidates.push({ action: 'renda',        targetId: null, score: scoreBasic('renda',        coins, level) * persona.safeMult });
+  candidates.push({ action: 'ajuda_externa', targetId: null, score: scoreBasic('ajuda_externa', coins, level) * persona.safeMult });
 
   if (coins >= 7 && alive.length > 0) {
-    candidates.push({ action: 'golpe', targetId: pickTarget(alive, level).id, score: 78 + level * 4 });
+    const golpeBase = 78 + level * 4;
+    candidates.push({ action: 'golpe', targetId: pickTarget(alive, level).id, score: golpeBase * persona.aggroMult });
   }
 
   // ── Character actions (real cards or bluffs) ─────────────────────────────
-  tryCharAction(candidates, game, botId, 'politico',     'taxar',      null,          chars, coins, alive, level);
-  tryCharAction(candidates, game, botId, 'empresario',   'roubar',     'target_coins', chars, coins, alive, level);
-  tryCharAction(candidates, game, botId, 'assassino',    'assassinar', 'any',          chars, coins, alive, level);
-  tryCharAction(candidates, game, botId, 'juiz',         'veredito',   'any',          chars, coins, alive, level);
-  tryCharAction(candidates, game, botId, 'investigador', 'meter_x9',   'any',          chars, coins, alive, level);
-  tryCharAction(candidates, game, botId, 'investigador', 'disfarce',   null,           chars, coins, alive, level);
+  // Estagiário (level 1) never uses character actions — persona.usesChars = false
+  if (persona.usesChars) {
+    tryCharAction(candidates, game, botId, 'politico',     'taxar',        null,           chars, coins, alive, level, persona);
+    tryCharAction(candidates, game, botId, 'empresario',   'roubar',       'target_coins', chars, coins, alive, level, persona);
+    tryCharAction(candidates, game, botId, 'assassino',    'assassinar',   'any',          chars, coins, alive, level, persona);
+    tryCharAction(candidates, game, botId, 'juiz',         'veredito',     'any',          chars, coins, alive, level, persona);
+    tryCharAction(candidates, game, botId, 'investigador', 'meter_x9',     'any',          chars, coins, alive, level, persona);
+    tryCharAction(candidates, game, botId, 'investigador', 'disfarce',     null,           chars, coins, alive, level, persona);
+  }
 
   const valid = candidates.filter(c => c.targetId !== '__SKIP__');
   if (valid.length === 0) return { action: 'renda', targetId: null };
@@ -166,16 +219,17 @@ function scoreBasic(action, coins, level) {
   return Math.max(6, 28 - coins * 3);
 }
 
-function tryCharAction(candidates, game, botId, character, action, targetMode, chars, coins, alive, level) {
+function tryCharAction(candidates, game, botId, character, action, targetMode, chars, coins, alive, level, persona) {
   const def = ACTION_DEFS[action];
   if (!def) return;
   if (def.cost && coins < def.cost) return;
   if (def.requiresTarget && alive.length === 0) return;
 
   const hasChar     = chars.includes(character);
-  const bluffChance = [0, 0.0, 0.12, 0.28, 0.44, 0.60][level] ?? 0.10;
+  const rawBluff    = [0, 0.0, 0.12, 0.28, 0.44, 0.60][level] ?? 0.10;
+  const bluffChance = rawBluff * persona.bluffMult;
 
-  // Skip bluff for low levels
+  // Skip if bluffing and didn't pass the bluff gate
   if (!hasChar && Math.random() > bluffChance) return;
 
   // Determine target
@@ -189,10 +243,15 @@ function tryCharAction(candidates, game, botId, character, action, targetMode, c
     targetId = pickTarget(alive, level).id;
   }
 
-  const base = hasChar
-    ? [0, 38, 52, 62, 68, 74][level] ?? 50
-    : [0, 12, 22, 32, 42, 52][level] ?? 20;
+  // Base score
+  let base = hasChar
+    ? ([0, 38, 52, 62, 68, 74][level] ?? 50) + persona.charBonus
+    : ([0,  0, 22, 32, 42, 52][level] ?? 20);
 
+  // Aggro multiplier for damage actions (assassinar, golpe, veredito)
+  if (AGGRO_ACTIONS.has(action)) base *= persona.aggroMult;
+
+  // Safety gate: aggressive bots still respect coin costs
   candidates.push({ action, targetId, score: base + Math.random() * 8 });
 }
 
@@ -200,9 +259,19 @@ function pickTarget(alivePlayers, level) {
   if (alivePlayers.length === 0) return null;
   if (alivePlayers.length === 1) return alivePlayers[0];
 
+  // ── 👑 Dono do Morro: always targets the leader (richest / most cards) ────
+  if (level === 5) {
+    return [...alivePlayers].sort((a, b) => {
+      const aLive = a.cards.filter(c => !c.dead).length;
+      const bLive = b.cards.filter(c => !c.dead).length;
+      if (bLive !== aLive) return bLive - aLive; // most alive cards first
+      return b.coins - a.coins;                  // tiebreak: most coins
+    })[0];
+  }
+
   // ── Human focus bias (bots gang up on the human player) ──────────────────
-  // Level 1: 0%, 2: 20%, 3: 50%, 4: 78%, 5: 94%
-  const humanBias = [0, 0.00, 0.20, 0.50, 0.78, 0.94][level] ?? 0;
+  // Level 1: 0%, 2: 20%, 3: 50%, 4: 78%
+  const humanBias = [0, 0.00, 0.20, 0.50, 0.78][level] ?? 0;
   const humans = alivePlayers.filter(p => !p.isBot);
 
   if (humans.length > 0 && Math.random() < humanBias) {
@@ -250,17 +319,19 @@ function decideBotChallenge(game, botId, level) {
   if (!def?.challengeable) return false;
   if (pa.respondedPlayers?.includes(botId)) return false;
 
-  // Base random challenge chance — muito baixo para não desafiar o tempo todo
-  // Nível 1: 1%, 2: 2%, 3: 4%, 4: 8%, 5: 13%
-  const base = [0, 0.01, 0.02, 0.04, 0.08, 0.13][level] ?? 0.02;
+  // 🐣 Estagiário never challenges — too scared
+  if (level === 1) return false;
+
+  // Base random challenge chance — very low to avoid constant challenges
+  // Level 2: 2%, 3: 4%, 4: 8%, 5: 13%
+  const base = [0, 0, 0.02, 0.04, 0.08, 0.13][level] ?? 0.02;
 
   let chance = base;
 
-  // Bônus de suspeita: só ativa em níveis 3+ quando há evidência real
-  // (ex: todas as cópias do personagem já estão mortas)
+  // Suspicion bonus: only activates at level 3+ with strong evidence
+  // (e.g. all copies of the character are already dead / bot holds them)
   if (level >= 3 && pa.claimedCharacter) {
     const susp = suspicionScore(game, botId, pa.claimedCharacter);
-    // Só aumenta chance quando suspeita é alta (0.7+)
     if (susp >= 0.7) {
       const bonus = [0, 0, 0, 0.06, 0.14, 0.24][level] ?? 0;
       chance = Math.min(0.55, base + bonus * susp);
@@ -293,17 +364,18 @@ function decideBotBlock(game, botId, level) {
   const chars = botCharacters(game, botId);
   const legit = blockers.filter(b => chars.includes(b));
 
+  // 🐣 Estagiário: very low legit block rate (too scared even with the right card)
   const legitChance = isTarget
-    ? [0, 0.38, 0.58, 0.72, 0.84, 0.94][level] ?? 0.40
-    : [0, 0.18, 0.32, 0.48, 0.62, 0.78][level] ?? 0.20;
+    ? [0, 0.15, 0.58, 0.72, 0.84, 0.94][level] ?? 0.40
+    : [0, 0.06, 0.32, 0.48, 0.62, 0.78][level] ?? 0.20;
 
   if (legit.length > 0 && Math.random() < legitChance) {
     return rand(legit);
   }
 
-  // Bluff block — raro, só em níveis altos
+  // Bluff block — rare, 🐣 Estagiário never bluff-blocks
   const bluffChance = isTarget
-    ? [0, 0.01, 0.03, 0.06, 0.10, 0.14][level] ?? 0.02
+    ? [0, 0.00, 0.03, 0.06, 0.10, 0.14][level] ?? 0.02
     : [0, 0.00, 0.01, 0.02, 0.04, 0.06][level] ?? 0.01;
 
   if (blockers.length > 0 && Math.random() < bluffChance) {

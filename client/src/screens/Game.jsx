@@ -26,7 +26,6 @@ import ChatBubblesLayer      from '../components/ChatBubblesLayer';
 import HowToPlayModal        from '../components/HowToPlayModal';
 import JukeboxModal          from '../components/JukeboxModal';
 import moedaImg from '../assets/moeda.svg';
-import mesaImg  from '../assets/mesa.svg';
 import styles from './Game.module.css';
 
 // Imagem da jukebox — carregada dinamicamente (build não quebra se não existir)
@@ -757,94 +756,6 @@ export default function Game({ data, myId, musicTrack, musicLastChanged }) {
 
         {/* Mesa */}
         <div className={styles.mesaWrapper}>
-          <AnimatePresence mode="wait">
-
-            {phase==='ACTION_SELECT'&&(
-              <motion.div key="sel" className={styles.mesaStatus}
-                initial={{opacity:0,y:-6}} animate={{opacity:1,y:0}} exit={{opacity:0}}>
-                {isMyTurn
-                  ?<span className={styles.mesaStatusMain} style={{color:'var(--yellow)'}}>✦ SUA VEZ — escolha uma ação</span>
-                  :<span className={styles.mesaStatusMain}>{players.find(p=>p.id===currentPlayerId)?.name} está pensando...</span>
-                }
-              </motion.div>
-            )}
-
-            {(phase==='RESPONSE_WINDOW'||phase==='BLOCK_CHALLENGE_WINDOW')&&pa&&(
-              <motion.div key="resp" className={styles.mesaStatus}
-                initial={{opacity:0,y:-6}} animate={{opacity:1,y:0}} exit={{opacity:0}}>
-                <span className={styles.mesaStatusIcon}>{pa.claimedCharacter?CHAR_CONFIG[pa.claimedCharacter]?.icon:'⚡'}</span>
-                <span className={styles.mesaStatusMain}>{ACTION_NAMES[pa.type]}</span>
-                <span className={styles.mesaStatusSub}>
-                  <span style={{color:'#82b1ff'}}>{actorName}</span>
-                  {targetName&&<>{' → '}<span style={{color:'#ef9a9a'}}>{targetName}</span></>}
-                </span>
-                {phase==='BLOCK_CHALLENGE_WINDOW'&&pa.blocker&&(
-                  <span className={styles.mesaStatusBlock}>🛡️ {blockerName} bloqueou</span>
-                )}
-              </motion.div>
-            )}
-
-            {phase==='LOSE_INFLUENCE'&&(
-              <motion.div key="lose" className={styles.mesaStatus}
-                initial={{opacity:0,y:-6}} animate={{opacity:1,y:0}} exit={{opacity:0}}>
-                <span className={styles.mesaStatusIcon}>💀</span>
-                <span className={styles.mesaStatusMain} style={{color:'var(--red)'}}>
-                  {players.find(p=>p.id===pa?.loseInfluenceQueue?.[0]?.playerId)?.name} perde uma carta
-                </span>
-              </motion.div>
-            )}
-
-            {(phase==='X9_PEEK_SELECT'||phase==='X9_PEEK_VIEW')&&(
-              <motion.div key="x9" className={styles.mesaStatus}
-                initial={{opacity:0,y:-6}} animate={{opacity:1,y:0}} exit={{opacity:0}}>
-                <span className={styles.mesaStatusIcon}>🕵️</span>
-                <span className={styles.mesaStatusMain} style={{color:'#ce93d8'}}>X9 em ação</span>
-                <span className={styles.mesaStatusSub}>
-                  <span style={{color:'#82b1ff'}}>{actorName}</span>{' → '}
-                  <span style={{color:'#ef9a9a'}}>{targetName}</span>
-                </span>
-              </motion.div>
-            )}
-
-            {phase==='CARD_SWAP_SELECT'&&(
-              <motion.div key="swap" className={styles.mesaStatus}
-                initial={{opacity:0,y:-6}} animate={{opacity:1,y:0}} exit={{opacity:0}}>
-                <span className={styles.mesaStatusIcon}>🔄</span>
-                <span className={styles.mesaStatusMain} style={{color:'#82b1ff'}}>
-                  {pa?.swapContext==='disfarce'?'Disfarce':'Infiltrar'}
-                </span>
-                <span className={styles.mesaStatusSub}>
-                  {players.find(p=>p.id===pa?.swapPlayerId)?.name} escolhe uma carta
-                </span>
-              </motion.div>
-            )}
-
-            {phase==='CHALLENGE_WON'&&pa&&(
-              <motion.div key="chalwon" className={styles.mesaStatus}
-                initial={{opacity:0,y:-6}} animate={{opacity:1,y:0}} exit={{opacity:0}}>
-                <span className={styles.mesaStatusIcon}>✅</span>
-                <span className={styles.mesaStatusMain} style={{color:'#4caf50'}}>Duvidada Falhou!</span>
-                <span className={styles.mesaStatusSub}>
-                  <span style={{color:'#82b1ff'}}>{actorName}</span> provou ter{' '}
-                  {pa.challengeWonCharacter&&(
-                    <span style={{color:'var(--yellow)'}}>{CHAR_CONFIG[pa.challengeWonCharacter]?.icon} {CHAR_CONFIG[pa.challengeWonCharacter]?.label}</span>
-                  )}
-                </span>
-              </motion.div>
-            )}
-
-          </AnimatePresence>
-
-          {phase==='COIN_FLIP'&&(
-            <motion.div key="coinflip" className={styles.mesaStatus}
-              initial={{opacity:0,y:-6}} animate={{opacity:1,y:0}} exit={{opacity:0}}>
-              <motion.span className={styles.mesaStatusIcon}
-                animate={{scale:[1,1.12,1]}} transition={{repeat:Infinity,duration:1.1}}>🪙</motion.span>
-              <span className={styles.mesaStatusMain}>Cara ou Coroa!</span>
-              {/* Detailed UI está no CoinFlipModal centralizado */}
-            </motion.div>
-          )}
-
           {/* Timer — lateral, só número */}
           {phase&&phase!=='GAME_OVER'&&timerStartRef.current&&(
             <div className={styles.timerLateral}
@@ -854,33 +765,120 @@ export default function Game({ data, myId, musicTrack, musicLastChanged }) {
             </div>
           )}
 
-          <div className={styles.mesaRow}>
-            {/* Jukebox — mesmo nível da mesa, à esquerda */}
-            <motion.button
-              className={styles.jukeboxBtn}
-              onClick={() => setShowJukebox(v => !v)}
-              whileHover={{ scale: 1.07, rotate: -2 }}
-              whileTap={{ scale: 0.93 }}
-              title="Música de fundo"
-            >
-              {jukeboxImg
-                ? <img src={jukeboxImg} alt="Jukebox" className={styles.jukeboxImg} />
-                : <span className={styles.jukeboxFallback}>🎰</span>
-              }
-            </motion.button>
+          {/* ── Green felt oval table ── */}
+          <motion.div
+            className={styles.feltTable}
+            animate={
+              phase==='RESPONSE_WINDOW'        ? { boxShadow: 'inset 0 4px 18px rgba(0,0,0,0.38), 0 0 0 3px #ffd60066, 0 8px 32px rgba(0,0,0,0.28)' } :
+              phase==='BLOCK_CHALLENGE_WINDOW' ? { boxShadow: 'inset 0 4px 18px rgba(0,0,0,0.38), 0 0 0 3px #f4433666, 0 8px 32px rgba(0,0,0,0.28)' } :
+              phase==='LOSE_INFLUENCE'         ? { boxShadow: 'inset 0 4px 18px rgba(0,0,0,0.38), 0 0 0 3px #f4433644, 0 8px 32px rgba(0,0,0,0.28)' } :
+              phase==='COIN_FLIP'              ? { boxShadow: 'inset 0 4px 18px rgba(0,0,0,0.38), 0 0 0 3px #ffd60077, 0 8px 32px rgba(0,0,0,0.28)' } :
+              phase==='X9_PEEK_SELECT'||phase==='X9_PEEK_VIEW' ? { boxShadow: 'inset 0 4px 18px rgba(0,0,0,0.38), 0 0 0 3px #9c27b066, 0 8px 32px rgba(0,0,0,0.28)' } :
+              { boxShadow: 'inset 0 4px 18px rgba(0,0,0,0.38), 0 6px 28px rgba(0,0,0,0.22)' }
+            }
+            transition={{ duration: 0.4 }}
+          >
+            <AnimatePresence mode="wait">
 
-            <motion.img src={mesaImg} className={styles.mesaImg} alt="mesa"
-              animate={
-                phase==='RESPONSE_WINDOW'       ?{filter:'brightness(1.15) drop-shadow(0 0 18px #ffd60088)'}:
-                phase==='BLOCK_CHALLENGE_WINDOW' ?{filter:'brightness(1.1) drop-shadow(0 0 18px #f4433688)'}:
-                phase==='LOSE_INFLUENCE'         ?{filter:'brightness(1.05) drop-shadow(0 0 16px #f4433666)'}:
-                phase==='COIN_FLIP'              ?{filter:'brightness(1.15) drop-shadow(0 0 20px #ffd60099)'}:
-                phase==='X9_PEEK_SELECT'         ?{filter:'brightness(1.1) drop-shadow(0 0 18px #9c27b088)'}:
-                phase==='X9_PEEK_VIEW'           ?{filter:'brightness(1.1) drop-shadow(0 0 18px #9c27b088)'}:
-                {filter:'brightness(1) drop-shadow(0 0 0px transparent)'}
-              }
-              transition={{duration:0.4}} />
-          </div>
+              {phase==='ACTION_SELECT'&&(
+                <motion.div key="sel" className={styles.mesaStatus}
+                  initial={{opacity:0,y:-6}} animate={{opacity:1,y:0}} exit={{opacity:0}}>
+                  {isMyTurn
+                    ?<span className={styles.mesaStatusMain} style={{color:'#ffd600',textShadow:'0 0 12px rgba(255,214,0,0.5)'}}>✦ SUA VEZ</span>
+                    :<span className={styles.mesaStatusMain}>{players.find(p=>p.id===currentPlayerId)?.name} pensando...</span>
+                  }
+                </motion.div>
+              )}
+
+              {(phase==='RESPONSE_WINDOW'||phase==='BLOCK_CHALLENGE_WINDOW')&&pa&&(
+                <motion.div key="resp" className={styles.mesaStatus}
+                  initial={{opacity:0,y:-6}} animate={{opacity:1,y:0}} exit={{opacity:0}}>
+                  <span className={styles.mesaStatusIcon}>{pa.claimedCharacter?CHAR_CONFIG[pa.claimedCharacter]?.icon:'⚡'}</span>
+                  <span className={styles.mesaStatusMain}>{ACTION_NAMES[pa.type]}</span>
+                  <span className={styles.mesaStatusSub}>
+                    <span style={{color:'#90caf9'}}>{actorName}</span>
+                    {targetName&&<>{' → '}<span style={{color:'#ef9a9a'}}>{targetName}</span></>}
+                  </span>
+                  {phase==='BLOCK_CHALLENGE_WINDOW'&&pa.blocker&&(
+                    <span className={styles.mesaStatusBlock}>🛡️ {blockerName} bloqueou</span>
+                  )}
+                </motion.div>
+              )}
+
+              {phase==='LOSE_INFLUENCE'&&(
+                <motion.div key="lose" className={styles.mesaStatus}
+                  initial={{opacity:0,y:-6}} animate={{opacity:1,y:0}} exit={{opacity:0}}>
+                  <span className={styles.mesaStatusIcon}>💀</span>
+                  <span className={styles.mesaStatusMain} style={{color:'#ef9a9a'}}>
+                    {players.find(p=>p.id===pa?.loseInfluenceQueue?.[0]?.playerId)?.name} perde uma carta
+                  </span>
+                </motion.div>
+              )}
+
+              {(phase==='X9_PEEK_SELECT'||phase==='X9_PEEK_VIEW')&&(
+                <motion.div key="x9" className={styles.mesaStatus}
+                  initial={{opacity:0,y:-6}} animate={{opacity:1,y:0}} exit={{opacity:0}}>
+                  <span className={styles.mesaStatusIcon}>🕵️</span>
+                  <span className={styles.mesaStatusMain} style={{color:'#ce93d8'}}>X9 em ação</span>
+                  <span className={styles.mesaStatusSub}>
+                    <span style={{color:'#90caf9'}}>{actorName}</span>{' → '}
+                    <span style={{color:'#ef9a9a'}}>{targetName}</span>
+                  </span>
+                </motion.div>
+              )}
+
+              {phase==='CARD_SWAP_SELECT'&&(
+                <motion.div key="swap" className={styles.mesaStatus}
+                  initial={{opacity:0,y:-6}} animate={{opacity:1,y:0}} exit={{opacity:0}}>
+                  <span className={styles.mesaStatusIcon}>🔄</span>
+                  <span className={styles.mesaStatusMain} style={{color:'#90caf9'}}>
+                    {pa?.swapContext==='disfarce'?'Disfarce':'Infiltrar'}
+                  </span>
+                  <span className={styles.mesaStatusSub}>
+                    {players.find(p=>p.id===pa?.swapPlayerId)?.name} escolhe uma carta
+                  </span>
+                </motion.div>
+              )}
+
+              {phase==='CHALLENGE_WON'&&pa&&(
+                <motion.div key="chalwon" className={styles.mesaStatus}
+                  initial={{opacity:0,y:-6}} animate={{opacity:1,y:0}} exit={{opacity:0}}>
+                  <span className={styles.mesaStatusIcon}>✅</span>
+                  <span className={styles.mesaStatusMain} style={{color:'#a5d6a7'}}>Duvidada Falhou!</span>
+                  <span className={styles.mesaStatusSub}>
+                    <span style={{color:'#90caf9'}}>{actorName}</span> provou ter{' '}
+                    {pa.challengeWonCharacter&&(
+                      <span style={{color:'#ffd600'}}>{CHAR_CONFIG[pa.challengeWonCharacter]?.icon} {CHAR_CONFIG[pa.challengeWonCharacter]?.label}</span>
+                    )}
+                  </span>
+                </motion.div>
+              )}
+
+            </AnimatePresence>
+
+            {phase==='COIN_FLIP'&&(
+              <motion.div key="coinflip" className={styles.mesaStatus}
+                initial={{opacity:0,y:-6}} animate={{opacity:1,y:0}} exit={{opacity:0}}>
+                <motion.span className={styles.mesaStatusIcon}
+                  animate={{scale:[1,1.12,1]}} transition={{repeat:Infinity,duration:1.1}}>🪙</motion.span>
+                <span className={styles.mesaStatusMain} style={{color:'#ffd600'}}>Cara ou Coroa!</span>
+              </motion.div>
+            )}
+          </motion.div>{/* /feltTable */}
+
+          {/* Jukebox — abaixo da mesa */}
+          <motion.button
+            className={styles.jukeboxBtn}
+            onClick={() => setShowJukebox(v => !v)}
+            whileHover={{ scale: 1.07, rotate: -2 }}
+            whileTap={{ scale: 0.93 }}
+            title="Música de fundo"
+          >
+            {jukeboxImg
+              ? <img src={jukeboxImg} alt="Jukebox" className={styles.jukeboxImg} />
+              : <span className={styles.jukeboxFallback}>🎰</span>
+            }
+          </motion.button>
         </div>{/* /mesaWrapper */}
 
           {rightOp && (
