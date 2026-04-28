@@ -576,6 +576,12 @@ export default function Game({ data, myId, musicTrack, musicLastChanged }) {
             {!isHost && (
               <p style={{color:'var(--muted)',fontSize:13,marginTop:12}}>Aguardando o host reiniciar...</p>
             )}
+            <motion.button
+              className={styles.gameOverLeaveBtn}
+              whileHover={{ scale:1.04 }} whileTap={{ scale:0.95 }}
+              onClick={() => socket.emit('leave_room', {}, () => { window.location.reload(); })}>
+              🚪 Sair do Jogo
+            </motion.button>
           </motion.div>
 
           {/* Chat da rodada */}

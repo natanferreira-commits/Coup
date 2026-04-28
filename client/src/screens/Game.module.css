@@ -463,6 +463,30 @@
 .loserCards { display: flex; gap: 4px; }
 .loserCard { font-size: 1rem; }
 
+/* ── Botão sair na tela de fim de jogo ── */
+.gameOverLeaveBtn {
+  margin-top: 8px;
+  width: 100%;
+  padding: 9px 14px;
+  background: transparent;
+  border: 1px solid rgba(229,57,53,0.35);
+  color: var(--red);
+  border-radius: 10px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  letter-spacing: 0.04em;
+  transition: background 0.15s, border-color 0.15s;
+}
+.gameOverLeaveBtn:hover { background: rgba(229,57,53,0.07); border-color: var(--red); }
+:global([data-theme="dark"]) .gameOverLeaveBtn {
+  border-color: rgba(239,83,80,0.35); color: #ef8080;
+}
+:global([data-theme="dark"]) .gameOverLeaveBtn:hover {
+  background: rgba(239,83,80,0.12); border-color: #ef8080;
+}
+
 /* Game over log */
 .gameOverLog {
   background: var(--surface); border: 1px solid var(--border);

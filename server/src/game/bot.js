@@ -41,12 +41,13 @@ const TURN_DELAYS = {
 };
 
 // Reaction delay (challenge / block / lose-influence / etc.)
+// Mínimo 3 s para dar tempo ao jogador humano decidir primeiro
 const REACT_DELAYS = {
-  1: [2000, 3500],
-  2: [1600, 3000],
-  3: [1200, 2500],
-  4: [ 900, 2000],
-  5: [ 700, 1500],
+  1: [4500, 7000],
+  2: [4000, 6500],
+  3: [3500, 6000],
+  4: [3000, 5500],
+  5: [3000, 5000],
 };
 
 // How much each character is "worth" (used for discard decisions)
@@ -200,8 +201,8 @@ function pickTarget(alivePlayers, level) {
   if (alivePlayers.length === 1) return alivePlayers[0];
 
   // ── Human focus bias (bots gang up on the human player) ──────────────────
-  // Level 1: 0%, 2: 15%, 3: 42%, 4: 68%, 5: 88%
-  const humanBias = [0, 0.00, 0.15, 0.42, 0.68, 0.88][level] ?? 0;
+  // Level 1: 0%, 2: 20%, 3: 50%, 4: 78%, 5: 94%
+  const humanBias = [0, 0.00, 0.20, 0.50, 0.78, 0.94][level] ?? 0;
   const humans = alivePlayers.filter(p => !p.isBot);
 
   if (humans.length > 0 && Math.random() < humanBias) {
@@ -249,12 +250,21 @@ function decideBotChallenge(game, botId, level) {
   if (!def?.challengeable) return false;
   if (pa.respondedPlayers?.includes(botId)) return false;
 
-  const base = [0, 0.04, 0.09, 0.18, 0.30, 0.46][level] ?? 0.05;
+  // Base random challenge chance — muito baixo para não desafiar o tempo todo
+  // Nível 1: 1%, 2: 2%, 3: 4%, 4: 8%, 5: 13%
+  const base = [0, 0.01, 0.02, 0.04, 0.08, 0.13][level] ?? 0.02;
 
   let chance = base;
+
+  // Bônus de suspeita: só ativa em níveis 3+ quando há evidência real
+  // (ex: todas as cópias do personagem já estão mortas)
   if (level >= 3 && pa.claimedCharacter) {
     const susp = suspicionScore(game, botId, pa.claimedCharacter);
-    chance = Math.min(0.92, base + susp * [0, 0, 0.1, 0.25, 0.4, 0.55][level]);
+    // Só aumenta chance quando suspeita é alta (0.7+)
+    if (susp >= 0.7) {
+      const bonus = [0, 0, 0, 0.06, 0.14, 0.24][level] ?? 0;
+      chance = Math.min(0.55, base + bonus * susp);
+    }
   }
 
   return Math.random() < chance;
@@ -291,10 +301,10 @@ function decideBotBlock(game, botId, level) {
     return rand(legit);
   }
 
-  // Bluff block
+  // Bluff block — raro, só em níveis altos
   const bluffChance = isTarget
-    ? [0, 0.04, 0.09, 0.14, 0.18, 0.22][level] ?? 0.05
-    : [0, 0.01, 0.04, 0.07, 0.10, 0.12][level] ?? 0.02;
+    ? [0, 0.01, 0.03, 0.06, 0.10, 0.14][level] ?? 0.02
+    : [0, 0.00, 0.01, 0.02, 0.04, 0.06][level] ?? 0.01;
 
   if (blockers.length > 0 && Math.random() < bluffChance) {
     return rand(blockers);

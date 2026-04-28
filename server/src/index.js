@@ -555,7 +555,37 @@ io.on('connection', socket => {
 
   // ── Normal events ─────────────────────────────────────────────────────────
 
+  /**
+   * Ensures the player leaves any current room before creating/joining a new one.
+   * Prevents the "dois jogos conectados" bug where a player receives game_state
+   * from two rooms simultaneously.
+   */
+  function autoLeaveCurrentRoom() {
+    const existing = getRoomByPlayer(socket.id);
+    if (!existing) return;
+    const player = existing.players.find(p => p.id === socket.id || p.currentSocketId === socket.id);
+    if (!player) return;
+    if (existing.isPve) clearBotTimer(existing.code);
+    const playerId = player.id;
+    removePlayerFromRoom(existing.code, playerId);
+    socket.leave(existing.code);
+    if (pid) { clearTimeout(disconnectTimers.get(pid)); disconnectTimers.delete(pid); pidSessions.delete(pid); }
+    // If game was in progress, eliminate that player's cards and check win
+    const liveRoom = getRoomByCode(existing.code);
+    if (liveRoom?.game) {
+      const gp = liveRoom.game.players.find(p => p.id === playerId);
+      if (gp) gp.cards.forEach(c => { c.dead = true; });
+      const alive = liveRoom.game.players.filter(p => p.cards.some(c => !c.dead));
+      if (alive.length === 1 && liveRoom.game.phase !== 'GAME_OVER') {
+        liveRoom.game.winner = alive[0].id;
+        liveRoom.game.phase  = 'GAME_OVER';
+      }
+      if (liveRoom.players.filter(p => !p.isBot).length > 0) broadcast(liveRoom);
+    }
+  }
+
   socket.on('create_room', ({ playerName }, cb) => {
+    autoLeaveCurrentRoom();
     const room = createRoom(socket.id, playerName, pid);
     socket.join(room.code);
     if (pid) pidSessions.set(pid, { roomCode: room.code, playerId: socket.id });
@@ -563,6 +593,7 @@ io.on('connection', socket => {
   });
 
   socket.on('create_pve_room', ({ playerName, difficulty }, cb) => {
+    autoLeaveCurrentRoom();
     const diff = ['estagiario', 'clt', 'patrao', 'deputado', 'dono_morro'].includes(difficulty)
       ? difficulty : 'estagiario';
     const room = createPveRoom(socket.id, playerName, pid, diff);
