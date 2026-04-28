@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, createContext, useContext } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import socket from '../socket';
 import Card from '../components/Card';
@@ -32,6 +32,9 @@ import styles from './Game.module.css';
 // Imagem da jukebox — carregada dinamicamente (build não quebra se não existir)
 const _jukeboxAssets = import.meta.glob('../assets/jukebox.*', { eager: true, import: 'default' });
 const jukeboxImg = Object.values(_jukeboxAssets)[0] ?? null;
+
+// ── Tooltip context (evita overflow-clip do actionsTop) ──────────────────────
+const TooltipCtx = createContext(null);
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -143,6 +146,7 @@ export default function Game({ data, myId, musicTrack, musicLastChanged }) {
   const [activeEventPopup, setActiveEventPopup] = useState(null); // evento visível no popup
   const [eventAnnouncing,  setEventAnnouncing]  = useState(false); // overlay "EVENTO CHEGANDO"
   const [mobileLeftOpen,   setMobileLeftOpen]   = useState(false); // drawer esquerdo em mobile
+  const [hoveredDesc,      setHoveredDesc]      = useState('');   // tooltip desc bar
 
   // ── Animation state ───────────────────────────────────────────────────────
   const [coinAnims,      setCoinAnims]      = useState([]); // [{ id, from, to, amount }]
@@ -952,6 +956,7 @@ export default function Game({ data, myId, musicTrack, musicLastChanged }) {
       </div>
 
       {/* ── RIGHT: actions (top) + char cards (bottom) ── */}
+      <TooltipCtx.Provider value={setHoveredDesc}>
       <div className={styles.rightPanel}>
 
         {/* ── ACTIONS TOP ── */}
@@ -1227,6 +1232,20 @@ export default function Game({ data, myId, musicTrack, musicLastChanged }) {
           </AnimatePresence>
         </div>
 
+        {/* ── Barra de descrição da ação hovered ── */}
+        <AnimatePresence>
+          {hoveredDesc && (
+            <motion.div
+              className={styles.descBar}
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 4 }}
+              transition={{ duration: 0.15 }}>
+              {hoveredDesc}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* ── FINGIR PERSONAGEM (bottom) ── */}
         <div className={styles.charSection}>
           <p className={styles.panelLabel}>Fingir um personagem</p>
@@ -1257,6 +1276,7 @@ export default function Game({ data, myId, musicTrack, musicLastChanged }) {
           </div>
         </div>
       </div>
+      </TooltipCtx.Provider>
 
       {/* Reiniciar (apenas host) */}
       {isHost&&(
@@ -1392,6 +1412,7 @@ function WaitingBox({ phase, pa, actorName, targetName, blockerName, iAmActor, a
 }
 
 function Btn({ icon, label, sub, onClick, disabled, danger, success, selected, tooltip }) {
+  const setDesc = useContext(TooltipCtx);
   return (
     <motion.button
       className={`${styles.actionBtn}
@@ -1401,7 +1422,8 @@ function Btn({ icon, label, sub, onClick, disabled, danger, success, selected, t
       `}
       disabled={disabled}
       onClick={onClick}
-      data-tooltip={tooltip||undefined}
+      onMouseEnter={tooltip && setDesc ? () => setDesc(tooltip) : undefined}
+      onMouseLeave={setDesc ? () => setDesc('') : undefined}
       whileHover={!disabled?{scale:1.02,y:-1}:{}}
       whileTap={!disabled?{scale:0.96}:{}}
       transition={{type:'spring',stiffness:400,damping:20}}>

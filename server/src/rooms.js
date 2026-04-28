@@ -97,6 +97,7 @@ function startGame(room) {
       { character: deck.pop(), dead: false },
       { character: deck.pop(), dead: false },
     ],
+    ...(p.isBot ? { isBot: true } : {}),
   }));
 
   room.game = {

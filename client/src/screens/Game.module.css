@@ -352,28 +352,7 @@
   background: rgba(19,81,180,0.05);
 }
 
-/* Tooltip — aparece ABAIXO do botão para não ser cortado pelo topo do painel */
-.actionBtn[data-tooltip]:hover::after {
-  content: attr(data-tooltip);
-  position: absolute;
-  top: calc(100% + 5px);
-  bottom: auto;
-  left: 0; right: 0;
-  background: #ffffff;
-  border: 1px solid #c5cedf;
-  color: #1a2540;
-  padding: 7px 10px;
-  border-radius: 8px;
-  font-size: 0.64rem;
-  font-weight: 400;
-  line-height: 1.5;
-  z-index: 999;
-  pointer-events: none;
-  text-align: left;
-  white-space: normal;
-  font-family: inherit;
-  box-shadow: 0 4px 16px rgba(19,81,180,0.12);
-}
+/* Tooltip CSS removido — descrição agora via .descBar fora do overflow container */
 .actionBtn:disabled { opacity: 0.35; cursor: not-allowed; }
 .actionBtn div    { display: flex; flex-direction: column; gap: 1px; }
 .actionBtn strong { font-size: 0.77rem; color: var(--text); }
@@ -966,6 +945,21 @@
   margin-left: 1px;
 }
 
+/* ── Barra de descrição da ação (fora do overflow container) ── */
+.descBar {
+  flex-shrink: 0;
+  padding: 7px 12px;
+  font-size: 0.67rem;
+  line-height: 1.5;
+  color: #3a4a70;
+  background: #f0f3fb;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+}
+
 /* ── Grid de botões de ação: 2 por linha ── */
 .actionBtnGrid {
   display: grid;
@@ -1086,10 +1080,9 @@
 :global([data-theme="dark"]) .actionBtnSuccess { background: rgba(0,156,59,0.08) !important; border-color: rgba(0,156,59,0.3) !important; }
 /* category label dark */
 :global([data-theme="dark"]) .catLabel { color: #8099d0; }
-/* tooltip dark mode */
-:global([data-theme="dark"]) .actionBtn[data-tooltip]:hover::after {
-  background: #22263a;
+/* description bar dark mode */
+:global([data-theme="dark"]) .descBar {
+  background: #1e2236;
   border-color: #3d4a7a;
-  color: #eef2ff;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.45);
+  color: #c8d8f8;
 }

@@ -31,13 +31,22 @@ const BOT_DIFFICULTY_LEVELS = {
 
 const BOT_NAMES = ['Zé do Coreto', 'Claudinho', 'Magrão', 'Tonhão', 'Biqueira'];
 
-// Think-time per difficulty (ms): [min, max]
-const THINK_DELAYS = {
-  1: [1200, 2400],
-  2: [ 900, 1800],
-  3: [ 700, 1400],
-  4: [ 500, 1000],
-  5: [ 400,  800],
+// Turn delay (ACTION_SELECT): always ≥ 5 s so UI popups are readable
+const TURN_DELAYS = {
+  1: [5500, 8500],
+  2: [5000, 7500],
+  3: [5000, 7000],
+  4: [5000, 6500],
+  5: [5000, 6000],
+};
+
+// Reaction delay (challenge / block / lose-influence / etc.)
+const REACT_DELAYS = {
+  1: [2000, 3500],
+  2: [1600, 3000],
+  3: [1200, 2500],
+  4: [ 900, 2000],
+  5: [ 700, 1500],
 };
 
 // How much each character is "worth" (used for discard decisions)
@@ -93,11 +102,21 @@ function suspicionScore(game, botId, char) {
   return 0.10;                      // normal suspicion
 }
 
-// ── Public: think delay ───────────────────────────────────────────────────────
+// ── Public: think delays ──────────────────────────────────────────────────────
 
-function getThinkDelay(difficultyLevel) {
-  const [mn, mx] = THINK_DELAYS[difficultyLevel] || THINK_DELAYS[1];
+function getTurnDelay(difficultyLevel) {
+  const [mn, mx] = TURN_DELAYS[difficultyLevel] || TURN_DELAYS[1];
   return mn + Math.floor(Math.random() * (mx - mn));
+}
+
+function getReactDelay(difficultyLevel) {
+  const [mn, mx] = REACT_DELAYS[difficultyLevel] || REACT_DELAYS[1];
+  return mn + Math.floor(Math.random() * (mx - mn));
+}
+
+/** @deprecated use getTurnDelay / getReactDelay */
+function getThinkDelay(difficultyLevel) {
+  return getReactDelay(difficultyLevel);
 }
 
 // ── Action Selection ──────────────────────────────────────────────────────────
@@ -177,8 +196,20 @@ function tryCharAction(candidates, game, botId, character, action, targetMode, c
 }
 
 function pickTarget(alivePlayers, level) {
+  if (alivePlayers.length === 0) return null;
+  if (alivePlayers.length === 1) return alivePlayers[0];
+
+  // ── Human focus bias (bots gang up on the human player) ──────────────────
+  // Level 1: 0%, 2: 15%, 3: 42%, 4: 68%, 5: 88%
+  const humanBias = [0, 0.00, 0.15, 0.42, 0.68, 0.88][level] ?? 0;
+  const humans = alivePlayers.filter(p => !p.isBot);
+
+  if (humans.length > 0 && Math.random() < humanBias) {
+    return humans[0]; // only one human in PvE
+  }
+
+  // ── Fallback: most dangerous at level 4+, random otherwise ───────────────
   if (level >= 4) {
-    // Target most dangerous (most cards alive + most coins)
     return [...alivePlayers].sort((a, b) => {
       const aLive = a.cards.filter(c => !c.dead).length;
       const bLive = b.cards.filter(c => !c.dead).length;
@@ -376,6 +407,8 @@ module.exports = {
   BOT_COUNTS,
   BOT_DIFFICULTY_LEVELS,
   BOT_NAMES,
+  getTurnDelay,
+  getReactDelay,
   getThinkDelay,
   chooseBotAction,
   decideBotChallenge,

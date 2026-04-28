@@ -9,7 +9,8 @@ const {
 } = require('./rooms');
 const {
   BOT_DIFFICULTY_LEVELS,
-  getThinkDelay,
+  getTurnDelay,
+  getReactDelay,
   chooseBotAction,
   decideBotChallenge,
   decideBotBlock,
@@ -231,7 +232,7 @@ function scheduleBotTurn(room) {
   if (!botId) return;
 
   const level = BOT_DIFFICULTY_LEVELS[room.pveDifficulty] ?? 1;
-  const delay = getThinkDelay(level);
+  const delay = game.phase === 'ACTION_SELECT' ? getTurnDelay(level) : getReactDelay(level);
 
   const timer = setTimeout(() => {
     botTimers.delete(room.code);
