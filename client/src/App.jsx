@@ -55,11 +55,13 @@ export default function App() {
       // If we were spectating and now receive game_state, we've been promoted
       setIsSpectator(false);
       setSpectatorData(null);
-      // Sync music state for reconnecting players (only auto-play non-silent tracks)
+      // Sync music — só inicia/troca se a faixa realmente mudou
+      // (game_state dispara a cada turno; chamar playTrack toda vez acumulava
+      //  nós Web Audio e setIntervals, travando o jogo progressivamente)
       if (data.musicTrack !== undefined) {
         setMusicTrack(data.musicTrack);
         setMusicLastChanged(data.musicLastChanged || 0);
-        if (data.musicTrack && data.musicTrack !== 'none') {
+        if (data.musicTrack !== sfx.getCurrentTrack()) {
           sfx.playTrack(data.musicTrack);
         }
       }
