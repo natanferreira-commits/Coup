@@ -31,23 +31,22 @@ const BOT_DIFFICULTY_LEVELS = {
 
 const BOT_NAMES = ['Zé do Coreto', 'Claudinho', 'Magrão', 'Tonhão', 'Biqueira'];
 
-// Turn delay (ACTION_SELECT): always ≥ 5 s so UI popups are readable
+// Turn delay (ACTION_SELECT)
 const TURN_DELAYS = {
-  1: [5500, 8500],
-  2: [5000, 7500],
-  3: [5000, 7000],
-  4: [5000, 6500],
-  5: [5000, 6000],
+  1: [2800, 4500],
+  2: [2400, 4000],
+  3: [2000, 3500],
+  4: [1800, 3000],
+  5: [1500, 2600],
 };
 
 // Reaction delay (challenge / block / lose-influence / etc.)
-// Mínimo 3 s para dar tempo ao jogador humano decidir primeiro
 const REACT_DELAYS = {
-  1: [4500, 7000],
-  2: [4000, 6500],
-  3: [3500, 6000],
-  4: [3000, 5500],
-  5: [3000, 5000],
+  1: [2500, 4000],
+  2: [2000, 3500],
+  3: [1700, 3000],
+  4: [1400, 2500],
+  5: [1200, 2200],
 };
 
 // ── Personality profiles ─────────────────────────────────────────────────────
@@ -81,10 +80,10 @@ const PERSONALITY = {
   4: { // 🏛️ Deputado — blefador: claims characters boldly even without cards
     bluffMult:  2.8,   // bluffs very aggressively
     safeMult:   0.6,
-    aggroMult:  1.1,
+    aggroMult:  1.3,
     charBonus:  9.0,   // loves showing off
     usesChars:  true,
-    targetLeader: false,
+    targetLeader: true, // also targets the strongest player
   },
   5: { // 👑 Dono do Morro — mata líder: neutralises the richest/most powerful player
     bluffMult:  1.3,
@@ -278,12 +277,21 @@ function chooseBotAction(game, botId, level) {
     tryCharAction(candidates, game, botId, 'juiz',         'veredito',     'any',          chars, coins, alive, level, persona);
     tryCharAction(candidates, game, botId, 'investigador', 'meter_x9',     'any',          chars, coins, alive, level, persona);
     tryCharAction(candidates, game, botId, 'investigador', 'disfarce',     null,           chars, coins, alive, level, persona);
+    tryCharAction(candidates, game, botId, 'investigador', 'trocar_carta', 'any',          chars, coins, alive, level, persona);
   }
 
   const valid = candidates.filter(c => c.targetId !== '__SKIP__');
   if (valid.length === 0) return { action: 'renda', targetId: null };
 
-  return weightedPick(valid, level);
+  const picked = weightedPick(valid, level);
+
+  // Veredito: bot must accuse the target of having a specific character
+  if (picked.action === 'veredito' && picked.targetId) {
+    picked.accusedCharacter = chooseBotVeredito(game, botId, picked.targetId, level);
+    if (!picked.accusedCharacter) return { action: 'renda', targetId: null }; // fallback
+  }
+
+  return picked;
 }
 
 function scoreBasic(action, coins, level) {
@@ -330,6 +338,52 @@ function tryCharAction(candidates, game, botId, character, action, targetMode, c
 
   // Safety gate: aggressive bots still respect coin costs
   candidates.push({ action, targetId, score: base + Math.random() * 8 });
+}
+
+/**
+ * Decide which character to accuse the target of having for Veredito.
+ * Level 5 can read the actual cards; lower levels use memory + guess.
+ */
+function chooseBotVeredito(game, botId, targetId, level) {
+  const ALL_CHARS = ['politico', 'empresario', 'investigador', 'juiz', 'assassino', 'guarda_costas'];
+  const target = getPlayer(game, targetId);
+  if (!target) return null;
+  const targetAlive = target.cards.filter(c => !c.dead);
+  if (targetAlive.length === 0) return null;
+
+  // Level 5: omniscient — pick most valuable alive card of target
+  if (level >= 5) {
+    const best = [...targetAlive].sort((a, b) => (CHAR_VALUE[b.character] ?? 0) - (CHAR_VALUE[a.character] ?? 0));
+    return best[0].character;
+  }
+
+  // Level 4: use X9 memory if available
+  if (level >= 4) {
+    const seen = getBotMemory(game, botId, targetId);
+    if (seen.length > 0) {
+      // Verify the remembered card is still alive (could have been lost)
+      const stillAlive = seen.find(ch => targetAlive.some(c => c.character === ch));
+      if (stillAlive) return stillAlive;
+    }
+  }
+
+  // Levels 2-3: guess a plausible character (avoid ones known-dead or in own hand)
+  const botChars = botCharacters(game, botId);
+  const plausible = ALL_CHARS.filter(ch => {
+    const dead = countDeadChar(game, ch);
+    const own = botChars.filter(c => c === ch).length;
+    return (3 - dead - own) > 0;
+  });
+
+  if (plausible.length === 0) return rand(ALL_CHARS);
+
+  // Prefer high-value characters as accusation (more damage if correct)
+  if (level >= 3) {
+    plausible.sort((a, b) => (CHAR_VALUE[b] ?? 0) - (CHAR_VALUE[a] ?? 0));
+    return plausible[0];
+  }
+
+  return rand(plausible);
 }
 
 function pickTarget(alivePlayers, level) {
@@ -410,22 +464,22 @@ function decideBotChallenge(game, botId, level) {
   const susp = advancedSuspicionScore(game, botId, pa.actorId, pa.claimedCharacter, level);
 
   // ── Near-certain bluff (≥0.85): actor almost definitely lying ────────────
-  // Lv2: 35%, Lv3: 62%, Lv4: 84%, Lv5: 96%
+  // Lv2: 42%, Lv3: 70%, Lv4: 90%, Lv5: 98%
   if (susp >= 0.85) {
-    const rate = [0, 0, 0.35, 0.62, 0.84, 0.96][level] ?? 0.62;
+    const rate = [0, 0, 0.42, 0.70, 0.90, 0.98][level] ?? 0.70;
     return Math.random() < rate;
   }
 
   // ── Medium suspicion (0.40–0.85): suspicious but not certain ─────────────
-  // Lv2: 5%, Lv3: 12%, Lv4: 26%, Lv5: 42%
+  // Lv2: 7%, Lv3: 18%, Lv4: 36%, Lv5: 55%
   if (susp >= 0.40) {
-    const rate = [0, 0, 0.05, 0.12, 0.26, 0.42][level] ?? 0.08;
+    const rate = [0, 0, 0.07, 0.18, 0.36, 0.55][level] ?? 0.12;
     return Math.random() < rate;
   }
 
   // ── Low suspicion: rare gut-feeling challenge ─────────────────────────────
-  // Lv2: 1%, Lv3: 2%, Lv4: 3%, Lv5: 4%
-  const rate = [0, 0, 0.01, 0.02, 0.03, 0.04][level] ?? 0.01;
+  // Lv2: 1%, Lv3: 3%, Lv4: 5%, Lv5: 7%
+  const rate = [0, 0, 0.01, 0.03, 0.05, 0.07][level] ?? 0.01;
   return Math.random() < rate;
 }
 
@@ -454,8 +508,8 @@ function decideBotBlock(game, botId, level) {
 
   // 🐣 Estagiário: very low legit block rate (too scared even with the right card)
   const legitChance = isTarget
-    ? [0, 0.15, 0.58, 0.72, 0.84, 0.94][level] ?? 0.40
-    : [0, 0.06, 0.32, 0.48, 0.62, 0.78][level] ?? 0.20;
+    ? [0, 0.20, 0.68, 0.82, 0.92, 0.97][level] ?? 0.50
+    : [0, 0.08, 0.40, 0.58, 0.74, 0.88][level] ?? 0.28;
 
   if (legit.length > 0 && Math.random() < legitChance) {
     return rand(legit);
@@ -501,16 +555,16 @@ function decideBotChallengeBlock(game, botId, level) {
 
   // Near-certain bluff (≥0.85)
   if (susp >= 0.85) {
-    const rate = [0, 0, 0.28, 0.55, 0.78, 0.94][level] ?? 0.55;
+    const rate = [0, 0, 0.35, 0.65, 0.86, 0.96][level] ?? 0.65;
     return Math.random() < rate;
   }
   // Medium (0.40–0.85)
   if (susp >= 0.40) {
-    const rate = [0, 0, 0.08, 0.20, 0.36, 0.54][level] ?? 0.15;
+    const rate = [0, 0, 0.10, 0.26, 0.44, 0.62][level] ?? 0.20;
     return Math.random() < rate;
   }
   // Low — base acceptance rate
-  const base = [0, 0, 0.02, 0.06, 0.12, 0.22][level] ?? 0.04;
+  const base = [0, 0, 0.02, 0.07, 0.14, 0.26][level] ?? 0.04;
   return Math.random() < base;
 }
 

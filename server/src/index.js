@@ -273,8 +273,8 @@ function executeBotAction(room, botId, level) {
 
   switch (game.phase) {
     case 'ACTION_SELECT': {
-      const { action, targetId } = chooseBotAction(game, botId, level);
-      handleAction(room, botId, action, targetId, {});
+      const { action, targetId, accusedCharacter } = chooseBotAction(game, botId, level);
+      handleAction(room, botId, action, targetId, { accusedCharacter: accusedCharacter || undefined });
       break;
     }
 
