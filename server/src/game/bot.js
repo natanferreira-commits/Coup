@@ -108,6 +108,27 @@ const CHAR_VALUE = {
   politico:      1,
 };
 
+// ── Bot memory — persists across turns within a game ─────────────────────────
+// Stored directly on the game object as game._botMemory = { [botId]: { [targetId]: char[] } }
+// This avoids passing roomCode everywhere and GCs automatically with the game object.
+
+/**
+ * Record a card that botId has *seen* (via X9) on targetId.
+ * `character` is the revealed card character key.
+ */
+function recordBotX9Memory(game, botId, targetId, character) {
+  if (!game._botMemory)                   game._botMemory = {};
+  if (!game._botMemory[botId])            game._botMemory[botId] = {};
+  if (!game._botMemory[botId][targetId])  game._botMemory[botId][targetId] = [];
+  const seen = game._botMemory[botId][targetId];
+  if (!seen.includes(character)) seen.push(character);
+}
+
+/** Returns the list of characters the bot has seen on a target ([] if none). */
+function getBotMemory(game, botId, targetId) {
+  return game._botMemory?.[botId]?.[targetId] || [];
+}
+
 // ── Internal helpers ─────────────────────────────────────────────────────────
 
 function rand(arr) {
@@ -151,6 +172,19 @@ function countDeadChar(game, char) {
 function advancedSuspicionScore(game, botId, actorId, char, level) {
   const dead = countDeadChar(game, char);
   const own  = botCharacters(game, botId).filter(c => c === char).length;
+
+  // ── Memory check (levels 4-5): bot remembers cards seen via X9 ───────────
+  if (level >= 4) {
+    const seenOnActor = getBotMemory(game, botId, actorId);
+    if (seenOnActor.length > 0) {
+      if (seenOnActor.includes(char)) return 0.02; // bot saw this exact card → definitely legit
+      // Bot saw one or more of actor's cards but NOT this char.
+      // If actor has only 1 alive card and it wasn't char, this is a definite bluff.
+      const actorAlive = (getPlayer(game, actorId)?.cards || []).filter(c => !c.dead).length;
+      if (actorAlive === 1) return 0.92; // single card known to be something else
+      if (actorAlive === 2 && seenOnActor.length >= 1) return 0.62; // saw one card, it wasn't char
+    }
+  }
 
   // ── Level 5 (Dono do Morro): reads all live cards on server ──────────────
   if (level >= 5) {
@@ -575,4 +609,5 @@ module.exports = {
   chooseBotCardSwap,
   chooseBotDisfarce,
   chooseBotCardShow,
+  recordBotX9Memory,
 };

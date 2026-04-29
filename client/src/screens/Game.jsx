@@ -26,6 +26,7 @@ import ChatBubblesLayer      from '../components/ChatBubblesLayer';
 import HowToPlayModal        from '../components/HowToPlayModal';
 import JukeboxModal          from '../components/JukeboxModal';
 import TutorialOverlay, { useShouldShowTutorial } from '../components/TutorialOverlay';
+import ChallengeRevealModal from '../components/ChallengeRevealModal';
 import moedaImg from '../assets/moeda.svg';
 import styles from './Game.module.css';
 
@@ -96,7 +97,7 @@ const ACTION_CATEGORIES = [
   {
     id: 'juiz', label: '⚖️ Juiz', labelColor: '#1b5e20', bg: 'rgba(27,94,32,0.04)', charKey: 'juiz',
     actions: [
-      { action:'veredito', icon:'⚖️', label:'Veredito', sub:'Condena · 5💰', tooltip:'Afirma ser o Juiz. Gasta 5 moedas. Acusa o alvo de ter uma carta específica. Se acertar o alvo perde a carta; se errar você perde as moedas. Qualquer um pode duvidar.' },
+      { action:'veredito', icon:'⚖️', label:'Veredito', sub:'Condena · 4💰', tooltip:'Afirma ser o Juiz. Gasta 4 moedas. Acusa o alvo de ter uma carta específica. Se acertar o alvo perde a carta; se errar você perde as moedas. Qualquer um pode duvidar.' },
     ],
   },
   {
@@ -148,6 +149,7 @@ export default function Game({ data, myId, musicTrack, musicLastChanged }) {
   const [mobileLeftOpen,   setMobileLeftOpen]   = useState(false); // drawer esquerdo em mobile
   const [hoveredDesc,      setHoveredDesc]      = useState('');   // tooltip desc bar
   const [showTutorial,    closeTutorial]       = useShouldShowTutorial();
+  const [challengeReveal, setChallengeReveal]  = useState(null); // { actorName, claimedChar, won }
 
   // ── Animation state ───────────────────────────────────────────────────────
   const [coinAnims,      setCoinAnims]      = useState([]); // [{ id, from, to, amount }]
@@ -402,19 +404,44 @@ export default function Game({ data, myId, musicTrack, musicLastChanged }) {
     prevGameRef.current = game;
   }, [game, getPlayerPos, getTablePos, pushCoinAnim, pushCardDeathAnim]);
 
-  // ── Screen shake on challenge resolution ─────────────────────────────────
-  const prevPhaseRef = useRef(null);
+  // ── Screen shake + challenge reveal drama ────────────────────────────────
+  const prevPhaseRef    = useRef(null);
+  const prevPaRef       = useRef(null);
   useEffect(() => {
-    if (
-      (phase === 'CHALLENGE_WON' || phase === 'LOSE_INFLUENCE') &&
-      (prevPhaseRef.current === 'RESPONSE_WINDOW' || prevPhaseRef.current === 'BLOCK_CHALLENGE_WINDOW')
-    ) {
+    const fromChallengeable =
+      prevPhaseRef.current === 'RESPONSE_WINDOW' ||
+      prevPhaseRef.current === 'BLOCK_CHALLENGE_WINDOW';
+    const toResolution = phase === 'CHALLENGE_WON' || phase === 'LOSE_INFLUENCE';
+
+    if (toResolution && fromChallengeable) {
       setScreenShake(true);
       const t = setTimeout(() => setScreenShake(false), 700);
+
+      // ── Detect whether this resolution came from a challenge (not golpe/assassinar) ──
+      // After a challenge:  CHALLENGE_WON → actor had card (won=true for challenger ≡ false for actor)
+      //                     LOSE_INFLUENCE with actorId in queue → actor was bluffing (won=false)
+      // After golpe/assassinar: LOSE_INFLUENCE with targetId in queue (no challenge)
+      const prevPa = prevPaRef.current;
+      if (prevPa?.claimedCharacter) {
+        const wasChallenge =
+          phase === 'CHALLENGE_WON' ||
+          (phase === 'LOSE_INFLUENCE' && pa?.loseInfluenceQueue?.[0]?.playerId === prevPa.actorId);
+
+        if (wasChallenge) {
+          const aName = players.find(p => p.id === prevPa.actorId)?.name || '?';
+          setChallengeReveal({
+            actorName:   aName,
+            claimedChar: prevPa.claimedCharacter,
+            won:         phase === 'CHALLENGE_WON', // true = actor had the card
+          });
+        }
+      }
+
       return () => clearTimeout(t);
     }
     prevPhaseRef.current = phase;
-  }, [phase]);
+    prevPaRef.current    = pa;
+  }, [phase]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Quick chat socket listener ────────────────────────────────────────────
   useEffect(() => {
@@ -1112,7 +1139,7 @@ export default function Game({ data, myId, musicTrack, musicLastChanged }) {
                         (action!=='golpe'&&mustGolpe) ||
                         (action==='golpe'&&myCoins<7) ||
                         (action==='assassinar'&&myCoins<3) ||
-                        (action==='veredito'&&myCoins<5) ||
+                        (action==='veredito'&&myCoins<4) ||
                         isEventBlocked;
                       const eventBlockTooltip = isEventBlocked
                         ? (game?.activeEvent?.type === 'operacao_pf'
@@ -1353,6 +1380,10 @@ export default function Game({ data, myId, musicTrack, musicLastChanged }) {
     />
     <ChatBubblesLayer bubbles={chatBubbles} getPos={getBubblePos} />
     {showTutorial && <TutorialOverlay onClose={closeTutorial} />}
+    <ChallengeRevealModal
+      reveal={challengeReveal}
+      onDismiss={() => setChallengeReveal(null)}
+    />
     </>
   );
 }

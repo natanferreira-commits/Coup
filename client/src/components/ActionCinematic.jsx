@@ -11,7 +11,7 @@ const CINEMATIC_CONFIG = {
   taxar:        { title: 'FAZER O L',       naturalName: 'fez o L',             sub: 'Político pegou do banco',    delta: '+3', coinMode: 'rain',  accent: '#69f0ae', charKey: 'politico'                       },
   roubar:       { title: 'COBRA A TAXA',    naturalName: 'pegou o arrego de',   sub: 'Bicheiro roubou moedas',     delta: '±2', coinMode: 'burst', accent: '#ffb74d', charKey: 'empresario'                      },
   assassinar:   { title: 'MANDOU JOGAR NO VASCO', naturalName: 'mandou pro Vasco', sub: 'Bandido elimina influência', delta: '-3', coinMode: null, accent: '#ef5350', charKey: 'assassino'                      },
-  veredito:     { title: 'VEREDITO',        naturalName: 'usou Veredito em',    sub: 'O Juiz pronunciou sentença', delta: '-5', coinMode: null,    accent: '#66bb6a', charKey: 'juiz'                           },
+  veredito:     { title: 'VEREDITO',        naturalName: 'usou Veredito em',    sub: 'O Juiz pronunciou sentença', delta: '-4', coinMode: null,    accent: '#66bb6a', charKey: 'juiz'                           },
   meter_x9:     { title: 'CAGUETOU',        naturalName: 'meteu o X9 em',       sub: 'X9 espionou uma carta',      delta: null, coinMode: null,    accent: '#ce93d8', charKey: 'investigador'                   },
   disfarce:     { title: 'DISFARCE',        naturalName: 'usou Disfarce',       sub: 'Trocou carta em segredo',    delta: null, coinMode: null,    accent: '#ce93d8', charKey: 'investigador'                   },
   trocar_carta: { title: 'TROCA FORÇADA',   naturalName: 'forçou troca em',     sub: 'Forçou troca de carta',      delta: null, coinMode: null,    accent: '#ce93d8', charKey: 'investigador'                   },

@@ -588,6 +588,56 @@ export const sfx = {
     tone({ freq: 160, type: 'sawtooth', start: 0.12, duration: 0.18, gain: 0.22 });
   },
 
+  /** Caixa acelerada — build-up de suspense para o reveal do desafio (2s) */
+  drumRoll() {
+    if (_muted) return;
+    const ac = ctx();
+    // Batidas de caixa que aceleram de 120ms → 45ms ao longo de 1.8s
+    const totalDur = 1.85;
+    const startInterval = 0.12;
+    const endInterval   = 0.045;
+    let t = 0;
+    let step = 0;
+    while (t < totalDur) {
+      const progress = t / totalDur;
+      const interval = startInterval - progress * (startInterval - endInterval);
+      // Snare: burst de ruído com bandpass
+      const bufSize = Math.ceil(ac.sampleRate * 0.06);
+      const buf  = ac.createBuffer(1, bufSize, ac.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
+      const src = ac.createBufferSource();
+      src.buffer = buf;
+      const bp  = ac.createBiquadFilter();
+      bp.type = 'bandpass'; bp.frequency.value = 3000 + progress * 2000; bp.Q.value = 0.8;
+      const vol = ac.createGain();
+      const gainVal = 0.06 + progress * 0.10; // cresce com a tensão
+      vol.gain.setValueAtTime(gainVal, ac.currentTime + t);
+      vol.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + t + 0.055);
+      src.connect(bp); bp.connect(vol); vol.connect(getSfxGain());
+      src.start(ac.currentTime + t);
+      src.stop(ac.currentTime + t + 0.07);
+      t += interval;
+      step++;
+    }
+  },
+
+  /** Reveal final — stab de reveal após drum roll */
+  revealStab(won) {
+    if (_muted) return;
+    if (won) {
+      // Acorde de vitória: C E G
+      [[523.25, 0], [659.25, 0.04], [783.99, 0.08]].forEach(([f, s]) =>
+        tone({ freq: f, type: 'sine', start: s, duration: 0.45, gain: 0.22 })
+      );
+    } else {
+      // Queda dramática de derrota
+      tone({ freq: 320, type: 'sawtooth', start: 0,    duration: 0.2,  gain: 0.28, pitchEnd: 160 });
+      tone({ freq: 180, type: 'sawtooth', start: 0.18, duration: 0.25, gain: 0.2,  pitchEnd: 90  });
+      noise({ start: 0, duration: 0.15, gain: 0.14 });
+    }
+  },
+
   /** Carta eliminada — descida sombria */
   eliminate() {
     if (_muted) return;

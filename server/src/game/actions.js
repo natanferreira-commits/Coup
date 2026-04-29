@@ -24,7 +24,7 @@ const ACTION_DEFS = {
   },
   // ── Juiz offensive ─────────────────────────────────────────────────────────
   veredito: {
-    character: 'juiz', cost: 5, challengeable: true, blockable: false,
+    character: 'juiz', cost: 4, challengeable: true, blockable: false,
     requiresTarget: true, anyoneCanBlock: false, anyoneCanChallenge: true,
   },
   // ── X9 trio ─────────────────────────────────────────────

@@ -1,0 +1,121 @@
+/* ── Overlay ── */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.bg {
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse 70% 60% at 50% 50%, #0a0a14 0%, rgba(4,4,10,0.96) 65%);
+  backdrop-filter: blur(8px);
+}
+
+.scanlines {
+  position: absolute; inset: 0;
+  background: repeating-linear-gradient(
+    0deg, transparent, transparent 3px,
+    rgba(0,0,0,0.12) 3px, rgba(0,0,0,0.12) 4px
+  );
+  pointer-events: none; z-index: 1;
+}
+
+.content {
+  position: relative; z-index: 2;
+  width: min(460px, 90vw);
+  display: flex; flex-direction: column; align-items: center;
+  gap: 16px;
+}
+
+/* ── Drum-roll phase ── */
+.rollPhase {
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+}
+
+.questionMark {
+  font-size: 7rem; line-height: 1;
+  filter: drop-shadow(0 0 30px rgba(255,214,0,0.5));
+}
+
+.rollLabel {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 3rem; letter-spacing: 0.15em;
+  color: #fff; margin: 0;
+  text-shadow: 0 0 40px rgba(255,214,0,0.3);
+}
+
+.rollSub {
+  font-size: 0.9rem; color: rgba(255,255,255,0.55);
+  text-align: center; margin: 0;
+}
+
+.rollBar {
+  width: min(320px, 80vw); height: 4px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 2px; overflow: hidden;
+}
+.rollBarFill {
+  height: 100%;
+  background: linear-gradient(90deg, #ffd600, #ff7043);
+  transform-origin: left;
+  border-radius: 2px;
+}
+
+/* ── Reveal phase ── */
+.revealPhase {
+  display: flex; flex-direction: column; align-items: center; gap: 16px;
+}
+
+/* Card art container */
+.cardWrap {
+  position: relative;
+  width: 140px; height: 190px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 2px solid var(--char-color, #ffd600);
+  box-shadow:
+    0 0 40px color-mix(in srgb, var(--char-color) 40%, transparent),
+    0 0 80px color-mix(in srgb, var(--char-color) 18%, transparent);
+}
+.cardImg {
+  width: 100%; height: 100%;
+  object-fit: cover; object-position: top center;
+}
+.cardGlow {
+  position: absolute; inset: 0;
+  background: linear-gradient(to bottom, transparent 50%, rgba(0,0,0,0.5));
+}
+
+.charEmoji {
+  font-size: 8rem; line-height: 1;
+  filter: drop-shadow(0 0 30px rgba(255,214,0,0.6));
+}
+
+/* Result badge */
+.resultBadge {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2.6rem; letter-spacing: 0.1em;
+  border-radius: 10px; padding: 4px 20px;
+}
+.resultWon {
+  color: #69f0ae;
+  background: rgba(105,240,174,0.1);
+  border: 1.5px solid rgba(105,240,174,0.35);
+  text-shadow: 0 0 20px rgba(105,240,174,0.5);
+}
+.resultLost {
+  color: #ef5350;
+  background: rgba(239,83,80,0.1);
+  border: 1.5px solid rgba(239,83,80,0.35);
+  text-shadow: 0 0 20px rgba(239,83,80,0.5);
+}
+
+.resultSub {
+  font-size: 0.88rem; color: rgba(255,255,255,0.6);
+  text-align: center; margin: 0;
+  max-width: 340px; line-height: 1.5;
+}

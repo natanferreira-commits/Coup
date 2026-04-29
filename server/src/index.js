@@ -20,6 +20,7 @@ const {
   chooseBotCardSwap,
   chooseBotDisfarce,
   chooseBotCardShow,
+  recordBotX9Memory,
 } = require('./game/bot');
 const {
   handleAction, handlePass, handleBlock, handleChallenge,
@@ -35,6 +36,11 @@ const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*', methods: ['GET', 'POST'] } });
 
 app.get('/health', (_, res) => res.json({ ok: true }));
+
+// ── Action cooldown — protects against double-tap / replay on mobile ─────────
+/** playerId → timestamp of last accepted take_action */
+const actionCooldowns = new Map();
+const ACTION_COOLDOWN_MS = 600;
 
 // ── Turn timer (60 s) ─────────────────────────────────────────────────────────
 
@@ -321,6 +327,10 @@ function executeBotAction(room, botId, level) {
 
     case 'X9_PEEK_VIEW': {
       if (!pa || pa.actorId !== botId) break;
+      // Record what the bot just saw for future turns
+      if (pa.x9Result && pa.targetId) {
+        recordBotX9Memory(room.game, botId, pa.targetId, pa.x9Result.character);
+      }
       handleAcknowledgePeek(room, botId);
       break;
     }
@@ -381,24 +391,32 @@ function sanitizeGame(game, playerId) {
   };
 }
 
-/** Spectators see the game without any hidden card info */
+/** Spectators are omniscient — they see ALL cards (live and dead) */
 function sanitizeGameForSpectator(game) {
   return {
     players: game.players.map(p => ({
       id: p.id, name: p.name, coins: p.coins,
       alive: p.cards.some(c => !c.dead),
-      cards: p.cards.map((c, i) => ({ index: i, dead: c.dead, character: c.dead ? c.character : null })),
+      // Spectators see every card including face-down ones
+      cards: p.cards.map((c, i) => ({ index: i, dead: c.dead, character: c.character })),
     })),
     currentPlayerId: game.currentPlayerId,
     phase: game.phase,
     pendingAction: game.pendingAction ? {
-      type: game.pendingAction.type, actorId: game.pendingAction.actorId,
-      targetId: game.pendingAction.targetId, claimedCharacter: game.pendingAction.claimedCharacter,
+      type: game.pendingAction.type,
+      actorId: game.pendingAction.actorId,
+      targetId: game.pendingAction.targetId,
+      claimedCharacter: game.pendingAction.claimedCharacter,
       blocker: game.pendingAction.blocker,
+      respondedPlayers: game.pendingAction.respondedPlayers,
+      loseInfluenceQueue: game.pendingAction.loseInfluenceQueue,
+      vereditoCharacter: game.pendingAction.vereditoCharacter || null,
+      challengeWonCharacter: game.pendingAction.challengeWonCharacter || null,
     } : null,
-    log: game.log.slice(-25),
+    log: game.log.slice(-30),
     winner: game.winner,
     activeEvent: game.activeEvent ?? null,
+    roundNumber: game.roundNumber || 1,
   };
 }
 
@@ -832,7 +850,26 @@ function attachGameHandlers(socket) {
     cb?.({ success: true });
   });
 
-  socket.on('take_action',           withRoom((room, { action, targetId, accusedCharacter }, pid) => handleAction(room, pid, action, targetId, { accusedCharacter })));
+  socket.on('take_action', (payload, ack) => {
+    try {
+      const room = getRoomByPlayer(socket.id);
+      if (!room?.game) return ack?.({ success: false, error: 'Sala não encontrada' });
+      const playerId = resolvePlayerId();
+      // Double-tap guard: reject if same player fired within cooldown window
+      const now = Date.now();
+      const lastAt = actionCooldowns.get(playerId) || 0;
+      if (now - lastAt < ACTION_COOLDOWN_MS) {
+        return ack?.({ success: false, error: 'Aguarde um momento antes de agir novamente' });
+      }
+      actionCooldowns.set(playerId, now);
+      const result = handleAction(room, playerId, payload?.action, payload?.targetId, { accusedCharacter: payload?.accusedCharacter });
+      broadcast(room);
+      ack?.({ success: result?.success ?? true, error: result?.error });
+    } catch (err) {
+      console.error('[take_action] erro:', err);
+      ack?.({ success: false, error: 'Erro interno do servidor' });
+    }
+  });
   socket.on('challenge',             withRoom((room, _, pid) => handleChallenge(room, pid)));
   socket.on('block',                 withRoom((room, { character }, pid) => handleBlock(room, pid, character)));
   socket.on('pass',                  withRoom((room, _, pid) => handlePass(room, pid)));
