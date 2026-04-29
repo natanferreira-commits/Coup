@@ -550,6 +550,10 @@ export default function Game({ data, myId, musicTrack, musicLastChanged }) {
   const mustChooseChallengeWon = phase === 'CHALLENGE_WON' && iAmActor;
   const isHost              = data?.hostId === myId;
 
+  // While the challenge reveal modal is playing the drum-roll, freeze the displayed
+  // phase so the mesa and action panel don't reveal the result before the drama ends.
+  const effectivePhase = challengeReveal ? 'RESPONSE_WINDOW' : phase;
+
   const blockOptions = pa ? (BLOCK_OPTIONS[pa.type] || []) : [];
   const actorName    = pa ? players.find(p => p.id === pa.actorId)?.name  : null;
   const targetName   = pa?.targetId ? players.find(p => p.id === pa.targetId)?.name : null;
@@ -817,18 +821,18 @@ export default function Game({ data, myId, musicTrack, musicLastChanged }) {
           <motion.div
             className={styles.feltTable}
             animate={
-              phase==='RESPONSE_WINDOW'        ? { boxShadow: 'inset 0 4px 18px rgba(0,0,0,0.38), 0 0 0 3px #ffd60066, 0 8px 32px rgba(0,0,0,0.28)' } :
-              phase==='BLOCK_CHALLENGE_WINDOW' ? { boxShadow: 'inset 0 4px 18px rgba(0,0,0,0.38), 0 0 0 3px #f4433666, 0 8px 32px rgba(0,0,0,0.28)' } :
-              phase==='LOSE_INFLUENCE'         ? { boxShadow: 'inset 0 4px 18px rgba(0,0,0,0.38), 0 0 0 3px #f4433644, 0 8px 32px rgba(0,0,0,0.28)' } :
-              phase==='COIN_FLIP'              ? { boxShadow: 'inset 0 4px 18px rgba(0,0,0,0.38), 0 0 0 3px #ffd60077, 0 8px 32px rgba(0,0,0,0.28)' } :
-              phase==='X9_PEEK_SELECT'||phase==='X9_PEEK_VIEW' ? { boxShadow: 'inset 0 4px 18px rgba(0,0,0,0.38), 0 0 0 3px #9c27b066, 0 8px 32px rgba(0,0,0,0.28)' } :
+              effectivePhase==='RESPONSE_WINDOW'        ? { boxShadow: 'inset 0 4px 18px rgba(0,0,0,0.38), 0 0 0 3px #ffd60066, 0 8px 32px rgba(0,0,0,0.28)' } :
+              effectivePhase==='BLOCK_CHALLENGE_WINDOW' ? { boxShadow: 'inset 0 4px 18px rgba(0,0,0,0.38), 0 0 0 3px #f4433666, 0 8px 32px rgba(0,0,0,0.28)' } :
+              effectivePhase==='LOSE_INFLUENCE'         ? { boxShadow: 'inset 0 4px 18px rgba(0,0,0,0.38), 0 0 0 3px #f4433644, 0 8px 32px rgba(0,0,0,0.28)' } :
+              effectivePhase==='COIN_FLIP'              ? { boxShadow: 'inset 0 4px 18px rgba(0,0,0,0.38), 0 0 0 3px #ffd60077, 0 8px 32px rgba(0,0,0,0.28)' } :
+              effectivePhase==='X9_PEEK_SELECT'||effectivePhase==='X9_PEEK_VIEW' ? { boxShadow: 'inset 0 4px 18px rgba(0,0,0,0.38), 0 0 0 3px #9c27b066, 0 8px 32px rgba(0,0,0,0.28)' } :
               { boxShadow: 'inset 0 4px 18px rgba(0,0,0,0.38), 0 6px 28px rgba(0,0,0,0.22)' }
             }
             transition={{ duration: 0.4 }}
           >
             <AnimatePresence mode="wait">
 
-              {phase==='ACTION_SELECT'&&(
+              {effectivePhase==='ACTION_SELECT'&&(
                 <motion.div key="sel" className={styles.mesaStatus}
                   initial={{opacity:0,y:-6}} animate={{opacity:1,y:0}} exit={{opacity:0}}>
                   {isMyTurn
@@ -838,7 +842,7 @@ export default function Game({ data, myId, musicTrack, musicLastChanged }) {
                 </motion.div>
               )}
 
-              {(phase==='RESPONSE_WINDOW'||phase==='BLOCK_CHALLENGE_WINDOW')&&pa&&(
+              {(effectivePhase==='RESPONSE_WINDOW'||effectivePhase==='BLOCK_CHALLENGE_WINDOW')&&pa&&(
                 <motion.div key="resp" className={styles.mesaStatus}
                   initial={{opacity:0,y:-6}} animate={{opacity:1,y:0}} exit={{opacity:0}}>
                   <span className={styles.mesaStatusIcon}>{pa.claimedCharacter?CHAR_CONFIG[pa.claimedCharacter]?.icon:'⚡'}</span>
@@ -847,13 +851,13 @@ export default function Game({ data, myId, musicTrack, musicLastChanged }) {
                     <span style={{color:'#90caf9'}}>{actorName}</span>
                     {targetName&&<>{' → '}<span style={{color:'#ef9a9a'}}>{targetName}</span></>}
                   </span>
-                  {phase==='BLOCK_CHALLENGE_WINDOW'&&pa.blocker&&(
+                  {effectivePhase==='BLOCK_CHALLENGE_WINDOW'&&pa.blocker&&(
                     <span className={styles.mesaStatusBlock}>🛡️ {blockerName} bloqueou</span>
                   )}
                 </motion.div>
               )}
 
-              {phase==='LOSE_INFLUENCE'&&(
+              {effectivePhase==='LOSE_INFLUENCE'&&(
                 <motion.div key="lose" className={styles.mesaStatus}
                   initial={{opacity:0,y:-6}} animate={{opacity:1,y:0}} exit={{opacity:0}}>
                   <span className={styles.mesaStatusIcon}>💀</span>
@@ -863,7 +867,7 @@ export default function Game({ data, myId, musicTrack, musicLastChanged }) {
                 </motion.div>
               )}
 
-              {(phase==='X9_PEEK_SELECT'||phase==='X9_PEEK_VIEW')&&(
+              {(effectivePhase==='X9_PEEK_SELECT'||effectivePhase==='X9_PEEK_VIEW')&&(
                 <motion.div key="x9" className={styles.mesaStatus}
                   initial={{opacity:0,y:-6}} animate={{opacity:1,y:0}} exit={{opacity:0}}>
                   <span className={styles.mesaStatusIcon}>🕵️</span>
@@ -875,7 +879,7 @@ export default function Game({ data, myId, musicTrack, musicLastChanged }) {
                 </motion.div>
               )}
 
-              {phase==='CARD_SWAP_SELECT'&&(
+              {effectivePhase==='CARD_SWAP_SELECT'&&(
                 <motion.div key="swap" className={styles.mesaStatus}
                   initial={{opacity:0,y:-6}} animate={{opacity:1,y:0}} exit={{opacity:0}}>
                   <span className={styles.mesaStatusIcon}>🔄</span>
@@ -888,7 +892,7 @@ export default function Game({ data, myId, musicTrack, musicLastChanged }) {
                 </motion.div>
               )}
 
-              {phase==='CHALLENGE_WON'&&pa&&(
+              {effectivePhase==='CHALLENGE_WON'&&pa&&(
                 <motion.div key="chalwon" className={styles.mesaStatus}
                   initial={{opacity:0,y:-6}} animate={{opacity:1,y:0}} exit={{opacity:0}}>
                   <span className={styles.mesaStatusIcon}>✅</span>
@@ -904,7 +908,7 @@ export default function Game({ data, myId, musicTrack, musicLastChanged }) {
 
             </AnimatePresence>
 
-            {phase==='COIN_FLIP'&&(
+            {effectivePhase==='COIN_FLIP'&&(
               <motion.div key="coinflip" className={styles.mesaStatus}
                 initial={{opacity:0,y:-6}} animate={{opacity:1,y:0}} exit={{opacity:0}}>
                 <motion.span className={styles.mesaStatusIcon}
@@ -973,12 +977,12 @@ export default function Game({ data, myId, musicTrack, musicLastChanged }) {
         <div className={styles.actionsTop}>
 
           {/* Coin flip agora no CoinFlipModal centralizado */}
-          {phase==='COIN_FLIP'&&(
+          {effectivePhase==='COIN_FLIP'&&(
             <p className={styles.hint}>🪙 Aguardando resultado da moeda...</p>
           )}
 
           {/* ── CHALLENGE_WON: actor decides swap or keep ── */}
-          {phase==='CHALLENGE_WON'&&(
+          {effectivePhase==='CHALLENGE_WON'&&(
             <motion.div className={styles.challengeWonBox}
               initial={{opacity:0,y:8}} animate={{opacity:1,y:0}}>
               <p className={styles.challengeWonTitle}>
@@ -1120,7 +1124,7 @@ export default function Game({ data, myId, musicTrack, musicLastChanged }) {
           )}
 
           {/* ── Action categories (visíveis sempre na fase ACTION_SELECT) ── */}
-          {phase==='ACTION_SELECT'&&!pendingConfirm&&(
+          {effectivePhase==='ACTION_SELECT'&&!pendingConfirm&&(
             <>
               {ACTION_CATEGORIES.map((cat,ci)=>{
                 const mustGolpe = myCoins>=10;
@@ -1167,9 +1171,9 @@ export default function Game({ data, myId, musicTrack, musicLastChanged }) {
           )}
 
           {/* ── Waiting — tela informativa por fase ── */}
-          {phase!=='ACTION_SELECT'&&!canChallengeAct&&!canBlockAct&&!canChallengeBlock&&!mustAcknowledgePeek&&phase!=='COIN_FLIP'&&me?.alive&&(
+          {effectivePhase!=='ACTION_SELECT'&&!canChallengeAct&&!canBlockAct&&!canChallengeBlock&&!mustAcknowledgePeek&&effectivePhase!=='COIN_FLIP'&&me?.alive&&(
             <WaitingBox
-              phase={phase} pa={pa}
+              phase={effectivePhase} pa={pa}
               actorName={actorName} targetName={targetName} blockerName={blockerName}
               iAmActor={iAmActor} alreadyResponded={alreadyResponded}
               isTargetedAction={isTargetedAction} isAnyoneChallenge={isAnyoneChallenge}

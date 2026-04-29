@@ -359,23 +359,28 @@
 .charCardAllDead  { opacity: 0.18 !important; filter: grayscale(1) !important; pointer-events: none; }
 .charDeadBadge {
   position: absolute; top: 2px; left: 2px;
-  background: rgba(229,57,53,0.88); color: #fff;
-  font-size: 0.42rem; font-weight: 900;
-  border-radius: 3px; padding: 1px 3px;
+  background: rgba(0,0,0,0.82); color: #ff6b6b;
+  font-size: 0.5rem; font-weight: 900;
+  border-radius: 3px; padding: 1px 4px;
   line-height: 1.3; letter-spacing: 0.02em; pointer-events: none;
+  border: 1px solid rgba(229,57,53,0.5);
 }
 .charAliveDots {
   position: absolute; bottom: 3px; left: 0; right: 0;
   display: flex; justify-content: center; gap: 3px; pointer-events: none;
+  padding: 2px 5px 3px;
+  background: rgba(0,0,0,0.72);
+  margin: 0 4px;
+  border-radius: 4px;
 }
 .charAliveDot {
-  width: 5px; height: 5px; border-radius: 50%;
-  background: #69f0ae;
-  box-shadow: 0 0 4px rgba(105,240,174,0.7);
+  width: 6px; height: 6px; border-radius: 50%;
+  background: #00e676;
+  box-shadow: 0 0 5px rgba(0,230,118,0.9);
 }
 .charAliveDotDead {
-  background: rgba(229,57,53,0.45);
-  box-shadow: none;
+  background: rgba(229,57,53,0.85);
+  box-shadow: 0 0 3px rgba(229,57,53,0.5);
 }
 
 .charCardImg {
