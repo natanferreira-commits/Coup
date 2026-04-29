@@ -73,8 +73,37 @@ function DiceCard({ result, rolling, revealed, revealDelay }) {
   );
 }
 
+// ── Contexto de impacto por tipo de evento ────────────────────────────────────
+function getEventContext(event, players) {
+  if (!event || !Array.isArray(players) || players.length === 0) return null;
+  const alive = players.filter(p => p.alive);
+  switch (event.type) {
+    case 'arrastaoo': {
+      const richest = [...alive].sort((a, b) => b.coins - a.coins)[0];
+      if (!richest) return null;
+      return `💸 ${richest.name} tem mais moedas (${richest.coins}🪙) — será o alvo do arrastão!`;
+    }
+    case 'mensalao':
+      return `💵 Todo mundo recebe +1 moeda do banco neste round!`;
+    case 'crise_economica':
+      return `📉 Ações que rendem moedas valem -1 neste round. Planejem bem!`;
+    case 'big_fone':
+      return `🎰 Vote na música clicando no Jukebox abaixo da mesa!`;
+    case 'operacao_pf':
+      return `🚔 Roubar está BLOQUEADO neste round — o Bicheiro está de férias.`;
+    case 'fake_news':
+      return `📰 Meter o X9 e Infiltrar estão BLOQUEADOS neste round.`;
+    case 'jogo_do_bicho': {
+      if (!event.results?.length) return `🎲 Cada jogador lança um dado — sorte de todos!`;
+      const total = event.results.reduce((s, r) => s + (r.coinDelta || 0), 0);
+      return `🎲 ${event.results.length} jogadores participam. Total em jogo: ${Math.abs(total)} moedas.`;
+    }
+    default: return null;
+  }
+}
+
 // ── Popup principal ───────────────────────────────────────────────────────────
-export default function EventPopup({ event, onDismiss }) {
+export default function EventPopup({ event, onDismiss, players }) {
   // rollPhase: 'idle' | 'rolling' | 'revealed'  (Jogo do Bicho)
   const [rollPhase, setRollPhase] = useState('idle');
 
@@ -122,6 +151,7 @@ export default function EventPopup({ event, onDismiss }) {
 
   const meta    = EVENT_META[event.type] || { emoji: '⚡', color: '#fff', bg: '#111', glow: '#fff' };
   const isBicho = event.type === 'jogo_do_bicho';
+  const context = getEventContext(event, players);
 
   // Chave da barra: reinicia quando bicho chega em 'revealed'
   const timerKey = isBicho && rollPhase === 'revealed'
@@ -164,6 +194,18 @@ export default function EventPopup({ event, onDismiss }) {
           <div className={styles.label}>EVENTO DO ROUND</div>
           <h2 className={styles.title}>{event.name}</h2>
           <p className={styles.description}>{event.description}</p>
+
+          {/* Contexto de impacto */}
+          {context && (
+            <motion.div
+              className={styles.contextBadge}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.35 }}
+            >
+              {context}
+            </motion.div>
+          )}
 
           {/* ── Jogo do Bicho: botão Girar (fase idle) ── */}
           {isBicho && rollPhase === 'idle' && (

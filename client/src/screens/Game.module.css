@@ -356,6 +356,27 @@
 .charCardMine     { border-color: var(--yellow) !important; box-shadow: 0 0 8px rgba(255,223,0,0.35); }
 .charCardSelected { border-color: var(--blue) !important; box-shadow: 0 0 10px rgba(19,81,180,0.3); }
 .charCardDimmed   { opacity: 0.3; filter: grayscale(0.8); }
+.charCardAllDead  { opacity: 0.18 !important; filter: grayscale(1) !important; pointer-events: none; }
+.charDeadBadge {
+  position: absolute; top: 2px; left: 2px;
+  background: rgba(229,57,53,0.88); color: #fff;
+  font-size: 0.42rem; font-weight: 900;
+  border-radius: 3px; padding: 1px 3px;
+  line-height: 1.3; letter-spacing: 0.02em; pointer-events: none;
+}
+.charAliveDots {
+  position: absolute; bottom: 3px; left: 0; right: 0;
+  display: flex; justify-content: center; gap: 3px; pointer-events: none;
+}
+.charAliveDot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: #69f0ae;
+  box-shadow: 0 0 4px rgba(105,240,174,0.7);
+}
+.charAliveDotDead {
+  background: rgba(229,57,53,0.45);
+  box-shadow: none;
+}
 
 .charCardImg {
   width: 100%; height: 100%;
@@ -440,6 +461,25 @@
 .responseTitle {
   font-size: 0.76rem; color: var(--text); line-height: 1.5;
 }
+/* Who-responded progress strip */
+.respProgress {
+  display: flex; flex-wrap: wrap; gap: 4px;
+  margin: 2px 0 4px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+.respChip {
+  display: flex; align-items: center; gap: 3px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 2px 7px;
+  font-size: 0.64rem; font-weight: 600; color: var(--muted);
+  transition: all 0.25s;
+}
+.respChipDone {
+  background: rgba(105,240,174,0.1) !important;
+  border-color: rgba(105,240,174,0.35) !important;
+  color: #4caf50 !important;
+}
 
 /* Target pill */
 .targetPill {
@@ -450,6 +490,20 @@
 .targetPill strong { color: var(--red); }
 .clearTarget { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.85rem; padding: 0 2px; }
 .clearTarget:hover { color: var(--red); }
+/* Target banner — shown when a target is pre-selected in action panel */
+.targetBanner {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  background: rgba(229,57,53,0.06); border: 1px solid rgba(229,57,53,0.28);
+  border-radius: 8px; padding: 5px 10px;
+  font-size: 0.74rem; color: var(--text);
+}
+/* Compact target row inside confirm overlay (when target already set) */
+.targetSelectedRow {
+  display: flex; align-items: center; justify-content: space-between;
+  background: rgba(239,154,154,0.09); border: 1px solid rgba(239,154,154,0.32);
+  border-radius: 8px; padding: 6px 10px;
+  font-size: 0.78rem; margin-top: 4px;
+}
 
 /* Hint */
 .hint { font-size: 0.68rem; color: var(--muted); text-align: center; }
@@ -649,10 +703,15 @@
   letter-spacing: 0.02em;
   pointer-events: none;
   z-index: 20;
-  transition: color 0.4s;
+  transition: color 0.5s, opacity 0.5s;
   text-shadow: 0 0 20px currentColor;
   user-select: none;
 }
+@keyframes timerPulse {
+  0%,100% { transform: translateY(-50%) scale(1); }
+  50%     { transform: translateY(-50%) scale(1.18); }
+}
+.timerPulse { animation: timerPulse 0.5s ease-in-out infinite !important; }
 
 /* ── Restart button ── */
 .restartBtn {

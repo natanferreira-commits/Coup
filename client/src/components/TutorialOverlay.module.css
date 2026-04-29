@@ -1,0 +1,129 @@
+/* ── Overlay ── */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(4, 8, 20, 0.72);
+  backdrop-filter: blur(5px);
+}
+
+/* ── Card ── */
+.card {
+  position: relative;
+  z-index: 1;
+  background: var(--surface, #fff);
+  border: 1.5px solid var(--border, #dde3f0);
+  border-radius: 22px;
+  padding: 32px 28px 22px;
+  width: min(400px, 92vw);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  box-shadow:
+    0 4px 40px rgba(19, 81, 180, 0.18),
+    0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Step dots */
+.dots {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--border, #dde3f0);
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+}
+.dotActive {
+  background: var(--blue, #1351b4);
+  transform: scale(1.35);
+}
+
+/* Emoji */
+.emoji {
+  font-size: 4.2rem;
+  line-height: 1;
+  margin: 4px 0 2px;
+  filter: drop-shadow(0 2px 12px rgba(19, 81, 180, 0.18));
+}
+
+/* Title */
+.title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.9rem;
+  letter-spacing: 0.06em;
+  color: var(--blue, #1351b4);
+  text-align: center;
+  margin: 0;
+  line-height: 1.1;
+}
+
+/* Body */
+.body {
+  font-size: 0.9rem;
+  color: var(--text, #1a2540);
+  text-align: center;
+  line-height: 1.6;
+  margin: 0;
+  max-width: 320px;
+}
+
+/* Navigation row */
+.nav {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.btnPrimary {
+  flex: 1;
+  background: var(--blue, #1351b4);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 11px 18px;
+  font-size: 0.9rem;
+  font-weight: 800;
+  cursor: pointer;
+  font-family: inherit;
+  letter-spacing: 0.02em;
+  transition: background 0.15s, transform 0.1s;
+}
+.btnPrimary:hover  { background: #1761d0; }
+.btnPrimary:active { transform: scale(0.97); }
+
+.btnSecondary {
+  background: transparent;
+  color: var(--muted, #6b7a99);
+  border: 1px solid var(--border, #dde3f0);
+  border-radius: 12px;
+  padding: 11px 14px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.15s, color 0.15s;
+}
+.btnSecondary:hover { border-color: var(--blue, #1351b4); color: var(--blue, #1351b4); }
+
+/* Counter */
+.counter {
+  font-size: 0.62rem;
+  color: var(--muted, #6b7a99);
+  letter-spacing: 0.08em;
+  margin: 0;
+}

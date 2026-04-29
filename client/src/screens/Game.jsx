@@ -25,6 +25,7 @@ import RoundEventAnnounce    from '../components/RoundEventAnnounce';
 import ChatBubblesLayer      from '../components/ChatBubblesLayer';
 import HowToPlayModal        from '../components/HowToPlayModal';
 import JukeboxModal          from '../components/JukeboxModal';
+import TutorialOverlay, { useShouldShowTutorial } from '../components/TutorialOverlay';
 import moedaImg from '../assets/moeda.svg';
 import styles from './Game.module.css';
 
@@ -146,6 +147,7 @@ export default function Game({ data, myId, musicTrack, musicLastChanged }) {
   const [eventAnnouncing,  setEventAnnouncing]  = useState(false); // overlay "EVENTO CHEGANDO"
   const [mobileLeftOpen,   setMobileLeftOpen]   = useState(false); // drawer esquerdo em mobile
   const [hoveredDesc,      setHoveredDesc]      = useState('');   // tooltip desc bar
+  const [showTutorial,    closeTutorial]       = useShouldShowTutorial();
 
   // ── Animation state ───────────────────────────────────────────────────────
   const [coinAnims,      setCoinAnims]      = useState([]); // [{ id, from, to, amount }]
@@ -529,6 +531,16 @@ export default function Game({ data, myId, musicTrack, musicLastChanged }) {
   // Which character card to highlight in the fingir grid
   const activeChar = pendingConfirm?.charKey ?? null;
 
+  // ── Contagem de cópias mortas por personagem (para o grid de fingir) ─────────
+  const deadCounts = (() => {
+    const counts = {};
+    Object.keys(CHAR_CONFIG).forEach(k => { counts[k] = 0; });
+    players.forEach(p => p.cards.forEach(c => {
+      if (c.dead && c.character) counts[c.character] = (counts[c.character] || 0) + 1;
+    }));
+    return counts;
+  })();
+
   // ── Ações bloqueadas pelo evento ativo (feedback visual imediato) ───────────
   const blockedActions = (() => {
     const evType = game?.activeEvent?.type;
@@ -653,6 +665,7 @@ export default function Game({ data, myId, musicTrack, musicLastChanged }) {
     <EventPopup
       event={activeEventPopup}
       onDismiss={dismissEventPopup}
+      players={players}
     />
 
     <div className={`${styles.board}${screenShake?` ${styles.boardShake}`:''}`}>
@@ -756,11 +769,19 @@ export default function Game({ data, myId, musicTrack, musicLastChanged }) {
 
         {/* Mesa */}
         <div className={styles.mesaWrapper}>
-          {/* Timer — lateral, só número */}
+          {/* Timer — lateral, só número — urgência progressiva */}
           {phase&&phase!=='GAME_OVER'&&timerStartRef.current&&(
-            <div className={styles.timerLateral}
-              style={{color: timeLeft<=10?'var(--red)':timeLeft<=20?'#d4a800':'var(--muted)',
-                      opacity: timeLeft>30?0.35:timeLeft>20?0.65:1}}>
+            <div
+              className={`${styles.timerLateral}${timeLeft<=8?` ${styles.timerPulse}`:''}`}
+              style={{
+                color:   timeLeft<=8  ? 'var(--red)'  :
+                         timeLeft<=15 ? '#ff7043'     :
+                         timeLeft<=22 ? '#d4a800'     :
+                         timeLeft<=30 ? '#69f0ae'     : 'var(--muted)',
+                opacity: timeLeft>30  ? 0.35 :
+                         timeLeft>22  ? 0.65 :
+                         timeLeft>15  ? 0.85 : 1,
+              }}>
               {timeLeft}
             </div>
           )}
@@ -981,32 +1002,39 @@ export default function Game({ data, myId, musicTrack, musicLastChanged }) {
                 {/* ── Target picker (shown when action needs target) ── */}
                 {TARGET_ACTIONS.includes(pendingConfirm.action)&&(
                   <div style={{width:'100%',marginTop:6}}>
-                    <p className={styles.confirmTitle} style={{fontSize:11,color:'var(--muted)',marginBottom:4}}>
-                      🎯 Escolha o alvo:
-                    </p>
-                    <div style={{display:'flex',flexWrap:'wrap',gap:5,justifyContent:'center'}}>
-                      {others.filter(p=>p.alive).map(p=>(
-                        <motion.button key={p.id}
-                          className={styles.actionBtn}
-                          style={{
-                            '--char-color': pendingConfirm.targetId===p.id ? '#ef9a9a' : 'rgba(255,255,255,0.15)',
-                            border: pendingConfirm.targetId===p.id
-                              ? '2px solid #ef9a9a' : '2px solid rgba(255,255,255,0.12)',
-                            padding:'5px 10px', minWidth:0, flex:'0 0 auto',
-                            background: pendingConfirm.targetId===p.id
-                              ? 'rgba(239,154,154,0.12)' : 'rgba(255,255,255,0.04)',
-                          }}
-                          whileTap={{scale:0.96}}
-                          onClick={()=>setPendingConfirm(prev=>({...prev,targetId:p.id}))}>
-                          <strong style={{fontSize:12}}>{p.name}</strong>
-                          <div style={{fontSize:10,opacity:0.6}}>{p.coins}🪙</div>
-                        </motion.button>
-                      ))}
-                    </div>
-                    {pendingConfirm.targetId&&(
-                      <p style={{fontSize:11,color:'#ef9a9a',marginTop:4,textAlign:'center'}}>
-                        Alvo: <strong>{players.find(p=>p.id===pendingConfirm.targetId)?.name}</strong>
-                      </p>
+                    {pendingConfirm.targetId ? (
+                      /* Alvo já selecionado — exibe compacto */
+                      <div className={styles.targetSelectedRow}>
+                        <span>🎯 Alvo: <strong>{players.find(p=>p.id===pendingConfirm.targetId)?.name}</strong></span>
+                        <button className={styles.clearTarget}
+                          onClick={()=>setPendingConfirm(prev=>({...prev,targetId:null}))}>
+                          trocar ✕
+                        </button>
+                      </div>
+                    ) : (
+                      /* Seleção de alvo */
+                      <>
+                        <p className={styles.confirmTitle} style={{fontSize:11,color:'var(--muted)',marginBottom:4}}>
+                          🎯 Escolha o alvo:
+                        </p>
+                        <div style={{display:'flex',flexWrap:'wrap',gap:5,justifyContent:'center'}}>
+                          {others.filter(p=>p.alive).map(p=>(
+                            <motion.button key={p.id}
+                              className={styles.actionBtn}
+                              style={{
+                                '--char-color':'#ef9a9a',
+                                border:'2px solid rgba(255,255,255,0.12)',
+                                padding:'5px 10px', minWidth:0, flex:'0 0 auto',
+                                background:'rgba(255,255,255,0.04)',
+                              }}
+                              whileTap={{scale:0.96}}
+                              onClick={()=>setPendingConfirm(prev=>({...prev,targetId:p.id}))}>
+                              <strong style={{fontSize:12}}>{p.name}</strong>
+                              <div style={{fontSize:10,opacity:0.6}}>{p.coins}🪙</div>
+                            </motion.button>
+                          ))}
+                        </div>
+                      </>
                     )}
                   </div>
                 )}
@@ -1054,6 +1082,15 @@ export default function Game({ data, myId, musicTrack, musicLastChanged }) {
               </motion.div>
             )}
           </AnimatePresence>
+
+          {/* ── Target banner — alvo pré-selecionado via clique no adversário ── */}
+          {canAct&&selectedTarget&&!pendingConfirm&&(
+            <div className={styles.targetBanner}>
+              🎯 Alvo: <strong>{players.find(p=>p.id===selectedTarget)?.name}</strong>
+              <button className={styles.clearTarget} style={{marginLeft:'auto'}}
+                onClick={()=>setSelectedTarget(null)}>✕ limpar</button>
+            </div>
+          )}
 
           {/* ── Action categories (visíveis sempre na fase ACTION_SELECT) ── */}
           {phase==='ACTION_SELECT'&&!pendingConfirm&&(
@@ -1121,6 +1158,27 @@ export default function Game({ data, myId, musicTrack, musicLastChanged }) {
                 <strong>{actorName}</strong> declara <strong>{ACTION_NAMES[pa?.type]}</strong>
                 {targetName&&<> em <strong>{targetName}</strong></>}
               </p>
+              {/* ── Quem já respondeu ── */}
+              {(()=>{
+                const respondable = players.filter(p=>p.alive&&p.id!==pa?.actorId);
+                if(respondable.length===0) return null;
+                const doneIds = pa?.respondedPlayers||[];
+                const doneCount = respondable.filter(p=>doneIds.includes(p.id)).length;
+                return (
+                  <div>
+                    <div className={styles.respProgress}>
+                      {respondable.map(p=>(
+                        <div key={p.id} className={`${styles.respChip}${doneIds.includes(p.id)?` ${styles.respChipDone}`:''}`}>
+                          {doneIds.includes(p.id)?'✓':'⏳'} {p.name.split(' ')[0]}
+                        </div>
+                      ))}
+                    </div>
+                    <p style={{fontSize:'0.62rem',color:'var(--muted)',marginBottom:2}}>
+                      {doneCount}/{respondable.length} passaram
+                    </p>
+                  </div>
+                );
+              })()}
               {/* Mostra a carta acusada no Veredito */}
               {pa?.type==='veredito'&&pa?.vereditoCharacter&&(
                 <div style={{
@@ -1216,21 +1274,33 @@ export default function Game({ data, myId, musicTrack, musicLastChanged }) {
               const isMine   = me?.cards.some(c=>!c.dead&&c.character===charKey);
               const isDimmed = canAct&&activeChar!==null&&charKey!==activeChar;
               const isActive = canAct&&charKey===activeChar;
+              const dead     = deadCounts[charKey] || 0;
+              const alive    = 3 - dead;
+              const allDead  = alive <= 0;
               return (
                 <motion.div key={charKey}
                   className={`${styles.charCard}
                     ${isMine?styles.charCardMine:''}
                     ${isActive?styles.charCardSelected:''}
                     ${isDimmed?styles.charCardDimmed:''}
+                    ${allDead?styles.charCardAllDead:''}
                   `}
                   style={{'--char-color':cfg.color}}
-                  animate={isDimmed?{filter:'grayscale(0.8)',opacity:0.3}:{filter:'grayscale(0)',opacity:1}}
+                  animate={isDimmed?{filter:'grayscale(0.8)',opacity:0.3}:allDead?{filter:'grayscale(1)',opacity:0.18}:{filter:'grayscale(0)',opacity:1}}
                   transition={{duration:0.25}}>
                   {cfg.img
                     ?<img src={cfg.img} alt={cfg.label} className={styles.charCardImg}/>
                     :<div className={styles.charCardFallback}><span>{cfg.icon}</span></div>
                   }
-                  {isMine&&<div className={styles.mineBadge}>✓</div>}
+                  {/* Dead count badge */}
+                  {dead>0&&<div className={styles.charDeadBadge}>{dead}💀</div>}
+                  {/* Alive dots (3 total, green=alive, red=dead) */}
+                  <div className={styles.charAliveDots}>
+                    {[0,1,2].map(i=>(
+                      <div key={i} className={`${styles.charAliveDot}${i>=alive?` ${styles.charAliveDotDead}`:''}`}/>
+                    ))}
+                  </div>
+                  {isMine&&!isActive&&<div className={styles.mineBadge}>✓</div>}
                   {isActive&&<div className={styles.selectedBadge}>✓ USANDO</div>}
                 </motion.div>
               );
@@ -1282,6 +1352,7 @@ export default function Game({ data, myId, musicTrack, musicLastChanged }) {
       visible={turnVisible}
     />
     <ChatBubblesLayer bubbles={chatBubbles} getPos={getBubblePos} />
+    {showTutorial && <TutorialOverlay onClose={closeTutorial} />}
     </>
   );
 }

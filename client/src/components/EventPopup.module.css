@@ -104,7 +104,22 @@
   color: rgba(255, 255, 255, 0.65);
   text-align: center;
   line-height: 1.5;
-  margin: 0 0 8px;
+  margin: 0;
+}
+
+/* ── Contexto de impacto ── */
+.contextBadge {
+  background: color-mix(in srgb, var(--ev-color) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ev-color) 40%, transparent);
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--ev-color);
+  text-align: center;
+  line-height: 1.4;
+  width: 100%;
+  margin-bottom: 4px;
 }
 
 /* ── Jogo do Bicho — grade de dados ── */
