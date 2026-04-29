@@ -161,9 +161,21 @@ function applyEventEffect(game, event) {
 function checkGameOver(game) {
   const alive = getAlivePlayers(game);
   if (alive.length === 1) {
-    game.winner = alive[0].id;
+    const w = alive[0];
+    game.winner = w.id;
     game.phase = 'GAME_OVER';
-    log(game, `🏆 ${alive[0].name} venceu o Golpe! Parabéns ao mais safado 🇧🇷`);
+    const aliveChars = w.cards.filter(c => !c.dead).map(c => c.character);
+    const WIN_MSGS = {
+      politico:      `${w.name} taxou todo mundo e sobreviveu no poder. O Político nunca perde! 🏛️`,
+      empresario:    `${w.name} juntou fortuna e eliminou geral. O Bicheiro sempre dá o jeito! 💼`,
+      investigador:  `${w.name} sabia de tudo desde o início. Vocês não tinham chance contra o X9! 🕵️`,
+      juiz:          `${w.name} deu o veredito final: ele mesmo vence. A lei é quem ele diz! ⚖️`,
+      assassino:     `${w.name} eliminou todos sem deixar testemunhas. O Bandido não perdoa! 🔫`,
+      guarda_costas: `${w.name} defendeu tudo e sobreviveu de escudo. Miliciano não larga o osso! 🛡️`,
+    };
+    const winChar = aliveChars.find(c => WIN_MSGS[c]) || aliveChars[0];
+    const msg = WIN_MSGS[winChar] || `${w.name} venceu o Golpe! Parabéns ao mais safado 🇧🇷`;
+    log(game, `🏆 ${msg}`);
     return true;
   }
   return false;
@@ -287,6 +299,11 @@ function resolveActionEffect(game) {
       if (game.deck.length >= 1) opts.push(game.deck.pop());
       if (game.deck.length >= 1) opts.push(game.deck.pop());
       pa.disfarceOptions = opts;
+      if (opts.length === 0) {
+        log(game, `${actor.name} tentou o disfarce mas o baralho tá vazio! O X9 não tem pra onde ir 🎭`);
+        advanceTurn(game);
+        return;
+      }
       game.phase = 'DISFARCE_SELECT';
       return;
     }
@@ -358,6 +375,14 @@ function handleAction(room, actorId, actionType, targetId, extraData = {}) {
     return { success: true };
   }
   game.phase = 'RESPONSE_WINDOW';
+  const TENSION = [
+    '👀 Silêncio na mesa. Alguém vai duvidar?',
+    '🎭 O clima ficou pesado... Quem vai se arriscar?',
+    '⚡ Momento decisivo. Todo mundo observando.',
+    '🔥 Dá pra cortar a tensão com uma faca.',
+    '😤 Blefe ou verdade? Só tem um jeito de saber.',
+  ];
+  log(game, TENSION[Math.floor(Math.random() * TENSION.length)]);
   return { success: true };
 }
 

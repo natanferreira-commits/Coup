@@ -46,7 +46,7 @@ const ACTION_COOLDOWN_MS = 600;
 
 const turnTimers = new Map(); // roomCode → setTimeout handle
 const TURN_TIMEOUT_MS = 60_000;
-const NO_TIMER_PHASES = ['X9_PEEK_SELECT', 'X9_PEEK_VIEW', 'CARD_SWAP_SELECT', 'DISFARCE_SELECT'];
+const NO_TIMER_PHASES = ['X9_PEEK_SELECT', 'X9_PEEK_VIEW', 'CARD_SWAP_SELECT'];
 
 function clearTurnTimer(roomCode) {
   if (turnTimers.has(roomCode)) {
@@ -132,6 +132,16 @@ function setTurnTimer(room) {
         case 'CHALLENGE_WON':
           if (pa) handleChallengeWonChoice(room, pa.actorId, true); // auto-swap on timeout
           break;
+
+        case 'DISFARCE_SELECT': {
+          if (!pa) break;
+          const opts = pa.disfarceOptions || [];
+          handleSelectDisfarce(room, pa.actorId, {
+            myCardIndex: 0,
+            pickedOption: opts.length > 0 ? 0 : null,
+          });
+          break;
+        }
       }
     } catch (e) {
       console.error('[timer] auto-action error:', e);
@@ -368,6 +378,7 @@ const GRACE_PERIOD_MS = 20_000; // 20s — dentro do janela de 35s do cliente
 // ── Sanitize ─────────────────────────────────────────────────────────────────
 
 function sanitizeGame(game, playerId) {
+  const gameOver = game.phase === 'GAME_OVER' || !!game.winner;
   return {
     players: game.players.map(p => ({
       id: p.id, name: p.name, coins: p.coins,
@@ -375,7 +386,7 @@ function sanitizeGame(game, playerId) {
       isBot: p.isBot || false,
       cards: p.cards.map((c, i) => ({
         index: i, dead: c.dead,
-        character: (p.id === playerId || c.dead) ? c.character : null,
+        character: (p.id === playerId || c.dead || gameOver) ? c.character : null,
       })),
     })),
     currentPlayerId: game.currentPlayerId,
@@ -1016,6 +1027,9 @@ function attachGameHandlers(socket) {
     if (!player) return;
     const playerId = player.id;
     const roomCode = room.code;
+
+    // Clean up action cooldown to prevent memory leak
+    actionCooldowns.delete(playerId);
 
     const pid = socket._pid;
 

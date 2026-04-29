@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, createContext, useContext } from 'react';
+import { useState, useEffect, useRef, useCallback, createContext, useContext, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import socket from '../socket';
 import Card from '../components/Card';
@@ -157,6 +157,7 @@ export default function Game({ data, myId, musicTrack, musicLastChanged }) {
   const [blockAnim,      setBlockAnim]      = useState(false);
   const [challengeAnim,  setChallengeAnim]  = useState(false);
   const [turnVisible,    setTurnVisible]    = useState(false);
+  const [dealAnimKey,    setDealAnimKey]    = useState(() => Date.now());
 
   // ── Refs ──────────────────────────────────────────────────────────────────
   /** playerId → DOM element for position queries */
@@ -404,6 +405,17 @@ export default function Game({ data, myId, musicTrack, musicLastChanged }) {
     prevGameRef.current = game;
   }, [game, getPlayerPos, getTablePos, pushCoinAnim, pushCardDeathAnim]);
 
+  // ── Deal animation: re-trigger when game restarts (round resets to 1) ────
+  const prevRoundForDeal = useRef(null);
+  useEffect(() => {
+    if (!game?.roundNumber) return;
+    const prev = prevRoundForDeal.current;
+    prevRoundForDeal.current = game.roundNumber;
+    if (prev !== null && prev > 1 && game.roundNumber === 1) {
+      setDealAnimKey(Date.now());
+    }
+  }, [game?.roundNumber]);
+
   // ── Screen shake + challenge reveal drama ────────────────────────────────
   const prevPhaseRef    = useRef(null);
   const prevPaRef       = useRef(null);
@@ -422,6 +434,11 @@ export default function Game({ data, myId, musicTrack, musicLastChanged }) {
       //                     LOSE_INFLUENCE with actorId in queue → actor was bluffing (won=false)
       // After golpe/assassinar: LOSE_INFLUENCE with targetId in queue (no challenge)
       const prevPa = prevPaRef.current;
+
+      // Update refs BEFORE early return so the next render doesn't double-trigger the shake
+      prevPhaseRef.current = phase;
+      prevPaRef.current    = pa;
+
       if (prevPa?.claimedCharacter) {
         const wasChallenge =
           phase === 'CHALLENGE_WON' ||
@@ -606,8 +623,11 @@ export default function Game({ data, myId, musicTrack, musicLastChanged }) {
                     <span className={styles.loserName}>{p.name}</span>
                     <div className={styles.loserCards}>
                       {p.cards.map((c,i) => (
-                        <span key={i} className={styles.loserCard}>
-                          {c.dead ? (CHAR_CONFIG[c.character]?.icon || '💀') : '🃏'}
+                        <span key={i} className={styles.loserCard}
+                          style={!c.dead ? { filter: 'grayscale(0)', opacity: 1 } : { opacity: 0.5 }}
+                          title={CHAR_CONFIG[c.character]?.label || ''}>
+                          {CHAR_CONFIG[c.character]?.icon || '💀'}
+                          {!c.dead && <span style={{ fontSize: '0.5rem', display: 'block', textAlign: 'center', color: '#ffd600' }}>VIVO</span>}
                         </span>
                       ))}
                     </div>
@@ -963,7 +983,17 @@ export default function Game({ data, myId, musicTrack, musicLastChanged }) {
               <span className={styles.myName}>{me?.name}</span>
             </div>
             <div className={styles.myCards}>
-              {me?.cards.map((c,i)=><Card key={i} character={c.character} dead={c.dead} size="xl"/>)}
+              {me?.cards.map((c,i)=>(
+                <motion.div
+                  key={`${dealAnimKey}-${i}`}
+                  initial={{ y: 55, opacity: 0, rotateY: 90 }}
+                  animate={{ y: 0, opacity: 1, rotateY: 0 }}
+                  transition={{ delay: i * 0.15, type: 'spring', stiffness: 210, damping: 20, opacity: { duration: 0.25 } }}
+                  style={{ perspective: 600 }}
+                >
+                  <Card character={c.character} dead={c.dead} size="xl"/>
+                </motion.div>
+              ))}
             </div>
           </div>
         </div>
@@ -1394,7 +1424,7 @@ export default function Game({ data, myId, musicTrack, musicLastChanged }) {
 
 // ── Btn component with tooltip ─────────────────────────────────────────────────
 // ── WaitingBox — tela de espera contextual ───────────────────────────────────
-function WaitingBox({ phase, pa, actorName, targetName, blockerName, iAmActor, alreadyResponded, isTargetedAction, isAnyoneChallenge, players }) {
+const WaitingBox = memo(function WaitingBox({ phase, pa, actorName, targetName, blockerName, iAmActor, alreadyResponded, isTargetedAction, isAnyoneChallenge, players }) {
   let icon = '⏳';
   let title = 'Aguardando...';
   let sub = null;
@@ -1477,10 +1507,10 @@ function WaitingBox({ phase, pa, actorName, targetName, blockerName, iAmActor, a
       </div>
     </motion.div>
   );
-}
+});
 
 // ── OpCard — carta compacta de oponente (top ou lateral) ────────────────────
-function OpCard({ p, hostId, currentPlayerId, selectedTarget, canAct, setSelectedTarget, playerElRefs, side = false }) {
+const OpCard = memo(function OpCard({ p, hostId, currentPlayerId, selectedTarget, canAct, setSelectedTarget, playerElRefs, side = false }) {
   const isHostP = p.id === hostId;
   return (
     <div
@@ -1523,7 +1553,22 @@ function OpCard({ p, hostId, currentPlayerId, selectedTarget, canAct, setSelecte
                     ? <img src={cfg.img} className={styles.playerCardImg} alt={cfg.label}/>
                     : <span className={styles.playerCardFallback}>{cfg.icon||'?'}</span>
                 ) : (
-                  <div className={styles.playerCardBack}>🃏</div>
+                  <div className={styles.playerCardBack}>
+                    <span style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:'0.72rem',letterSpacing:'0.06em',lineHeight:1,textShadow:'0 1px 2px rgba(0,0,0,0.5)'}}>
+                      <span style={{color:'#e8f0ff'}}>G</span><span style={{color:'#69f0ae'}}>O</span><span style={{color:'#69f0ae'}}>L</span><span style={{color:'#ffd600'}}>P</span><span style={{color:'#e8f0ff'}}>E</span>
+                    </span>
+                  </div>
+                )}
+                {c.dead&&(
+                  <div style={{
+                    position:'absolute',inset:0,pointerEvents:'none',
+                    display:'flex',alignItems:'center',justifyContent:'center',
+                  }}>
+                    <svg width="100%" height="100%" viewBox="0 0 42 60" style={{position:'absolute',inset:0}}>
+                      <line x1="4" y1="4" x2="38" y2="56" stroke="rgba(229,57,53,0.7)" strokeWidth="3" strokeLinecap="round"/>
+                      <line x1="38" y1="4" x2="4" y2="56" stroke="rgba(229,57,53,0.7)" strokeWidth="3" strokeLinecap="round"/>
+                    </svg>
+                  </div>
                 )}
                 {c.dead&&<div className={styles.playerCardDeadBadge}>💀 {cfg.label}</div>}
               </div>
@@ -1541,7 +1586,7 @@ function OpCard({ p, hostId, currentPlayerId, selectedTarget, canAct, setSelecte
       </motion.div>
     </div>
   );
-}
+});
 
 function Btn({ icon, label, sub, onClick, disabled, danger, success, selected, tooltip }) {
   const setDesc = useContext(TooltipCtx);
